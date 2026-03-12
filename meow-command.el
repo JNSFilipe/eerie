@@ -933,7 +933,8 @@ Will cancel all other selection, except char selection. "
   (when (and (region-active-p)
              (not (equal '(expand . char) (meow--selection-type))))
     (meow-cancel-selection))
-  (meow--execute-kbd-macro meow--kbd-backward-char))
+  (when (> (point) (line-beginning-position))
+    (backward-char 1)))
 
 (defun meow-right ()
   "Move to right.
@@ -947,7 +948,8 @@ Will cancel all other selection, except char selection. "
     (when (or (not meow-use-cursor-position-hack)
               (not ra)
               (equal '(expand . char) (meow--selection-type)))
-      (meow--execute-kbd-macro meow--kbd-forward-char))))
+      (when (< (point) (line-end-position))
+        (forward-char 1)))))
 
 (defun meow-left-expand ()
   "Activate char selection, then move left."
@@ -961,7 +963,8 @@ Will cancel all other selection, except char selection. "
     (thread-first
       (meow--make-selection '(expand . char) (point) (point))
       (meow--select t)))
-  (meow--execute-kbd-macro meow--kbd-backward-char))
+  (when (> (point) (line-beginning-position))
+    (backward-char 1)))
 
 (defun meow-right-expand ()
   "Activate char selection, then move right."
@@ -973,7 +976,14 @@ Will cancel all other selection, except char selection. "
     (thread-first
       (meow--make-selection '(expand . char) (point) (point))
       (meow--select t)))
-  (meow--execute-kbd-macro meow--kbd-forward-char))
+  (when (< (point) (line-end-position))
+    (forward-char 1)))
+
+(defun meow-goto-line-end ()
+  "Move to the end of the current line."
+  (interactive)
+  (meow--cancel-selection)
+  (goto-char (line-end-position)))
 
 (defun meow-prev (arg)
   "Move to the previous line.
@@ -1516,7 +1526,9 @@ latest search pattern."
   (interactive)
   (pcase meow--visual-type
     ('line (ignore))
-    ('block (backward-char))
+    ('block
+     (when (> (point) (line-beginning-position))
+       (backward-char 1)))
     (_ (meow--visual-move-char #'meow-left-expand))))
 
 (defun meow-visual-right ()
@@ -1524,7 +1536,9 @@ latest search pattern."
   (interactive)
   (pcase meow--visual-type
     ('line (ignore))
-    ('block (forward-char))
+    ('block
+     (when (< (point) (line-end-position))
+       (forward-char 1)))
     (_ (meow--visual-move-char #'meow-right-expand))))
 
 (defun meow-visual-prev ()
@@ -1554,6 +1568,11 @@ latest search pattern."
   (interactive)
   (meow--visual-extend-to-point
    (meow--visual-target-point-for-buffer-edge 'end)))
+
+(defun meow-visual-goto-line-end ()
+  "Extend the current VISUAL selection to the end of the current line."
+  (interactive)
+  (meow--visual-extend-to-point (line-end-position)))
 
 (defun meow-visual-search-forward ()
   "Prompt for a regexp and extend VISUAL selection to the next match."
@@ -1962,29 +1981,65 @@ To search backward, use \\[negative-argument]."
         (message "Searching %s failed" search))
       (meow--highlight-regexp-in-buffer search))))
 
-(defun meow--matching-bounds-at-point ()
-  "Return delimiter bounds for the delimiter under point.
+(defconst meow--matching-open-delimiters '(?\( ?\[ ?\{)
+  "Opening delimiters supported by `%'.")
 
-The result is a cons cell `(BEGIN . END)' using Meow's existing Vim text
-object mapping. Return nil when point is not on a supported delimiter."
-  (when-let* ((ch (char-after))
-              (thing (alist-get ch meow--vim-text-object-table)))
-    (or (meow--parse-range-of-thing thing nil)
-        (when (< (point) (point-max))
-          (save-excursion
-            (forward-char 1)
-            (meow--parse-range-of-thing thing nil))))))
+(defconst meow--matching-close-delimiters '(?\) ?\] ?\})
+  "Closing delimiters supported by `%'.")
 
-(defun meow--matching-delimiter-target ()
-  "Return the matching delimiter position for the delimiter under point."
-  (when-let* ((bounds (meow--matching-bounds-at-point)))
+(defconst meow--matching-quote-delimiters '(?\" ?\')
+  "Quote delimiters supported by `%'.")
+
+(defun meow--matching-delimiter-char-p (ch)
+  "Return non-nil when CH is supported by `%'."
+  (and ch (alist-get ch meow--vim-text-object-table)))
+
+(defun meow--matching-delimiter-position ()
+  "Return the buffer position of the delimiter `%` should inspect."
+  (cond
+   ((meow--matching-delimiter-char-p (char-after))
+    (point))
+   ((and (> (point) (point-min))
+         (memq (char-after) '(nil ?\n ?\r))
+         (meow--matching-delimiter-char-p (char-before)))
+    (1- (point)))))
+
+(defun meow--matching-quote-target (pos ch)
+  "Return the matching quote target for delimiter CH at POS."
+  (when-let* ((thing (alist-get ch meow--vim-text-object-table))
+              (bounds (or (save-excursion
+                            (goto-char pos)
+                            (meow--parse-range-of-thing thing nil))
+                          (when (< pos (point-max))
+                            (save-excursion
+                              (goto-char (1+ pos))
+                              (meow--parse-range-of-thing thing nil))))))
     (let ((beg (car bounds))
-          (end (cdr bounds))
-          (pos (point)))
+          (end (cdr bounds)))
       (cond
        ((= pos beg) (1- end))
-       ((= pos (1- end)) beg)
-       (t nil)))))
+       ((= pos (1- end)) beg)))))
+
+(defun meow--matching-paren-target (pos ch)
+  "Return the matching paren-like target for delimiter CH at POS."
+  (save-excursion
+    (goto-char pos)
+    (cond
+     ((memq ch meow--matching-open-delimiters)
+      (when-let ((end (ignore-errors (scan-sexps (point) 1))))
+        (1- end)))
+     ((memq ch meow--matching-close-delimiters)
+      (ignore-errors (scan-sexps (1+ (point)) -1))))))
+
+(defun meow--matching-delimiter-target ()
+  "Return the matching delimiter position for `%'."
+  (when-let* ((pos (meow--matching-delimiter-position))
+              (ch (save-excursion
+                    (goto-char pos)
+                    (char-after))))
+    (if (memq ch meow--matching-quote-delimiters)
+        (meow--matching-quote-target pos ch)
+      (meow--matching-paren-target pos ch))))
 
 (defun meow-jump-matching ()
   "Jump to the delimiter matching the delimiter under point."

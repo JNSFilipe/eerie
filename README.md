@@ -17,8 +17,10 @@ No setup function is required for the default layout.
 ### Normal mode
 
 - `h j k l` move
+- `h` and `l` stay on the current line instead of wrapping across lines
 - `g g` jumps to the start of the buffer
 - `G` jumps to the end of the buffer
+- `$` jumps to the end of the current line
 - `g d` uses `xref` to jump to definition
 - `%` jumps to the matching delimiter for `(`/`)`, `[`/`]`, `{`/`}`, `"` and `'`
 - `x` deletes the current character
@@ -38,7 +40,9 @@ No setup function is required for the default layout.
 - `v` starts charwise visual mode
 - `V` starts linewise visual mode anchored on the current line
 - `C-v` starts block selection with `rectangle-mark-mode`
+- `h` and `l` stay on the current line while extending the selection
 - `g g`, `G`, `/`, `?`, `n`, and `N` keep extending the active visual selection
+- `$` extends the active visual selection to the end of the current line
 - `%` extends the active visual selection to the matching delimiter
 - `d`, `c`, and `y` operate on the active visual selection
 - `i` and `a` retarget the visual selection to inner/around text objects
@@ -60,6 +64,7 @@ No setup function is required for the default layout.
 - Operator-pending currently covers doubled linewise operators, motion targets `w`/`W`/`b`/`B`/`h`/`l`/`0`/`$`/`f`/`t`, and the requested `i`/`a` text objects.
 - Doubled linewise operators like `dd`, `yy`, and `cc` do not trigger Meow's numeric expand hints.
 - Vim-style yank operators restore the original cursor position after copying.
+- `%` handles nested delimiters and still works when point is sitting after a closing delimiter at end of line or end of buffer.
 - Jump history is window-local and records explicit relocations such as `gg`, `G`, `gd`, `meow-goto-line`, `/?nN`, Meow's mark/global-mark jump helpers, and registered third-party navigation commands.
 - Registered command capture ships with a default list for built-in jumps like `beginning-of-buffer`, `end-of-buffer`, `goto-line`, `imenu`, and `xref`, plus common third-party commands such as `consult-*` and `avy-*` when those symbols are present.
 - Counts like `2dw`, search-repeat operator targets, and word text-object aliases like `iw` / `aw` are still deferred.

@@ -21,6 +21,8 @@ Turn this Meow fork into a Vim-first modal editing package with:
 11. Linewise visual anchor fixes
 12. Visual navigation extension and operator overlay cleanup
 13. Matching-delimiter jump and yank cursor preservation
+14. Matching-delimiter reliability fixes
+15. Horizontal movement clamping and line-end motion
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -84,6 +86,28 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Verification:
   - batch load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `yy` cursor preservation, normal `%`, and visual `%`
+
+## Stage 14 Summary
+- Goal: make `%` reliable across nested delimiters and common end-of-line / end-of-buffer cursor positions.
+- Implemented scope:
+  - replaced the fragile opener lookup that depended on recovering text-object bounds from the next character
+  - switched paren-like `%` matching to delimiter-aware `scan-sexps` logic so nested `(` `[` and `{` work consistently
+  - kept quote matching on the existing text-object bounds path
+  - taught `%` to treat a closing delimiter before newline or at `point-max` as the current target when point sits after the visible delimiter
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for nested openers plus end-of-line and end-of-buffer `%` jumps
+
+## Stage 15 Summary
+- Goal: stop horizontal motions from wrapping across lines and add `$` as a real line-end motion in normal and visual mode.
+- Implemented scope:
+  - made normal `h` and `l` clamp at line boundaries instead of crossing to the previous or next line
+  - made visual `h` and `l` clamp at line boundaries for charwise and blockwise visual movement
+  - added normal `$` to move to the end of the current line
+  - added visual `$` to extend the active visual selection to the end of the current line
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for clamped `h` / `l`, normal `$`, and visual `$`
 
 ## Stage 9 Summary
 - Goal: finish the remaining jumplist gaps by making jump history window-local, adding Vim-style search jumps, and automatically capturing registered third-party navigation commands.

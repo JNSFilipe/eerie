@@ -63,13 +63,35 @@
   (should (eq (lookup-key meow-normal-state-keymap (kbd "?")) 'meow-search-backward))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "n")) 'meow-search-next))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "N")) 'meow-search-prev))
+  (should (eq (lookup-key meow-normal-state-keymap (kbd "$")) 'meow-goto-line-end))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "%")) 'meow-jump-matching))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "C-o")) 'meow-jump-back))
   (should (eq (lookup-key meow-visual-g-prefix-keymap (kbd "g"))
               'meow-visual-goto-buffer-start))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "G")) 'meow-visual-goto-buffer-end))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "/")) 'meow-visual-search-forward))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd "$")) 'meow-visual-goto-line-end))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "%")) 'meow-visual-jump-matching)))
+
+(ert-deftest meow-left-and-right-stay-on-current-line ()
+  (meow-test-with-buffer "ab\ncd\n"
+    (forward-line 1)
+    (let ((origin (point)))
+      (call-interactively #'meow-left)
+      (should (= (point) origin)))
+    (goto-char (point-min))
+    (goto-char (line-end-position))
+    (let ((origin (point)))
+      (call-interactively #'meow-right)
+      (should (= (point) origin)))))
+
+(ert-deftest meow-goto-line-end-uses-dollar ()
+  (meow-test-with-buffer "abc\ndef\n"
+    (forward-char 1)
+    (call-interactively #'meow-goto-line-end)
+    (should (= (point) (save-excursion
+                         (goto-char (point-min))
+                         (line-end-position))))))
 
 (ert-deftest meow-visual-start-enters-visual-state ()
   (meow-test-with-buffer "alpha"
@@ -214,6 +236,24 @@
     (call-interactively #'meow-jump-matching)
     (should (= (point) 25))))
 
+(ert-deftest meow-jump-matching-handles-nested-openers ()
+  (meow-test-with-buffer "(())"
+    (goto-char 2)
+    (call-interactively #'meow-jump-matching)
+    (should (= (point) 3))
+    (call-interactively #'meow-jump-matching)
+    (should (= (point) 2))))
+
+(ert-deftest meow-jump-matching-handles-eol-and-eof-delimiters ()
+  (meow-test-with-buffer "(x)\n"
+    (goto-char (line-end-position))
+    (call-interactively #'meow-jump-matching)
+    (should (= (point) 1)))
+  (meow-test-with-buffer "(x)"
+    (goto-char (point-max))
+    (call-interactively #'meow-jump-matching)
+    (should (= (point) 1))))
+
 (ert-deftest meow-visual-jump-matching-extends-selection ()
   (meow-test-with-buffer "(abc)"
     (goto-char (point-min))
@@ -345,6 +385,28 @@
     (should (equal (current-kill 0) "a"))
     (should (meow-normal-mode-p))
     (should-not (region-active-p))))
+
+(ert-deftest meow-visual-left-and-right-stay-on-current-line ()
+  (meow-test-with-buffer "ab\ncd\n"
+    (forward-line 1)
+    (call-interactively #'meow-visual-start)
+    (let ((origin (point)))
+      (call-interactively #'meow-visual-left)
+      (should (= (point) origin)))
+    (call-interactively #'meow-visual-exit)
+    (goto-char (point-min))
+    (goto-char (line-end-position))
+    (call-interactively #'meow-visual-start)
+    (let ((origin (point)))
+      (call-interactively #'meow-visual-right)
+      (should (= (point) origin)))))
+
+(ert-deftest meow-visual-goto-line-end-extends-selection ()
+  (meow-test-with-buffer "abc\ndef\n"
+    (call-interactively #'meow-visual-start)
+    (call-interactively #'meow-visual-goto-line-end)
+    (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                   "abc"))))
 
 (ert-deftest meow-visual-bounds-of-thing-selects-square-object ()
   (meow-test-with-buffer "[abc]"
