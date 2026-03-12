@@ -27,6 +27,9 @@ Turn this Meow fork into a Vim-first modal editing package with:
 17. `w` visual-selection polish and `f` jumplist verification
 18. `w` cursor placement polish
 19. `w` reverse-hint exclusion fix
+20. Visual `f` selection extension
+21. Visual `f` reverse-cursor exclusion fix
+22. Visual `f` same-loop reverse refresh fix
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -90,6 +93,36 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Verification:
   - batch load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `w ; 1` skipping the current word
+
+## Stage 20 Summary
+- Goal: make `f` extend an active visual selection, including selections that were started by `w`.
+- Implemented scope:
+  - added a dedicated visual-state `f` command that reuses the numbered visible-char jump loop
+  - made visual `f` extend the current selection to include the chosen target character instead of replacing the selection
+  - bound `f` in the visual-state keymap so `w`-started selections can continue extending with visible-char jumps
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for visual `f` on a plain visual selection and on a `w`-started selection
+
+## Stage 21 Summary
+- Goal: make reverse visual `f` skip the character currently under the visual cursor, matching the normal-mode behavior.
+- Implemented scope:
+  - added a helper that identifies the actual visible cursor character in an active visual selection
+  - taught visual `f` to exclude that current cursor character from its numbered candidates
+  - fixed `v`-started and `w`-started selections so `f<char> ; 1` targets the previous matching character instead of staying on the current one
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for reverse visual `f` on both plain visual and `w`-started selections
+
+## Stage 22 Summary
+- Goal: make reverse visual `f` refresh its numbered candidates correctly after each jump within the same hint loop.
+- Implemented scope:
+  - changed visual `f` to recompute its current-cursor exclusion range on every jump-loop pass instead of capturing it once at command start
+  - fixed the stale-numbering case where `f<char> ; 1` showed updated overlays but still required the old numeric choice
+  - kept the fix working for both plain visual selections and selections started by `w`
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for same-loop reverse visual `f` on both plain visual and `w`-started selections
 
 ## Stage 10 Summary
 - Goal: close the first round of user-reported regressions after the Stage 9 feature work and add a manual smoke-test buffer.

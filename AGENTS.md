@@ -32,6 +32,9 @@
 - Normal `w` should leave an active charwise VISUAL selection behind with point at the end of the selected word, never assign a numbered hint to the currently selected occurrence, and still let movement keys extend it, visual `d` / `c` / `y` work on it, and `ESC` exit it cleanly.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.
 - Visual mode currently supports charwise, anchor-based linewise, and block selection, plus `d`, `c`, `y`, `i`, `a`, and `$`.
+- Visual mode currently also supports `f` as a visible character jump that extends the active selection, including selections that were started by `w`.
+- Reverse visual `f` should skip the character currently under the visual cursor, so `f<char> ; 1` moves to the previous matching character instead of staying on the current one.
+- Reverse visual `f` should also refresh its numbered candidates after each jump inside the same hint loop, so the visible labels and numeric choices stay aligned after `;`.
 - Visual mode currently also supports `%` to extend the active selection to the matching delimiter.
 - Visual `gg`, `G`, `/`, `?`, `n`, and `N` currently extend the active selection instead of dropping out of visual behavior.
 - Horizontal `h` / `l` movement should clamp at line boundaries in normal and visual mode instead of wrapping across lines.

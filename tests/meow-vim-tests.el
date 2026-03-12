@@ -83,6 +83,7 @@
   (should (eq (lookup-key meow-visual-g-prefix-keymap (kbd "g"))
               'meow-visual-goto-buffer-start))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "G")) 'meow-visual-goto-buffer-end))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd "f")) 'meow-visual-jump-char))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "/")) 'meow-visual-search-forward))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "$")) 'meow-visual-goto-line-end))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "%")) 'meow-visual-jump-matching)))
@@ -346,6 +347,86 @@
       (should (= (region-end) target-end))
       (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
                      "foo")))))
+
+(ert-deftest meow-visual-jump-char-extends-selection ()
+  (meow-test-with-buffer "abc def ghi\n"
+    (call-interactively #'meow-visual-start)
+    (meow-test-with-read-keys '(?1 ?\C-g)
+      (meow-visual-jump-char nil ?d))
+    (should (meow-visual-mode-p))
+    (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                   "abc d"))
+    (should (= (point)
+               (save-excursion
+                 (goto-char (point-min))
+                 (search-forward "abc d")
+                 (point))))))
+
+(ert-deftest meow-visual-jump-char-reverse-skips-current-cursor-char ()
+  (meow-test-with-buffer "abc ddd eee\n"
+    (call-interactively #'meow-visual-start)
+    (meow-test-with-read-keys '(?2 ?\C-g)
+      (meow-visual-jump-char nil ?d))
+    (let ((current-end (point)))
+      (meow-test-with-read-keys '(?\; ?1 ?\C-g)
+        (meow-visual-jump-char nil ?d))
+      (should (< (point) current-end))
+      (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                     "abc d")))))
+
+(ert-deftest meow-visual-jump-char-reverse-updates-within-same-loop ()
+  (meow-test-with-buffer "abc ddd eee\n"
+    (call-interactively #'meow-visual-start)
+    (meow-test-with-read-keys '(?2 ?\; ?1 ?\C-g)
+      (meow-visual-jump-char nil ?d))
+    (should (meow-visual-mode-p))
+    (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                   "abc d"))
+    (should (= (point)
+               (save-excursion
+                 (goto-char (point-min))
+                 (search-forward "abc d")
+                 (point))))))
+
+(ert-deftest meow-visual-jump-char-extends-w-selection ()
+  (meow-test-with-buffer "foo x foo y z\n"
+    (meow-test-with-read-keys '(?1 ?\C-g)
+      (meow-jump-word-occurrence nil))
+    (let ((initial-end (region-end)))
+      (meow-test-with-read-keys '(?1 ?\C-g)
+        (meow-visual-jump-char nil ?y))
+      (should (meow-visual-mode-p))
+      (should (> (region-end) initial-end))
+      (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                     "foo y")))))
+
+(ert-deftest meow-visual-jump-char-reverse-skips-current-char-after-w ()
+  (meow-test-with-buffer "foo ayy z\n"
+    (meow-test-with-read-keys '(?\C-g)
+      (meow-jump-word-occurrence nil))
+    (meow-test-with-read-keys '(?2 ?\C-g)
+      (meow-visual-jump-char nil ?y))
+    (let ((current-end (point)))
+      (meow-test-with-read-keys '(?\; ?1 ?\C-g)
+        (meow-visual-jump-char nil ?y))
+      (should (< (point) current-end))
+      (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                     "foo ay")))))
+
+(ert-deftest meow-visual-jump-char-reverse-updates-within-same-loop-after-w ()
+  (meow-test-with-buffer "foo ayy z\n"
+    (meow-test-with-read-keys '(?\C-g)
+      (meow-jump-word-occurrence nil))
+    (meow-test-with-read-keys '(?2 ?\; ?1 ?\C-g)
+      (meow-visual-jump-char nil ?y))
+    (should (meow-visual-mode-p))
+    (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                   "foo ay"))
+    (should (= (point)
+               (save-excursion
+                 (goto-char (point-min))
+                 (search-forward "foo ay")
+                 (point))))))
 
 (ert-deftest meow-jump-word-occurrence-escape-exits-selection ()
   (meow-test-with-buffer "foo x foo\n"

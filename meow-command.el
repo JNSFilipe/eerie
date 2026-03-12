@@ -1576,6 +1576,49 @@ latest search pattern."
   (interactive)
   (meow--visual-extend-to-point (line-end-position)))
 
+(defun meow--visual-cursor-range ()
+  "Return the buffer range for the visible cursor char in VISUAL state."
+  (when (region-active-p)
+    (let ((pos (cond
+                ((and meow-use-cursor-position-hack
+                      (meow--direction-forward-p)
+                      (> (point) (point-min)))
+                 (1- (point)))
+                ((< (point) (point-max))
+                 (point))
+                ((> (point) (point-min))
+                 (1- (point))))))
+      (when (and pos
+                 (<= (point-min) pos)
+                 (< pos (point-max)))
+        (cons pos (1+ pos))))))
+
+(defun meow--visual-jump-char-action (candidate)
+  "Extend the current VISUAL selection to CANDIDATE."
+  (meow--visual-extend-to-point (cdr candidate))
+  (meow--ensure-visible))
+
+(defun meow-visual-jump-char (arg char)
+  "Extend VISUAL selection to a visible CHAR using numbered hints.
+
+Use digits `1' through `9' to choose the visible candidates nearest point.
+Press `;' during the jump session to reverse direction. A negative prefix
+argument starts in backward direction."
+  (interactive (list current-prefix-arg (read-char "Visual jump char: " t)))
+  (let ((regex (regexp-quote (string (if (eq char 13) ?\n char))))
+        (direction (if (meow--with-negative-argument-p arg)
+                       'backward
+                     'forward)))
+    (meow--jump-loop
+     (lambda (dir)
+       (meow--jump-regexp-candidates
+        regex
+        dir
+        (meow--visual-cursor-range)))
+     #'meow--visual-jump-char-action
+     "char"
+     direction)))
+
 (defun meow-visual-search-forward ()
   "Prompt for a regexp and extend VISUAL selection to the next match."
   (interactive)

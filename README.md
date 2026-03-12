@@ -43,6 +43,7 @@ No setup function is required for the default layout.
 - `V` starts linewise visual mode anchored on the current line
 - `C-v` starts block selection with `rectangle-mark-mode`
 - `h` and `l` stay on the current line while extending the selection
+- `f` extends the active visual selection to a visible character with numbered hints; `;` reverses direction during the hint loop
 - `g g`, `G`, `/`, `?`, `n`, and `N` keep extending the active visual selection
 - `$` extends the active visual selection to the end of the current line
 - `%` extends the active visual selection to the matching delimiter
@@ -69,6 +70,9 @@ No setup function is required for the default layout.
 - `%` handles nested delimiters and still works when point is sitting after a closing delimiter at end of line or end of buffer.
 - `f` and `w` use a Meow-native visible-jump loop with digits `1` through `9`; no external `avy.el` runtime dependency is required.
 - `w` now promotes its target into Meow's actual visual state, keeps point at the end of the selected word, never numbers the current occurrence as a jump target, and lets `ESC` and visual movement/action keys keep working normally.
+- Because `w` ends in real visual state, visual `f` can keep extending that selection instead of replacing it.
+- Reverse visual `f` skips the character currently under the visual cursor, so `f<char> ; 1` goes to the previous match instead of staying on the current one.
+- Reverse visual `f` also refreshes its numbered candidates after each jump inside the same hint loop, so the overlay labels and numeric choices stay in sync after `;`.
 - Jump history is window-local and records explicit relocations such as `gg`, `G`, `gd`, `meow-goto-line`, `/?nN`, Meow's mark/global-mark jump helpers, and registered third-party navigation commands.
 - Registered command capture ships with a default list for built-in jumps like `beginning-of-buffer`, `end-of-buffer`, `goto-line`, `imenu`, and `xref`, plus common third-party commands such as `consult-*` when those symbols are present.
 - Counts like `2dw`, search-repeat operator targets, and word text-object aliases like `iw` / `aw` are still deferred.
