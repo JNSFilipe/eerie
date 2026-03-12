@@ -187,6 +187,8 @@ This command supports `meow-selection-command-fallback'."
     meow-goto-buffer-end
     meow-goto-definition
     meow-goto-line
+    meow-jump-char
+    meow-jump-word-occurrence
     meow-pop-to-mark
     meow-unpop-to-mark
     meow-pop-to-global-mark
@@ -1856,6 +1858,222 @@ with UNIVERSAL ARGUMENT, search both side."
 (defun meow-till-expand (n ch)
   (interactive "p\ncExpand till:")
   (meow-till n ch t))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; VISIBLE JUMP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun meow--jump-visible-p (pos)
+  "Return non-nil when POS is visibly rendered."
+  (let ((invisible (get-char-property pos 'invisible)))
+    (or (null invisible)
+        (eq t buffer-invisibility-spec)
+        (null (assoc invisible buffer-invisibility-spec)))))
+
+(defun meow--jump-next-visible-point ()
+  "Return the next visible point from point."
+  (let ((pos (point)))
+    (while (and (not (= (point-max) (setq pos (next-char-property-change pos))))
+                (not (meow--jump-visible-p pos))))
+    pos))
+
+(defun meow--jump-next-invisible-point ()
+  "Return the next invisible point from point."
+  (let ((pos (point)))
+    (while (and (not (= (point-max) (setq pos (next-char-property-change pos))))
+                (meow--jump-visible-p pos)))
+    pos))
+
+(defun meow--jump-visible-regions (beg end)
+  "Return visible regions between BEG and END."
+  (setq beg (max beg (point-min)))
+  (setq end (min end (point-max)))
+  (when (< beg end)
+    (let (visibles start)
+      (save-excursion
+        (save-restriction
+          (narrow-to-region beg end)
+          (setq start (goto-char (point-min)))
+          (while (not (= (point) (point-max)))
+            (goto-char (meow--jump-next-invisible-point))
+            (push (cons start (point)) visibles)
+            (setq start (goto-char (meow--jump-next-visible-point))))
+          (nreverse visibles))))))
+
+(defun meow--jump-regexp-candidates (regex &optional direction exclude-range)
+  "Return visible REGEX candidates ordered by DIRECTION.
+
+When EXCLUDE-RANGE is non-nil, skip the exact candidate with the same
+bounds."
+  (let ((case-fold-search t)
+        (current-point (point))
+        (direction (or direction 'forward))
+        candidates)
+    (dolist (pair (meow--jump-visible-regions
+                   (window-start)
+                   (window-end (selected-window) t)))
+      (save-excursion
+        (goto-char (car pair))
+        (while (re-search-forward regex (cdr pair) t)
+          (let ((beg (match-beginning 0))
+                (end (match-end 0)))
+            (when (and (not (and exclude-range
+                                 (= beg (car exclude-range))
+                                 (= end (cdr exclude-range))))
+                       (if (eq direction 'backward)
+                           (< beg current-point)
+                         (> beg current-point)))
+              (push (cons beg end) candidates))))))
+    (if (eq direction 'backward)
+        (sort candidates (lambda (a b) (> (car a) (car b))))
+      (nreverse candidates))))
+
+(defun meow--jump-show-candidates (candidates direction)
+  "Display numbered hint overlays for CANDIDATES in DIRECTION."
+  (meow--remove-expand-highlights)
+  (cl-loop for candidate in (seq-take candidates 9)
+           for idx from 1
+           do
+           (save-excursion
+             (goto-char (car candidate))
+             (let ((ov (make-overlay (point) (1+ (point))))
+                   (before-full-width-char
+                    (and (char-after) (= 2 (char-width (char-after)))))
+                   (before-newline (equal 10 (char-after)))
+                   (before-tab (equal 9 (char-after)))
+                   (face (if (eq direction 'backward)
+                             'meow-position-highlight-reverse-number-1
+                           'meow-position-highlight-number-1)))
+               (overlay-put ov 'window (selected-window))
+               (cond
+                (before-newline
+                 (overlay-put ov 'display
+                              (concat (propertize (format "%s" idx) 'face face) "\n")))
+                (before-tab
+                 (overlay-put ov 'display
+                              (concat (propertize (format "%s" idx) 'face face) "\t")))
+                (before-full-width-char
+                 (overlay-put ov 'display
+                              (propertize
+                               (format "%s" (meow--format-full-width-number idx))
+                               'face face)))
+                (t
+                 (overlay-put ov 'display
+                              (propertize (format "%s" idx) 'face face))))
+               (push ov meow--expand-overlays)))))
+
+(defun meow--jump-read-event (direction noun candidates)
+  "Read an event for jump hints in DIRECTION over NOUN and CANDIDATES."
+  (read-key
+   (if candidates
+       (format "Jump %s %s (1-%d, ; reverse, other key exits): "
+               noun direction (min 9 (length candidates)))
+     (format "No more %s %s (; reverses, other key exits): "
+             noun direction))))
+
+(defun meow--jump-loop (candidate-fn action noun &optional direction)
+  "Run a visible jump loop using CANDIDATE-FN and ACTION.
+
+NOUN is used for prompt text. DIRECTION defaults to `forward'.
+
+Return an exit reason symbol when the loop stops."
+  (let ((direction (or direction 'forward))
+        done
+        result)
+    (unwind-protect
+        (while (not done)
+          (let* ((candidates (funcall candidate-fn direction))
+                 (active-candidates (seq-take candidates 9)))
+            (meow--jump-show-candidates active-candidates direction)
+            (let* ((event (meow--jump-read-event direction noun active-candidates))
+                   (key (if (integerp event)
+                            event
+                          (event-basic-type event))))
+              (cond
+               ((eq key ?\e)
+                (setq done t
+                      result 'escape))
+               ((eq key ?\C-g)
+                (setq done t
+                      result 'keyboard-quit))
+               ((eq key ?\;)
+                (setq direction (if (eq direction 'forward) 'backward 'forward)))
+               ((and (integerp key) (>= key ?1) (<= key ?9))
+                (if-let ((candidate (nth (1- (- key ?0)) active-candidates)))
+                    (funcall action candidate)
+                  (message "No candidate %d" (- key ?0))))
+               (t
+                (setq unread-command-events (list event)
+                      done t
+                      result 'replay))))))
+      (meow--remove-expand-highlights))
+    result))
+
+(defun meow--jump-char-action (candidate)
+  "Jump to CANDIDATE for char jumping."
+  (goto-char (car candidate))
+  (meow--ensure-visible))
+
+(defun meow--jump-word-action (candidate)
+  "Select the word occurrence at CANDIDATE in VISUAL state."
+  (thread-first
+    (meow--make-selection '(expand . char) (car candidate) (cdr candidate))
+    (meow--select t))
+  (setq-local meow--visual-type 'char
+              meow--visual-line-anchor nil)
+  (meow--switch-state 'visual)
+  (meow--ensure-visible))
+
+(defun meow-jump-char (arg char)
+  "Jump to visible CHAR using numbered hints.
+
+Use digits `1' through `9' to choose the visible candidates nearest point.
+Press `;' during the jump session to reverse direction. A negative prefix
+argument starts in backward direction."
+  (interactive (list current-prefix-arg (read-char "Jump char: " t)))
+  (let ((regex (regexp-quote (string (if (eq char 13) ?\n char))))
+        (direction (if (meow--with-negative-argument-p arg)
+                       'backward
+                     'forward)))
+    (meow--with-recorded-jump
+      (meow--cancel-selection)
+      (meow--jump-loop
+       (lambda (dir) (meow--jump-regexp-candidates regex dir))
+       #'meow--jump-char-action
+       "char"
+       direction))))
+
+(defun meow-jump-word-occurrence (arg)
+  "Jump to visible occurrences of the current word using numbered hints.
+
+The current word is selected before jumping. Use digits `1' through `9'
+to choose a visible occurrence. Press `;' during the jump session to
+reverse direction. A negative prefix argument starts in backward
+direction. The final target is left in charwise VISUAL state so normal
+visual movement and action keys continue to work."
+  (interactive "P")
+  (if-let* ((bounds (bounds-of-thing-at-point meow-word-thing))
+            (word (buffer-substring-no-properties (car bounds) (cdr bounds))))
+      (let ((regex (format "\\<%s\\>" (regexp-quote word)))
+            (direction (if (meow--with-negative-argument-p arg)
+                           'backward
+                         'forward)))
+        (meow--with-recorded-jump
+          (meow--cancel-selection)
+          (meow--jump-word-action bounds)
+          (when (eq (meow--jump-loop
+                     (lambda (dir)
+                       (meow--jump-regexp-candidates
+                        regex
+                        dir
+                        (when (region-active-p)
+                          (cons (region-beginning) (region-end)))))
+                     #'meow--jump-word-action
+                     "word"
+                     direction)
+                    'escape)
+            (meow-visual-exit))))
+    (user-error "No word at point")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; VISIT and SEARCH

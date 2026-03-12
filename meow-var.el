@@ -707,6 +707,8 @@ The value can be nil, quick or record.")
     (meow-search-backward . "?")
     (meow-search-next . "search->")
     (meow-search-prev . "<-search")
+    (meow-jump-char . "jump-char")
+    (meow-jump-word-occurrence . "jump-word")
     (meow-undo . "undo")
     (meow-undo-in-selection . "undo-sel")
     (meow-pop-search . "popsearch")
@@ -767,13 +769,7 @@ Active jump stacks are stored per window.")
     consult-line
     consult-line-multi
     consult-mark
-    consult-ripgrep
-    avy-goto-char
-    avy-goto-char-2
-    avy-goto-char-timer
-    avy-goto-line
-    avy-goto-word-0
-    avy-goto-word-1)
+    consult-ripgrep)
   "Commands that should create jumplist entries when they relocate point."
   :group 'meow
   :type '(repeat symbol))

@@ -43,6 +43,18 @@
              (lambda (&rest _) input)))
     (call-interactively command)))
 
+(defmacro meow-test-with-read-keys (keys &rest body)
+  "Run BODY while `read-key' returns KEYS in sequence."
+  (declare (indent 1) (debug t))
+  `(let ((events ,keys))
+     (cl-letf (((symbol-function 'read-key)
+                (lambda (&rest _)
+                  (if events
+                      (prog1 (car events)
+                        (setq events (cdr events)))
+                    ?\C-g))))
+       ,@body)))
+
 (defun meow-test-goto-second-line ()
   "Move point to the beginning of the second line."
   (interactive)
@@ -57,7 +69,9 @@
   (should (eq (lookup-key meow-normal-state-keymap (kbd "u")) 'meow-undo))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "d")) 'meow-operator-delete))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "y")) 'meow-operator-yank))
+  (should (eq (lookup-key meow-normal-state-keymap (kbd "f")) 'meow-jump-char))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "v")) 'meow-visual-start))
+  (should (eq (lookup-key meow-normal-state-keymap (kbd "w")) 'meow-jump-word-occurrence))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "C-v")) 'meow-visual-block-start))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "/")) 'meow-search-forward))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "?")) 'meow-search-backward))
@@ -235,6 +249,110 @@
     (goto-char 22)
     (call-interactively #'meow-jump-matching)
     (should (= (point) 25))))
+
+(ert-deftest meow-jump-char-uses-numbered-visible-hints ()
+  (meow-test-with-buffer "A x A y A\n"
+    (let ((target (save-excursion
+                    (goto-char (point-min))
+                    (search-forward "A x A y ")
+                    (point))))
+      (meow-test-with-read-keys '(?2 ?\C-g)
+        (meow-jump-char nil ?A))
+      (should (= (point) target))
+      (should-not meow--expand-overlays)
+      (should (= (length (meow--get-jump-stack 'back)) 1)))))
+
+(ert-deftest meow-jump-char-supports-semicolon-direction-reversal ()
+  (meow-test-with-buffer "A x A y A\n"
+    (search-forward "A x ")
+    (let ((target (point-min)))
+      (meow-test-with-read-keys '(?\; ?1 ?\C-g)
+        (meow-jump-char nil ?A))
+      (should (= (point) target))
+      (should-not meow--expand-overlays)
+      (should (= (length (meow--get-jump-stack 'back)) 1)))))
+
+(ert-deftest meow-jump-char-participates-in-jump-history ()
+  (meow-test-with-buffer "A x A y A\n"
+    (let ((origin (point))
+          (target (save-excursion
+                    (goto-char (point-min))
+                    (search-forward "A x A y ")
+                    (point))))
+      (meow-test-with-read-keys '(?2 ?\C-g)
+        (meow-jump-char nil ?A))
+      (should (= (point) target))
+      (call-interactively #'meow-jump-back)
+      (should (= (point) origin))
+      (call-interactively #'meow-jump-forward)
+      (should (= (point) target)))))
+
+(ert-deftest meow-jump-word-occurrence-enters-visual-selection ()
+  (meow-test-with-buffer "foo x foo y foo\n"
+    (let ((target-beg (save-excursion
+                    (goto-char (point-min))
+                    (search-forward "foo x foo y ")
+                    (point)))
+          (target-end (save-excursion
+                        (goto-char (point-min))
+                        (search-forward "foo x foo y foo")
+                        (point))))
+      (meow-test-with-read-keys '(?2 ?\C-g)
+        (meow-jump-word-occurrence nil))
+      (should (= (point) target-end))
+      (should (region-active-p))
+      (should (meow-visual-mode-p))
+      (should (eq meow--visual-type 'char))
+      (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                     "foo"))
+      (should (= (region-beginning) target-beg))
+      (should (= (region-end) target-end))
+      (should (equal (meow--selection-type) '(expand . char)))
+      (should-not meow--expand-overlays)
+      (should (= (length (meow--get-jump-stack 'back)) 1)))))
+
+(ert-deftest meow-jump-word-occurrence-visual-movement-works ()
+  (meow-test-with-buffer "foo x foo\ntail line\n"
+    (meow-test-with-read-keys '(?1 ?\C-g)
+      (meow-jump-word-occurrence nil))
+    (should (meow-visual-mode-p))
+    (call-interactively #'meow-visual-next)
+    (should (meow-visual-mode-p))
+    (should (= (line-number-at-pos) 2))
+    (should (region-active-p))))
+
+(ert-deftest meow-jump-word-occurrence-visual-delete-works ()
+  (meow-test-with-buffer "foo x foo bar\n"
+    (meow-test-with-read-keys '(?1 ?\C-g)
+      (meow-jump-word-occurrence nil))
+    (call-interactively #'meow-visual-delete)
+    (should (meow-normal-mode-p))
+    (should-not (region-active-p))
+    (should (equal (buffer-string) "foo x  bar\n"))))
+
+(ert-deftest meow-jump-word-occurrence-reverse-skips-current-word ()
+  (meow-test-with-buffer "foo x foo y foo\n"
+    (search-forward "foo x ")
+    (let ((target-beg (point-min))
+          (target-end (save-excursion
+                        (goto-char (point-min))
+                        (search-forward "foo")
+                        (point))))
+      (meow-test-with-read-keys '(?\; ?1 ?\C-g)
+        (meow-jump-word-occurrence nil))
+      (should (= (point) target-end))
+      (should (meow-visual-mode-p))
+      (should (= (region-beginning) target-beg))
+      (should (= (region-end) target-end))
+      (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                     "foo")))))
+
+(ert-deftest meow-jump-word-occurrence-escape-exits-selection ()
+  (meow-test-with-buffer "foo x foo\n"
+    (meow-test-with-read-keys '(?\e)
+      (meow-jump-word-occurrence nil))
+    (should (meow-normal-mode-p))
+    (should-not (region-active-p))))
 
 (ert-deftest meow-jump-matching-handles-nested-openers ()
   (meow-test-with-buffer "(())"

@@ -5,10 +5,12 @@
 ;;
 ;; Suggested checks:
 ;; - `u`: delete or change text below, then undo it.
+;; - `f`: jump to visible `A` or `x` below with `1`-`9`, and press `;` to reverse direction.
 ;; - `V`: start on the first, middle, and last lines of each section.
 ;; - `C-v`: start on the aligned columns below, then move with `j` / `k`.
 ;; - `/`, `?`, `n`, `N`: search for "target" and walk the jumplist with `C-o` / `C-i`.
 ;; - `gd`: place point on `meow-demo-helper` inside `meow-demo-call-site`.
+;; - `w`: start on any `targetword` below, then jump between visible occurrences with `1`-`9` and `;`; `w ; 1` from a middle occurrence should go to the previous one, not stay on the current word. After that, `ESC`, movement keys, and `d` should behave like a normal visual selection.
 ;; - `di(`, `da[`, `ci"`, `dw`, `dd`, `yy`: use the marked sections below.
 
 (defun meow-demo-helper (value)
@@ -54,5 +56,12 @@
 ;; target one two three
 ;; target four five six
 ;; target seven eight nine
+
+;; Visible jump targets:
+;; - `f` on `A` should show numbered hints on the visible `A` characters.
+;; - `w` on `targetword` should select the current word and its visible occurrences, then leave a normal visual selection behind.
+;;
+;; A x A y A z A
+;; targetword alpha targetword beta targetword gamma targetword
 
 ;;; meow-interactive-demo.el ends here

@@ -23,6 +23,10 @@ Turn this Meow fork into a Vim-first modal editing package with:
 13. Matching-delimiter jump and yank cursor preservation
 14. Matching-delimiter reliability fixes
 15. Horizontal movement clamping and line-end motion
+16. Meow-native visible jumps for `f` and `w`
+17. `w` visual-selection polish and `f` jumplist verification
+18. `w` cursor placement polish
+19. `w` reverse-hint exclusion fix
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -41,6 +45,51 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - search motions as operator targets
   - full Vim search options such as `*`, `#`, and search offset syntax
   - cross-session persistence of jump history
+
+## Stage 16 Summary
+- Goal: replace the useful visible-jump parts of the user-provided `avy.el` with Meow-native commands so the fork no longer needs that file for `f` and `w`.
+- Implemented scope:
+  - added a Meow-owned visible jump loop that scans only the current window's visible text
+  - added normal-mode `f` as a numbered visible-char jump using digits `1` through `9`
+  - added normal-mode `w` as a numbered visible word-occurrence jump that selects the current word and each jumped-to occurrence
+  - added `;` as an in-loop direction toggle for both commands
+  - reused Meow's overlay infrastructure and jump-history helpers instead of depending on `avy.el` at runtime
+  - removed the default jumplist references to external `avy-*` commands from the shipped defaults and docs
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `f`, `w`, numeric hint selection, `;` direction reversal, and overlay cleanup
+
+## Stage 17 Summary
+- Goal: make `w` behave like a real active selection after jumping, add `ESC` exit behavior, and lock down `f` jumplist behavior with regression coverage.
+- Implemented scope:
+  - changed `w` to promote its current-word and occurrence targets into Meow's charwise VISUAL state instead of leaving a normal-state visit selection behind
+  - kept `w` compatible with movement extension and visual `d` / `c` / `y` actions by reusing the visual-state selection machinery
+  - made `ESC` inside the visible-jump loop exit the `w` selection cleanly instead of leaving visual state active
+  - fixed visible-jump control-key handling so `ESC` and `C-g` are recognized reliably
+  - added explicit ERT coverage that `f` participates in `C-o` / `C-i` jumplist round trips
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `w` entering visual mode, `ESC` exit, visual movement and delete after `w`, and `f` jumplist round trips
+
+## Stage 18 Summary
+- Goal: keep the `w` selection behavior from Stage 17, but place point at the end of the selected word instead of the beginning.
+- Implemented scope:
+  - flipped the final `w` selection activation so the selected word range stays unchanged while point lands on the word end
+  - kept `w` in charwise VISUAL state with the same `ESC`, movement, and action behavior from Stage 17
+  - updated regression coverage to assert both the selected word bounds and the new point location
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for the `w` selection bounds and end-of-word point placement
+
+## Stage 19 Summary
+- Goal: make sure the currently selected `w` occurrence is never assigned a numbered hint, especially after `;` reverses direction.
+- Implemented scope:
+  - taught the visible regex candidate collector to exclude an exact active range when requested
+  - updated `w` to exclude the currently selected occurrence from its numbered hints on every jump-loop pass
+  - fixed the `w ; 1` case so it targets the previous visible occurrence instead of staying on the current word
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `w ; 1` skipping the current word
 
 ## Stage 10 Summary
 - Goal: close the first round of user-reported regressions after the Stage 9 feature work and add a manual smoke-test buffer.
