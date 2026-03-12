@@ -63,7 +63,8 @@
   :keymap meow-visual-state-keymap
   :face meow-visual-cursor
   (unless meow-visual-mode
-    (setq-local meow--visual-type nil)
+    (setq-local meow--visual-type nil
+                meow--visual-line-anchor nil)
     (when (bound-and-true-p rectangle-mark-mode)
       (rectangle-mark-mode -1))
     (when (region-active-p)
@@ -143,12 +144,16 @@ Note: When this function is called, NORMAL state is already
 enabled.  NORMAL state is enabled globally when
 `meow-global-mode' is used, because in `fundamental-mode',
 there's no chance for meow to call an init function."
+  (meow--enable-jump-tracking)
+  (add-hook 'kill-buffer-hook #'meow--disable-jump-tracking nil t)
   (let ((state (meow--mode-get-state)))
     (meow--disable-current-state)
     (meow--switch-state state t)))
 
 (defun meow--disable ()
   "Disable Meow."
+  (remove-hook 'kill-buffer-hook #'meow--disable-jump-tracking t)
+  (meow--disable-jump-tracking)
   (mapc (lambda (state-mode) (funcall (cdr state-mode) -1)) meow-state-mode-alist)
   (meow--beacon-remove-overlays)
   (when (secondary-selection-exist-p)

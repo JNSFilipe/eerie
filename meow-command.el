@@ -121,13 +121,15 @@ in the history before deactivation."
   (interactive)
   (when (region-active-p)
     (meow--cancel-selection))
-  (meow--execute-kbd-macro meow--kbd-undo))
+  (if (fboundp 'undo-only)
+      (undo-only 1)
+    (undo 1)))
 
 (defun meow-undo-in-selection ()
   "Cancel undo in current region."
   (interactive)
   (when (region-active-p)
-    (meow--execute-kbd-macro meow--kbd-undo)))
+    (undo-in-region (region-beginning) (region-end))))
 
 (defun meow-pop-selection ()
   (interactive)
@@ -174,26 +176,162 @@ This command supports `meow-selection-command-fallback'."
        (marker-buffer marker)
        (buffer-live-p (marker-buffer marker))))
 
-(defun meow--pop-jump (stack-symbol)
-  "Pop and return the next live marker from STACK-SYMBOL."
-  (let ((stack (symbol-value stack-symbol)))
+(defconst meow--jump-back-stack-window-parameter 'meow-jump-back-stack
+  "Window parameter used to store backward jump history.")
+
+(defconst meow--jump-forward-stack-window-parameter 'meow-jump-forward-stack
+  "Window parameter used to store forward jump history.")
+
+(defconst meow--explicit-jump-commands
+  '(meow-goto-buffer-start
+    meow-goto-buffer-end
+    meow-goto-definition
+    meow-goto-line
+    meow-pop-to-mark
+    meow-unpop-to-mark
+    meow-pop-to-global-mark
+    meow-search-forward
+    meow-search-backward
+    meow-search-next
+    meow-search-prev)
+  "Commands that manage jump recording explicitly.")
+
+(defun meow--jump-stack-parameter (direction)
+  "Return the window parameter symbol for jump stack DIRECTION."
+  (pcase direction
+    ('back meow--jump-back-stack-window-parameter)
+    ('forward meow--jump-forward-stack-window-parameter)
+    (_ (error "Unknown jump direction: %S" direction))))
+
+(defun meow--jump-stack-variable (direction)
+  "Return the compatibility variable symbol for jump stack DIRECTION."
+  (pcase direction
+    ('back 'meow--jump-back-stack)
+    ('forward 'meow--jump-forward-stack)
+    (_ (error "Unknown jump direction: %S" direction))))
+
+(defun meow--get-jump-stack (direction &optional window)
+  "Return the jump stack for DIRECTION in WINDOW."
+  (window-parameter (or window (selected-window))
+                    (meow--jump-stack-parameter direction)))
+
+(defun meow--set-jump-stack (direction stack &optional window)
+  "Set the jump STACK for DIRECTION in WINDOW."
+  (let ((window (or window (selected-window))))
+    (set-window-parameter window (meow--jump-stack-parameter direction) stack)
+    (when (eq window (selected-window))
+      (set (meow--jump-stack-variable direction) stack))
+    stack))
+
+(defun meow--jump-marker-equal-p (left right)
+  "Whether LEFT and RIGHT point to the same location."
+  (and (meow--jump-marker-live-p left)
+       (meow--jump-marker-live-p right)
+       (eq (marker-buffer left) (marker-buffer right))
+       (= (marker-position left) (marker-position right))))
+
+(defun meow--jump-marker-at-point-p (marker)
+  "Whether MARKER points to the current location."
+  (and (meow--jump-marker-live-p marker)
+       (eq (marker-buffer marker) (current-buffer))
+       (= (marker-position marker) (point))))
+
+(defun meow--jump-marker-at-window-point-p (marker window)
+  "Whether MARKER points to WINDOW's current point."
+  (and (meow--jump-marker-live-p marker)
+       (window-live-p window)
+       (eq (marker-buffer marker) (window-buffer window))
+       (= (marker-position marker) (window-point window))))
+
+(defun meow--push-jump-on-stack (direction marker &optional window)
+  "Push MARKER onto jump stack DIRECTION in WINDOW."
+  (let* ((window (or window (selected-window)))
+         (stack (meow--get-jump-stack direction window))
+         (top (car stack)))
+    (unless (or (not (meow--jump-marker-live-p marker))
+                (meow--jump-marker-equal-p top marker))
+      (meow--set-jump-stack direction (cons marker stack) window))))
+
+(defun meow--pop-jump (direction &optional window)
+  "Pop and return the next live marker from jump stack DIRECTION in WINDOW."
+  (let* ((window (or window (selected-window)))
+         (stack (meow--get-jump-stack direction window)))
     (while (and stack
                 (not (meow--jump-marker-live-p (car stack))))
       (setq stack (cdr stack)))
-    (set stack-symbol stack)
+    (meow--set-jump-stack direction stack window)
     (when stack
       (prog1 (car stack)
-        (set stack-symbol (cdr stack))))))
+        (meow--set-jump-stack direction (cdr stack) window)))))
 
-(defun meow--push-jump ()
-  "Record the current position in jump history."
-  (let ((marker (point-marker))
-        (top (car meow--jump-back-stack)))
-    (unless (and (meow--jump-marker-live-p top)
-                 (eq (marker-buffer top) (current-buffer))
-                 (= (marker-position top) (point)))
-      (push marker meow--jump-back-stack)))
-  (setq meow--jump-forward-stack nil))
+(defun meow--push-jump (&optional marker window)
+  "Record MARKER in backward jump history for WINDOW and clear forward history."
+  (let ((window (or window (selected-window))))
+    (meow--push-jump-on-stack 'back (or marker (point-marker)) window)
+    (meow--set-jump-stack 'forward nil window)))
+
+(defun meow--auto-record-jump-command-p (command)
+  "Whether COMMAND should be tracked automatically for jump history."
+  (and command
+       (not (memq command meow--explicit-jump-commands))
+       (memq command meow-jump-auto-record-commands)))
+
+(defun meow--auto-record-jump-advice (fn &rest args)
+  "Around advice that records successful relocations for jump-aware commands."
+  (if (not (bound-and-true-p meow-mode))
+      (apply fn args)
+    (let ((start (point-marker))
+          (origin-window (selected-window)))
+      (prog1
+          (apply fn args)
+        (let ((destination-window (if (window-minibuffer-p (selected-window))
+                                      origin-window
+                                    (selected-window))))
+          (when (and (window-live-p destination-window)
+                     (not (meow--jump-marker-at-window-point-p start destination-window)))
+            (meow--push-jump start destination-window)))))))
+
+(defun meow--set-jump-command-advice (command enabled)
+  "Enable or disable jump-recording advice for COMMAND."
+  (when (fboundp command)
+    (if enabled
+        (unless (advice-member-p #'meow--auto-record-jump-advice command)
+          (advice-add command :around #'meow--auto-record-jump-advice))
+      (when (advice-member-p #'meow--auto-record-jump-advice command)
+        (advice-remove command #'meow--auto-record-jump-advice)))))
+
+(defun meow--refresh-jump-command-advice (&rest _)
+  "Refresh advice for auto-recorded jump commands."
+  (when (> meow--jump-tracking-refcount 0)
+    (dolist (command meow-jump-auto-record-commands)
+      (when (meow--auto-record-jump-command-p command)
+        (meow--set-jump-command-advice command t)))))
+
+(defun meow--enable-jump-tracking ()
+  "Enable jump-tracking advice when Meow becomes active."
+  (cl-incf meow--jump-tracking-refcount)
+  (when (= meow--jump-tracking-refcount 1)
+    (add-hook 'after-load-functions #'meow--refresh-jump-command-advice)
+    (meow--refresh-jump-command-advice)))
+
+(defun meow--disable-jump-tracking ()
+  "Disable jump-tracking advice when no Meow buffers remain."
+  (when (> meow--jump-tracking-refcount 0)
+    (cl-decf meow--jump-tracking-refcount))
+  (when (= meow--jump-tracking-refcount 0)
+    (remove-hook 'after-load-functions #'meow--refresh-jump-command-advice)
+    (dolist (command meow-jump-auto-record-commands)
+      (when (meow--auto-record-jump-command-p command)
+        (meow--set-jump-command-advice command nil)))))
+
+(defmacro meow--with-recorded-jump (&rest body)
+  "Run BODY and record the starting location if point relocates."
+  (declare (debug t) (indent 0))
+  `(let ((start (point-marker)))
+     (prog1
+         (progn ,@body)
+       (unless (meow--jump-marker-at-point-p start)
+         (meow--push-jump start)))))
 
 (defun meow--goto-jump-marker (marker)
   "Jump to MARKER in the current window."
@@ -208,9 +346,9 @@ This command supports `meow-selection-command-fallback'."
   "Jump backward through Meow jump history."
   (interactive)
   (meow--cancel-selection)
-  (if-let ((marker (meow--pop-jump 'meow--jump-back-stack)))
+  (if-let ((marker (meow--pop-jump 'back)))
       (progn
-        (push (point-marker) meow--jump-forward-stack)
+        (meow--push-jump-on-stack 'forward (point-marker))
         (meow--goto-jump-marker marker))
     (user-error "Jump history is empty")))
 
@@ -218,31 +356,41 @@ This command supports `meow-selection-command-fallback'."
   "Jump forward through Meow jump history."
   (interactive)
   (meow--cancel-selection)
-  (if-let ((marker (meow--pop-jump 'meow--jump-forward-stack)))
+  (if-let ((marker (meow--pop-jump 'forward)))
       (progn
-        (push (point-marker) meow--jump-back-stack)
+        (meow--push-jump-on-stack 'back (point-marker))
         (meow--goto-jump-marker marker))
     (user-error "Forward jump history is empty")))
+
+(defun meow-register-jump-command (command)
+  "Register COMMAND for automatic jumplist recording."
+  (interactive
+   (list
+    (intern
+     (completing-read "Jump command: " obarray #'commandp t))))
+  (add-to-list 'meow-jump-auto-record-commands command)
+  (when (> meow--jump-tracking-refcount 0)
+    (meow--set-jump-command-advice command t)))
 
 (defun meow-goto-buffer-start ()
   "Jump to the start of the current buffer."
   (interactive)
-  (meow--push-jump)
-  (meow--cancel-selection)
-  (goto-char (point-min)))
+  (meow--with-recorded-jump
+    (meow--cancel-selection)
+    (goto-char (point-min))))
 
 (defun meow-goto-buffer-end ()
   "Jump to the end of the current buffer."
   (interactive)
-  (meow--push-jump)
-  (meow--cancel-selection)
-  (goto-char (point-max)))
+  (meow--with-recorded-jump
+    (meow--cancel-selection)
+    (goto-char (point-max))))
 
 (defun meow-goto-definition ()
   "Jump to definition using xref and record jump history."
   (interactive)
-  (meow--push-jump)
-  (meow-find-ref))
+  (meow--with-recorded-jump
+    (meow-find-ref)))
 
 ;;; Clipboards
 
@@ -1149,35 +1297,71 @@ numeric, repeat times.
 
 This command will expand line selection."
   (interactive)
-  (let* ((rbeg (when (use-region-p) (region-beginning)))
-         (rend (when (use-region-p) (region-end)))
-         (expand (equal '(expand . line) (meow--selection-type)))
-         (orig-p (point))
-         (beg-end (save-mark-and-excursion
-                    (if meow-goto-line-function
-                      (call-interactively meow-goto-line-function)
-                      (meow--execute-kbd-macro meow--kbd-goto-line))
-                    (cons (line-beginning-position)
-                          (line-end-position))))
-         (beg (car beg-end))
-         (end (cdr beg-end)))
-    (thread-first
-      (meow--make-selection '(expand . line)
-                            (if (and expand rbeg) (min rbeg beg) beg)
-                            (if (and expand rend) (max rend end) end))
-      (meow--select t (> orig-p beg)))
-    (recenter)))
+  (meow--with-recorded-jump
+    (let* ((rbeg (when (use-region-p) (region-beginning)))
+           (rend (when (use-region-p) (region-end)))
+           (expand (equal '(expand . line) (meow--selection-type)))
+           (orig-p (point))
+           (beg-end (save-mark-and-excursion
+                      (if meow-goto-line-function
+                          (call-interactively meow-goto-line-function)
+                        (meow--execute-kbd-macro meow--kbd-goto-line))
+                      (cons (line-beginning-position)
+                            (line-end-position))))
+           (beg (car beg-end))
+           (end (cdr beg-end)))
+      (thread-first
+        (meow--make-selection '(expand . line)
+                              (if (and expand rbeg) (min rbeg beg) beg)
+                              (if (and expand rend) (max rend end) end))
+        (meow--select t (> orig-p beg)))
+      (recenter))))
 
 ;; visual line versions
-(defun meow--visual-line-beginning-position ()
+(defun meow--visual-block-move-lines (n)
+  "Move rectangle point by N lines without dropping the goal column."
+  (let ((column (current-column)))
+    (forward-line n)
+    (move-to-column column)))
+
+(defun meow--visual-line-range ()
+  "Return the current visual line range as a cons cell.
+
+Fall back to the logical line when visual-line primitives collapse to a
+single point, which can happen in non-windowed test environments and at
+buffer edges."
   (save-excursion
-    (beginning-of-visual-line)
-    (point)))
+    (let ((line-beg (line-beginning-position))
+          (line-end (line-end-position)))
+      (beginning-of-visual-line)
+      (let ((beg (point)))
+        (end-of-visual-line)
+        (let ((end (point)))
+          (if (<= end beg)
+              (cons line-beg line-end)
+            (cons beg end)))))))
+
+(defun meow--visual-line-beginning-position ()
+  (car (meow--visual-line-range)))
 
 (defun meow--visual-line-end-position ()
-  (save-excursion
-    (end-of-visual-line)
-    (point)))
+  (cdr (meow--visual-line-range)))
+
+(defun meow--visual-line-apply-selection (current-range)
+  "Apply linewise VISUAL selection from the anchor to CURRENT-RANGE."
+  (let* ((anchor (or meow--visual-line-anchor current-range))
+         (anchor-beg (car anchor))
+         (anchor-end (cdr anchor))
+         (current-beg (car current-range))
+         (current-end (cdr current-range))
+         (beg (min anchor-beg current-beg))
+         (end (max anchor-end current-end))
+         (backward (< current-beg anchor-beg)))
+    (thread-first
+      (meow--make-selection '(expand . line) beg end)
+      (meow--select t backward))
+    (meow--maybe-highlight-num-positions
+     '(meow--backward-visual-line-1 . meow--forward-visual-line-1))))
 
 (defun meow--forward-visual-line-1 ()
   (let ((orig (point)))
@@ -1204,44 +1388,23 @@ Prefix:
 numeric, repeat times.
 "
   (interactive "p")
-  (unless (or expand (equal '(expand . line) (meow--selection-type)))
-    (meow--cancel-selection))
-  (let* ((orig (mark t))
-         (n (if (meow--direction-backward-p)
-                (- n)
-              n))
-         (forward (> n 0)))
-    (cond
-     ((region-active-p)
-      (let (p)
-        (save-mark-and-excursion
-          (line-move-visual n)
-          (goto-char
-           (if forward
-               (setq p (meow--visual-line-end-position))
-             (setq p (meow--visual-line-beginning-position)))))
-        (thread-first
-          (meow--make-selection '(expand . line) orig p expand)
-          (meow--select t))
-        (meow--maybe-highlight-num-positions '(meow--backward-visual-line-1 . meow--forward-visual-line-1))))
-     (t
-      (let ((m (if forward
-                   (meow--visual-line-beginning-position)
-                 (meow--visual-line-end-position)))
-            (p (save-mark-and-excursion
-                 (if forward
-                     (progn
-                       (line-move-visual (1- n))
-                       (meow--visual-line-end-position))
-                   (progn
-                     (line-move-visual (1+ n))
-                     (when (meow--empty-line-p)
-                       (backward-char 1))
-                     (meow--visual-line-beginning-position))))))
-        (thread-first
-          (meow--make-selection '(expand . line) m p expand)
-          (meow--select t))
-        (meow--maybe-highlight-num-positions '(meow--backward-visual-line-1 . meow--forward-visual-line-1)))))))
+  (let* ((active-line-visual
+          (and (equal '(expand . line) (meow--selection-type))
+               (eq meow--visual-type 'line)
+               meow--visual-line-anchor
+               (region-active-p)))
+         (offset (if active-line-visual
+                     n
+                   (if (> n 0)
+                       (1- n)
+                     (1+ n)))))
+    (unless active-line-visual
+      (setq-local meow--visual-line-anchor (meow--visual-line-range)))
+    (let ((target-range
+           (save-mark-and-excursion
+             (line-move-visual offset)
+             (meow--visual-line-range))))
+      (meow--visual-line-apply-selection target-range))))
 
 (defun meow-visual-line-expand (n)
   "Like `meow-line', but always expand."
@@ -1259,13 +1422,15 @@ numeric, repeat times.
   (interactive)
   (unless (region-active-p)
     (meow--visual-select-char))
-  (setq-local meow--visual-type 'char)
+  (setq-local meow--visual-type 'char
+              meow--visual-line-anchor nil)
   (meow--switch-state 'visual))
 
 (defun meow-visual-line-start ()
   "Enter linewise VISUAL state."
   (interactive)
-  (setq-local meow--visual-type 'line)
+  (setq-local meow--visual-type 'line
+              meow--visual-line-anchor (meow--visual-line-range))
   (meow--switch-state 'visual)
   (meow-visual-line 1))
 
@@ -1275,7 +1440,8 @@ numeric, repeat times.
   (unless (region-active-p)
     (push-mark (point) t t))
   (rectangle-mark-mode 1)
-  (setq-local meow--visual-type 'block)
+  (setq-local meow--visual-type 'block
+              meow--visual-line-anchor nil)
   (meow--switch-state 'visual))
 
 (defun meow-visual-exit ()
@@ -1290,6 +1456,60 @@ numeric, repeat times.
   (unless (region-active-p)
     (meow-visual-start))
   (call-interactively command))
+
+(defun meow--buffer-last-content-position ()
+  "Return the last meaningful position in the current buffer."
+  (if (and (> (point-max) (point-min))
+           (eq (char-before (point-max)) ?\n))
+      (1- (point-max))
+    (point-max)))
+
+(defun meow--visual-target-point-for-buffer-edge (edge)
+  "Return a VISUAL-mode target point at buffer EDGE."
+  (save-excursion
+    (pcase meow--visual-type
+      ('block
+       (let ((column (current-column)))
+         (goto-char (if (eq edge 'start)
+                        (point-min)
+                      (meow--buffer-last-content-position)))
+         (move-to-column column)
+         (point)))
+      ('line
+       (if (eq edge 'start)
+           (point-min)
+         (meow--buffer-last-content-position)))
+      (_
+       (if (eq edge 'start)
+           (point-min)
+         (point-max))))))
+
+(defun meow--visual-extend-to-point (pos)
+  "Extend the current VISUAL selection to POS."
+  (goto-char pos)
+  (pcase meow--visual-type
+    ('line
+     (meow--visual-line-apply-selection (meow--visual-line-range)))
+    ('block nil)
+    (_
+     (setq-local meow--selection
+                 (meow--make-selection '(expand . char)
+                                       (mark t)
+                                       (point))))))
+
+(defun meow--visual-search-command (direction &optional prompt)
+  "Extend VISUAL selection using a search in DIRECTION.
+
+When PROMPT is non-nil, read a new pattern with PROMPT. Otherwise reuse the
+latest search pattern."
+  (let ((pattern (if prompt
+                     (let ((input (meow--read-search-pattern prompt)))
+                       (meow--push-search input)
+                       input)
+                   (or (car regexp-search-ring)
+                       (user-error "No previous search")))))
+    (when (meow--search-pattern pattern direction)
+      (meow--visual-extend-to-point (point)))))
 
 (defun meow-visual-left ()
   "Move left while extending the current VISUAL selection."
@@ -1312,7 +1532,7 @@ numeric, repeat times.
   (interactive)
   (pcase meow--visual-type
     ('line (meow-visual-line -1))
-    ('block (forward-line -1))
+    ('block (meow--visual-block-move-lines -1))
     (_ (meow--visual-move-char #'meow-prev-expand))))
 
 (defun meow-visual-next ()
@@ -1320,8 +1540,43 @@ numeric, repeat times.
   (interactive)
   (pcase meow--visual-type
     ('line (meow-visual-line 1))
-    ('block (forward-line 1))
+    ('block (meow--visual-block-move-lines 1))
     (_ (meow--visual-move-char #'meow-next-expand))))
+
+(defun meow-visual-goto-buffer-start ()
+  "Extend the current VISUAL selection to the start of the buffer."
+  (interactive)
+  (meow--visual-extend-to-point
+   (meow--visual-target-point-for-buffer-edge 'start)))
+
+(defun meow-visual-goto-buffer-end ()
+  "Extend the current VISUAL selection to the end of the buffer."
+  (interactive)
+  (meow--visual-extend-to-point
+   (meow--visual-target-point-for-buffer-edge 'end)))
+
+(defun meow-visual-search-forward ()
+  "Prompt for a regexp and extend VISUAL selection to the next match."
+  (interactive)
+  (meow--visual-search-command 'forward "/"))
+
+(defun meow-visual-search-backward ()
+  "Prompt for a regexp and extend VISUAL selection to the previous match."
+  (interactive)
+  (meow--visual-search-command 'backward "?"))
+
+(defun meow-visual-search-next ()
+  "Extend VISUAL selection to the next match in the last search direction."
+  (interactive)
+  (meow--visual-search-command meow--last-search-direction))
+
+(defun meow-visual-search-prev ()
+  "Extend VISUAL selection to the next match opposite the last search direction."
+  (interactive)
+  (meow--visual-search-command
+   (if (eq meow--last-search-direction 'backward)
+       'forward
+     'backward)))
 
 (defun meow--visual-finish-action ()
   "Leave VISUAL after a non-insert action."
@@ -1587,6 +1842,80 @@ with UNIVERSAL ARGUMENT, search both side."
 ;;; VISIT and SEARCH
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun meow--read-search-pattern (prompt)
+  "Read a regexp search pattern with PROMPT."
+  (let* ((default (car regexp-search-ring))
+         (input (read-from-minibuffer prompt nil nil nil 'regexp-search-ring default)))
+    (cond
+     ((and (string-empty-p input) default) default)
+     ((string-empty-p input) (user-error "No previous search"))
+     (t input))))
+
+(defun meow--search-pattern (pattern direction)
+  "Search for PATTERN in DIRECTION and move point to the match start."
+  (let* ((reverse (eq direction 'backward))
+         (origin (point))
+         (case-fold-search nil)
+         (search-fn (if reverse #'re-search-backward #'re-search-forward))
+         (wrap-point (if reverse (point-max) (point-min)))
+         (seed (if reverse
+                   (if (> origin (point-min)) (1- origin) (point-max))
+                 (if (< origin (point-max)) (1+ origin) (point-min)))))
+    (goto-char seed)
+    (if (or (funcall search-fn pattern nil t 1)
+            (progn
+              (goto-char wrap-point)
+              (funcall search-fn pattern nil t 1)))
+        (progn
+          (goto-char (match-beginning 0))
+          (setq meow--last-search-direction direction)
+          (meow--ensure-visible)
+          (meow--highlight-regexp-in-buffer pattern)
+          (message "%s search: %s" (if reverse "Reverse" "Search") pattern)
+          t)
+      (goto-char origin)
+      (message "%s search failed: %s" (if reverse "Reverse" "Search") pattern)
+      nil)))
+
+(defun meow-search-forward ()
+  "Prompt for a regexp and jump to the next match."
+  (interactive)
+  (let ((pattern (meow--read-search-pattern "/")))
+    (meow--push-search pattern)
+    (meow--with-recorded-jump
+      (meow--cancel-selection)
+      (meow--search-pattern pattern 'forward))))
+
+(defun meow-search-backward ()
+  "Prompt for a regexp and jump to the previous match."
+  (interactive)
+  (let ((pattern (meow--read-search-pattern "?")))
+    (meow--push-search pattern)
+    (meow--with-recorded-jump
+      (meow--cancel-selection)
+      (meow--search-pattern pattern 'backward))))
+
+(defun meow-search-next ()
+  "Repeat the most recent Meow search in the same direction."
+  (interactive)
+  (if-let ((pattern (car regexp-search-ring)))
+      (meow--with-recorded-jump
+        (meow--cancel-selection)
+        (meow--search-pattern pattern meow--last-search-direction))
+    (user-error "No previous search")))
+
+(defun meow-search-prev ()
+  "Repeat the most recent Meow search in the opposite direction."
+  (interactive)
+  (if-let ((pattern (car regexp-search-ring)))
+      (meow--with-recorded-jump
+        (meow--cancel-selection)
+        (meow--search-pattern pattern
+                              (if (eq meow--last-search-direction 'backward)
+                                  'forward
+                                'backward)))
+    (user-error "No previous search")))
+
 (defun meow-search (arg)
   "Search and select with the car of current `regexp-search-ring'.
 
@@ -1632,6 +1961,48 @@ To search backward, use \\[negative-argument]."
             (meow--ensure-visible))
         (message "Searching %s failed" search))
       (meow--highlight-regexp-in-buffer search))))
+
+(defun meow--matching-bounds-at-point ()
+  "Return delimiter bounds for the delimiter under point.
+
+The result is a cons cell `(BEGIN . END)' using Meow's existing Vim text
+object mapping. Return nil when point is not on a supported delimiter."
+  (when-let* ((ch (char-after))
+              (thing (alist-get ch meow--vim-text-object-table)))
+    (or (meow--parse-range-of-thing thing nil)
+        (when (< (point) (point-max))
+          (save-excursion
+            (forward-char 1)
+            (meow--parse-range-of-thing thing nil))))))
+
+(defun meow--matching-delimiter-target ()
+  "Return the matching delimiter position for the delimiter under point."
+  (when-let* ((bounds (meow--matching-bounds-at-point)))
+    (let ((beg (car bounds))
+          (end (cdr bounds))
+          (pos (point)))
+      (cond
+       ((= pos beg) (1- end))
+       ((= pos (1- end)) beg)
+       (t nil)))))
+
+(defun meow-jump-matching ()
+  "Jump to the delimiter matching the delimiter under point."
+  (interactive)
+  (meow--with-recorded-jump
+    (meow--cancel-selection)
+    (if-let ((target (meow--matching-delimiter-target)))
+        (progn
+          (goto-char target)
+          (meow--ensure-visible))
+      (user-error "No matching delimiter at point"))))
+
+(defun meow-visual-jump-matching ()
+  "Extend VISUAL selection to the matching delimiter under point."
+  (interactive)
+  (if-let ((target (meow--matching-delimiter-target)))
+      (meow--visual-extend-to-point target)
+    (user-error "No matching delimiter at point")))
 
 (defun meow-pop-search ()
   "Searching for the previous target."
@@ -1799,12 +2170,108 @@ To search backward, use \\[negative-argument]."
     (setq-local meow--visual-type 'char)
     (meow--switch-state 'visual)))
 
+(defun meow--operator-select-range (beg end)
+  "Create an operator selection spanning BEG to END."
+  (unless (and beg end (/= beg end))
+    (user-error "Motion produced no target"))
+  (thread-first
+    (meow--make-selection '(select . transient) beg end)
+    (meow--select t)))
+
+(defun meow--operator-forward-thing-start (thing)
+  "Return the start of the next THING from point."
+  (save-mark-and-excursion
+    (when-let ((bounds (bounds-of-thing-at-point thing)))
+      (goto-char (cdr bounds)))
+    (while (and (< (point) (point-max))
+                (bounds-of-thing-at-point thing))
+      (forward-char 1))
+    (while (and (< (point) (point-max))
+                (not (bounds-of-thing-at-point thing)))
+      (forward-char 1))
+    (when-let ((bounds (bounds-of-thing-at-point thing)))
+      (car bounds))))
+
+(defun meow--operator-backward-thing-start (thing)
+  "Return the start of the previous THING from point."
+  (save-mark-and-excursion
+    (when (> (point) (point-min))
+      (backward-char 1))
+    (while (and (> (point) (point-min))
+                (not (bounds-of-thing-at-point thing)))
+      (backward-char 1))
+    (when-let ((bounds (bounds-of-thing-at-point thing)))
+      (car bounds))))
+
+(defun meow--operator-current-thing-end (thing)
+  "Return the end of the current THING at point."
+  (when-let ((bounds (bounds-of-thing-at-point thing)))
+    (cdr bounds)))
+
+(defun meow--operator-find-forward (ch &optional till)
+  "Return the forward find target for CH.
+
+When TILL is non-nil, return the position just before CH."
+  (save-mark-and-excursion
+    (let ((case-fold-search nil)
+          (limit (line-end-position))
+          (target (char-to-string ch)))
+      (when (search-forward target limit t 1)
+        (if till
+            (1- (point))
+          (point))))))
+
+(defun meow--operator-motion-range (operator motion)
+  "Return the range for OPERATOR acting on MOTION."
+  (let ((orig (point)))
+    (pcase motion
+      (`(word-forward)
+       (cons orig
+             (or (and (eq operator 'change)
+                      (meow--operator-current-thing-end meow-word-thing))
+                 (meow--operator-forward-thing-start meow-word-thing))))
+      (`(symbol-forward)
+       (cons orig
+             (or (and (eq operator 'change)
+                      (meow--operator-current-thing-end meow-symbol-thing))
+                 (meow--operator-forward-thing-start meow-symbol-thing))))
+      (`(word-backward)
+       (cons orig (meow--operator-backward-thing-start meow-word-thing)))
+      (`(symbol-backward)
+       (cons orig (meow--operator-backward-thing-start meow-symbol-thing)))
+      (`(char-left)
+       (cons orig (and (> orig (point-min)) (1- orig))))
+      (`(char-right)
+       (cons orig (and (< orig (point-max)) (1+ orig))))
+      (`(line-start)
+       (cons orig (line-beginning-position)))
+      (`(line-end)
+       (cons orig (line-end-position)))
+      (`(find-forward ,ch)
+       (cons orig (meow--operator-find-forward ch nil)))
+      (`(till-forward ,ch)
+       (cons orig (meow--operator-find-forward ch t))))))
+
 (defun meow--operator-target (operator)
   "Read and return the target for OPERATOR."
   (let ((event (read-key (format "%s target: " (capitalize (symbol-name operator))))))
     (pcase (event-basic-type event)
       ((pred (lambda (it) (eq it (aref (symbol-name operator) 0))))
        '(line))
+      (?w '(motion word-forward))
+      (?W '(motion symbol-forward))
+      (?b '(motion word-backward))
+      (?B '(motion symbol-backward))
+      (?h '(motion char-left))
+      (?l '(motion char-right))
+      (?0 '(motion line-start))
+      (?$ '(motion line-end))
+      (?f
+       (list 'motion 'find-forward
+             (meow--read-vim-text-object-char "Find char: ")))
+      (?t
+       (list 'motion 'till-forward
+             (meow--read-vim-text-object-char "Till char: ")))
       (?i
        (list 'text-object 'inner
              (meow--vim-text-object-for-char
@@ -1818,19 +2285,36 @@ To search backward, use \\[negative-argument]."
 
 (defun meow--operator-command (operator)
   "Execute Vim-style OPERATOR on the next target."
+  (let ((origin (point-marker)))
   (pcase (meow--operator-target operator)
     (`(line)
-     (meow-line 1))
+     (thread-first
+       (meow--make-selection '(expand . line)
+                             (line-beginning-position)
+                             (line-end-position))
+       (meow--select t)))
+    (`(motion ,motion-kind)
+     (pcase-let ((`(,beg . ,end)
+                  (meow--operator-motion-range operator (list motion-kind))))
+       (meow--operator-select-range beg end)))
+    (`(motion ,motion-kind ,motion-arg)
+     (pcase-let ((`(,beg . ,end)
+                  (meow--operator-motion-range operator (list motion-kind motion-arg))))
+       (meow--operator-select-range beg end)))
     (`(text-object ,kind ,thing)
      (meow--select-vim-text-object kind thing)))
   (pcase operator
     ('delete (meow-kill))
     ('change (meow-change))
-    ('yank (meow-save)))
+    ('yank
+     (meow-save)
+     (when (and (marker-buffer origin)
+                (eq (marker-buffer origin) (current-buffer)))
+       (goto-char origin))))
   (unless (meow-insert-mode-p)
     (when (region-active-p)
       (meow--cancel-selection))
-    (meow--switch-state 'normal)))
+    (meow--switch-state 'normal))))
 
 (defun meow-operator-delete ()
   "Run a Vim-style delete operator."
@@ -1860,22 +2344,24 @@ To search backward, use \\[negative-argument]."
 (defun meow-unpop-to-mark ()
   "Unpop off mark ring. Does nothing if mark ring is empty."
   (interactive)
-  (meow--cancel-selection)
-  (when mark-ring
-    (setq mark-ring (cons (copy-marker (mark-marker)) mark-ring))
-    (set-marker (mark-marker) (car (last mark-ring)) (current-buffer))
-    (setq mark-ring (nbutlast mark-ring))
-    (goto-char (marker-position (car (last mark-ring))))))
+  (meow--with-recorded-jump
+    (meow--cancel-selection)
+    (when mark-ring
+      (setq mark-ring (cons (copy-marker (mark-marker)) mark-ring))
+      (set-marker (mark-marker) (car (last mark-ring)) (current-buffer))
+      (setq mark-ring (nbutlast mark-ring))
+      (goto-char (marker-position (car (last mark-ring)))))))
 
 (defun meow-pop-to-mark ()
   "Alternative command to `pop-to-mark-command'.
 
 Before jump, a mark of current location will be created."
   (interactive)
-  (meow--cancel-selection)
-  (unless (member last-command '(meow-pop-to-mark meow-unpop-to-mark meow-pop-or-unpop-to-mark))
-    (setq mark-ring (append mark-ring (list (point-marker)))))
-  (pop-to-mark-command))
+  (meow--with-recorded-jump
+    (meow--cancel-selection)
+    (unless (member last-command '(meow-pop-to-mark meow-unpop-to-mark meow-pop-or-unpop-to-mark))
+      (setq mark-ring (append mark-ring (list (point-marker)))))
+    (pop-to-mark-command)))
 
 (defun meow-pop-or-unpop-to-mark (arg)
   "Call `meow-pop-to-mark' or `meow-unpop-to-mark', depending on ARG.
@@ -1898,10 +2384,11 @@ See also `meow-pop-or-unpop-to-mark-repeat-unpop'."
 
 Before jump, a mark of current location will be created."
   (interactive)
-  (meow--cancel-selection)
-  (unless (member last-command '(meow-pop-to-global-mark meow-pop-to-mark meow-unpop-to-mark))
-    (setq global-mark-ring (append global-mark-ring (list (point-marker)))))
-  (meow--execute-kbd-macro meow--kbd-pop-global-mark))
+  (meow--with-recorded-jump
+    (meow--cancel-selection)
+    (unless (member last-command '(meow-pop-to-global-mark meow-pop-to-mark meow-unpop-to-mark))
+      (setq global-mark-ring (append global-mark-ring (list (point-marker)))))
+    (meow--execute-kbd-macro meow--kbd-pop-global-mark)))
 
 (defun meow-back-to-indentation ()
   "Back to indentation."

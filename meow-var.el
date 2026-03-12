@@ -703,6 +703,10 @@ The value can be nil, quick or record.")
     (meow-line . "line")
     (meow-delete . "del")
     (meow-search . "search")
+    (meow-search-forward . "/")
+    (meow-search-backward . "?")
+    (meow-search-next . "search->")
+    (meow-search-prev . "<-search")
     (meow-undo . "undo")
     (meow-undo-in-selection . "undo-sel")
     (meow-pop-search . "popsearch")
@@ -733,10 +737,55 @@ The value can be nil, quick or record.")
   "A list of (command . short-name)")
 
 (defvar meow--jump-back-stack nil
-  "Stack of markers for backward jump history.")
+  "Fallback stack of markers for backward jump history.
+
+Active jump stacks are stored per window.")
 
 (defvar meow--jump-forward-stack nil
-  "Stack of markers for forward jump history.")
+  "Fallback stack of markers for forward jump history.
+
+Active jump stacks are stored per window.")
+
+(defcustom meow-jump-auto-record-commands
+  '(beginning-of-buffer
+    end-of-buffer
+    goto-line
+    bookmark-jump
+    imenu
+    pop-global-mark
+    pop-to-mark-command
+    xref-find-definitions
+    xref-find-references
+    xref-find-apropos
+    xref-go-back
+    xref-go-forward
+    xref-pop-marker-stack
+    consult-grep
+    consult-git-grep
+    consult-global-mark
+    consult-imenu
+    consult-line
+    consult-line-multi
+    consult-mark
+    consult-ripgrep
+    avy-goto-char
+    avy-goto-char-2
+    avy-goto-char-timer
+    avy-goto-line
+    avy-goto-word-0
+    avy-goto-word-1)
+  "Commands that should create jumplist entries when they relocate point."
+  :group 'meow
+  :type '(repeat symbol))
+
+(defvar meow--last-search-direction 'forward
+  "Direction used by the most recent Vim-style Meow search.")
+
+(defvar meow--jump-tracking-refcount 0
+  "Number of live Meow buffers that require jump tracking hooks.")
+
+(defvar-local meow--visual-line-anchor nil
+  "Anchor range for the current linewise VISUAL selection.")
 
 (defcustom meow-replace-pop-command-start-indexes
   '((meow-replace . 1)

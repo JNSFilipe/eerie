@@ -14,6 +14,13 @@ Turn this Meow fork into a Vim-first modal editing package with:
 4. Operator-pending core and text objects
 5. Visual char/line/block behavior and visual actions
 6. Documentation sync, regression fixes, and release polish
+7. Motion-based operators and motion target parser
+8. Jump history expansion and jumplist policy
+9. Search jumps, third-party capture, and window-local jumplists
+10. Undo binding, visual regressions, and manual smoke buffer
+11. Linewise visual anchor fixes
+12. Visual navigation extension and operator overlay cleanup
+13. Matching-delimiter jump and yank cursor preservation
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -26,6 +33,97 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
 - Deferred items:
-  - motion-based operator targets such as `dw`
   - full Vim-style block change/insert behavior
   - rewriting the legacy upstream `.org` docs
+  - operator counts and additional Vim motions beyond the Stage 7 scope
+  - search motions as operator targets
+  - full Vim search options such as `*`, `#`, and search offset syntax
+  - cross-session persistence of jump history
+
+## Stage 10 Summary
+- Goal: close the first round of user-reported regressions after the Stage 9 feature work and add a manual smoke-test buffer.
+- Implemented scope:
+  - bound normal-mode `u` to `meow-undo`
+  - switched `meow-undo` and `meow-undo-in-selection` to Emacs-native undo commands instead of keyboard macros
+  - fixed linewise visual startup so `V` selects the current line instead of collapsing to an empty range at buffer edges
+  - fixed blockwise vertical movement so `C-v` followed by `j` / `k` preserves the active column instead of snapping to column 0
+  - added an interactive demo file under `tests/meow-interactive-demo.el`
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `u`, linewise visual startup, and blockwise column preservation
+
+## Stage 11 Summary
+- Goal: fix the remaining linewise visual regressions reported after Stage 10.
+- Implemented scope:
+  - replaced the direction-sensitive `V` movement path with an anchor-based linewise selection model
+  - ensured `V` always starts on exactly the current line
+  - ensured `V j k` and `V k j` return to the original anchor line instead of collapsing or inverting
+  - kept blockwise `C-v` vertical movement column-stable from Stage 10
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with dedicated coverage for linewise anchor preservation and `j` / `k` directionality
+
+## Stage 12 Summary
+- Goal: make the shipped visual-navigation keys actually extend the active selection and remove spurious expand overlays from doubled line operators.
+- Implemented scope:
+  - fixed visual `gg` and `G` so they extend charwise, linewise, and blockwise selections instead of leaving linewise visual anchored on the old line
+  - kept visual `/`, `?`, `n`, and `N` extending the active selection and aligned their tests with the current charwise visual semantics
+  - made charwise visual `G` target `point-max` so end-of-buffer extension reaches the real buffer end
+  - prevented `dd`, `yy`, and `cc` linewise operator forms from triggering Meow's numeric expand overlays
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for visual `gg` / `G`, visual search extension, and no-overlay `dd` / `yy`
+
+## Stage 13 Summary
+- Goal: close two more Vim-parity regressions by keeping yank cursor position stable and adding `%` matching-delimiter jumps.
+- Implemented scope:
+  - restored the original cursor position after Vim-style yank operators such as `yy`, `yw`, and `ya"`
+  - added `%` in normal mode to jump between matching `(`/`)`, `[`/`]`, `{`/`}`, `"` and `'`
+  - added `%` in visual mode to extend the active selection to the matching delimiter
+  - reused the fork's existing Vim text-object delimiter mapping so `%` stays aligned with `i` / `a` text objects
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `yy` cursor preservation, normal `%`, and visual `%`
+
+## Stage 9 Summary
+- Goal: finish the remaining jumplist gaps by making jump history window-local, adding Vim-style search jumps, and automatically capturing registered third-party navigation commands.
+- Implemented scope:
+  - moved jump back and forward stacks to per-window storage while preserving `C-o` / `C-i`
+  - added `/`, `?`, `n`, and `N` style search commands backed by Emacs regex search primitives and Meow's search ring
+  - added automatic jump recording for registered non-Meow navigation commands through command advice and a public `meow-register-jump-command` helper
+  - shipped a default tracked-command list for core Emacs jump commands and common third-party navigation packages
+- Explicitly out of Stage 9:
+  - search motions as operator targets
+  - full Vim search options such as `*`, `#`, and search offset syntax
+  - cross-session persistence of jump history
+
+## Stage 8 Summary
+- Goal: broaden `C-o` / `C-i` coverage beyond the initial hardcoded buffer and definition jumps while keeping the jumplist predictable.
+- Implemented scope:
+  - introduced a reusable jump-recording helper that only records successful relocations
+  - extended jump recording to `meow-goto-line`, `meow-goto-buffer-start`, `meow-goto-buffer-end`, and `meow-goto-definition`
+  - extended jump recording to `meow-pop-to-mark`, `meow-unpop-to-mark`, and `meow-pop-to-global-mark`
+  - preserved duplicate suppression, dead-marker pruning, cross-buffer round trips, and forward-stack clearing on new jumps
+  - kept ordinary motions and operator targets out of jump history
+- Explicitly out of Stage 8:
+  - search-driven jump entries until `/`, `n`, and `N` style motions exist in the fork
+  - automatic capture of arbitrary third-party navigation commands outside Meow-owned wrappers
+  - window-local jumplist semantics
+
+## Stage 7 Summary
+- Goal: extend the operator-pending engine so `d`, `c`, and `y` can consume motion targets instead of only doubled operators and `i`/`a` text objects.
+- Implemented scope:
+  - `dw`, `cw`, `yw`
+  - `dW`, `cW`, `yW`
+  - `db`, `cb`, `yb`
+  - `dB`, `cB`, `yB`
+  - `dh`, `dl`, `ch`, `cl`, `yh`, `yl`
+  - `d0`, `c0`, `y0`
+  - `d$`, `c$`, `y$`
+  - `df<char>`, `cf<char>`, `yf<char>`
+  - `dt<char>`, `ct<char>`, `yt<char>`
+- Explicitly out of Stage 7:
+  - `2dw` / `d2w` style counts
+  - search-based motions like `dn`, `dN`
+  - sentence/paragraph/function motions
+  - full text-object aliases like `iw` and `aw`

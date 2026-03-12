@@ -4,4 +4,4 @@
 - [x] Support doubled operators like `dd`, `yy`, and `cc`
 - [x] Support `i` and `a` text objects for requested delimiters
 - [x] Add tests for linewise and text-object operators
-- [ ] Deferred: motion-based operator targets such as `dw`
+- [x] Stage 7 completed motion-based operator targets such as `dw`
