@@ -694,6 +694,9 @@ With argument ARG, do this that many times."
    ((meow-keypad-mode-p)
     (meow--exit-keypad-state))
    ((and (meow-insert-mode-p)
+         meow--multiedit-replay-command)
+    (meow--multiedit-apply-replay))
+   ((and (meow-insert-mode-p)
          (eq meow--beacon-defining-kbd-macro 'quick))
     (setq meow--beacon-defining-kbd-macro nil)
     (meow-beacon-insert-exit))
@@ -1469,12 +1472,591 @@ numeric, repeat times.
               meow--visual-line-anchor nil)
   (meow--switch-state 'visual))
 
+(defun meow--multiedit-active-p ()
+  "Return non-nil when a multi-edit session is active."
+  (and meow--multiedit-seed
+       meow--multiedit-primary))
+
+(defun meow--multiedit-valid-seed-p ()
+  "Return non-nil when the current region can seed multi-edit."
+  (and (meow-visual-mode-p)
+       (eq meow--visual-type 'char)
+       (region-active-p)
+       (< (region-beginning) (region-end))))
+
+(defun meow--multiedit-current-range ()
+  "Return the current active region range."
+  (cons (region-beginning) (region-end)))
+
+(defun meow--multiedit-range-equal-p (left right)
+  "Return non-nil when LEFT and RIGHT have the same bounds."
+  (and left
+       right
+       (= (car left) (car right))
+       (= (cdr left) (cdr right))))
+
+(defun meow--multiedit-target-member-p (range)
+  "Return non-nil when RANGE already belongs to the multi-edit session."
+  (seq-some (lambda (target)
+              (meow--multiedit-range-equal-p target range))
+            meow--multiedit-targets))
+
+(defun meow--multiedit-overlap-p (left right)
+  "Return non-nil when LEFT and RIGHT overlap."
+  (and (< (car left) (cdr right))
+       (< (car right) (cdr left))))
+
+(defun meow--multiedit-normalize-targets (targets)
+  "Return TARGETS without duplicates, erroring on partial overlaps."
+  (let (result)
+    (dolist (target targets)
+      (unless (seq-some (lambda (existing)
+                          (meow--multiedit-range-equal-p existing target))
+                        result)
+        (when (seq-some (lambda (existing)
+                          (meow--multiedit-overlap-p existing target))
+                        result)
+          (user-error "Multi-edit targets cannot overlap"))
+        (push target result)))
+    (nreverse result)))
+
+(defun meow--multiedit-sorted-targets (&optional reverse)
+  "Return the current multi-edit targets sorted by start position.
+
+When REVERSE is non-nil, return them in reverse order."
+  (let ((targets
+         (sort (copy-sequence meow--multiedit-targets)
+               (lambda (left right)
+                 (< (car left) (car right))))))
+    (if reverse
+        (nreverse targets)
+      targets)))
+
+(defun meow--multiedit-remove-overlays ()
+  "Remove all secondary multi-edit overlays."
+  (mapc #'delete-overlay meow--multiedit-overlays)
+  (setq-local meow--multiedit-overlays nil))
+
+(defun meow--multiedit-reset-state ()
+  "Reset all multi-edit session state in the current buffer."
+  (meow--multiedit-remove-overlays)
+  (remove-hook 'post-command-hook #'meow--multiedit-post-command t)
+  (setq-local meow--multiedit-seed nil
+              meow--multiedit-direction 'forward
+              meow--multiedit-targets nil
+              meow--multiedit-primary nil
+              meow--multiedit-search-head nil
+              meow--multiedit-backward nil
+              meow--multiedit-replay-markers nil
+              meow--multiedit-replay-command nil))
+
+(defun meow--multiedit-deactivate ()
+  "Deactivate multi-edit while keeping the current selection intact."
+  (when (meow--multiedit-active-p)
+    (meow--multiedit-reset-state)))
+
+(defun meow--multiedit-render-overlays ()
+  "Render secondary multi-edit targets."
+  (meow--multiedit-remove-overlays)
+  (dolist (range meow--multiedit-targets)
+    (unless (meow--multiedit-range-equal-p range meow--multiedit-primary)
+      (let ((ov (make-overlay (car range) (cdr range) nil t t)))
+        (overlay-put ov 'face 'meow-beacon-fake-selection)
+        (overlay-put ov 'priority 1)
+        (overlay-put ov 'meow-multiedit t)
+        (push ov meow--multiedit-overlays))))
+  (setq-local meow--multiedit-overlays (nreverse meow--multiedit-overlays)))
+
+(defun meow--multiedit-set-targets (targets primary)
+  "Replace the current multi-edit TARGETS and select PRIMARY."
+  (setq-local meow--multiedit-targets (meow--multiedit-normalize-targets targets))
+  (unless (seq-some (lambda (target)
+                      (meow--multiedit-range-equal-p target primary))
+                    meow--multiedit-targets)
+    (user-error "Primary multi-edit target disappeared"))
+  (meow--multiedit-apply-target primary))
+
+(defun meow--multiedit-primary-text ()
+  "Return the current primary multi-edit text."
+  (buffer-substring-no-properties (car meow--multiedit-primary)
+                                  (cdr meow--multiedit-primary)))
+
+(defun meow--multiedit-enter-insert-state-at-point (command)
+  "Enter INSERT at point for multi-edit COMMAND."
+  (when (region-active-p)
+    (meow--cancel-selection))
+  (meow--enter-insert-state)
+  (when (if (eq command 'append)
+            meow-select-on-append
+          meow-select-on-insert)
+    (setq-local meow--insert-activate-mark t)))
+
+(defun meow--multiedit-start-replay (command markers)
+  "Start a multi-edit replay session for COMMAND using MARKERS."
+  (setq-local meow--multiedit-replay-markers markers
+              meow--multiedit-replay-command command)
+  (meow--multiedit-enter-insert-state-at-point command)
+  (setq last-kbd-macro nil)
+  (call-interactively #'kmacro-start-macro))
+
+(defun meow--multiedit-position-for-target (target command)
+  "Return the insert position for TARGET under multi-edit COMMAND."
+  (funcall (if (eq command 'append) #'cdr #'car) target))
+
+(defun meow--multiedit-delete-all-targets ()
+  "Delete every current multi-edit target."
+  (let ((primary-marker (copy-marker (car meow--multiedit-primary)))
+        (primary-text (meow--multiedit-primary-text))
+        (targets (meow--multiedit-sorted-targets t)))
+    (meow--multiedit-reset-state)
+    (meow--wrap-collapse-undo
+      (dolist (target targets)
+        (meow--delete-region (car target) (cdr target))))
+    (kill-new primary-text)
+    (when (region-active-p)
+      (meow--cancel-selection))
+    (goto-char primary-marker)
+    (meow--switch-state 'normal)))
+
+(defun meow--multiedit-start-change ()
+  "Delete every current multi-edit target and start replay-backed INSERT."
+  (let* ((sorted-targets (meow--multiedit-sorted-targets))
+         (primary-range meow--multiedit-primary)
+         (primary-marker (copy-marker (car primary-range)))
+         (secondary-markers
+          (delq nil
+                (mapcar (lambda (target)
+                          (unless (meow--multiedit-range-equal-p target primary-range)
+                            (copy-marker (car target))))
+                        sorted-targets)))
+         (primary-text (meow--multiedit-primary-text)))
+    (meow--multiedit-reset-state)
+    (meow--wrap-collapse-undo
+      (dolist (target (reverse sorted-targets))
+        (meow--delete-region (car target) (cdr target))))
+    (kill-new primary-text)
+    (goto-char primary-marker)
+    (meow--multiedit-start-replay 'insert secondary-markers)))
+
+(defun meow--multiedit-start-insert-or-append (command)
+  "Start multi-edit replay for COMMAND without deleting the targets."
+  (let* ((sorted-targets (meow--multiedit-sorted-targets))
+         (primary-range meow--multiedit-primary)
+         (primary-position
+          (meow--multiedit-position-for-target primary-range command))
+         (secondary-markers
+          (delq nil
+                (mapcar (lambda (target)
+                          (unless (meow--multiedit-range-equal-p target primary-range)
+                            (copy-marker
+                             (meow--multiedit-position-for-target target command))))
+                        sorted-targets))))
+    (meow--multiedit-reset-state)
+    (goto-char primary-position)
+    (meow--multiedit-start-replay command secondary-markers)))
+
+(defun meow--multiedit-apply-replay ()
+  "Replay the last multi-edit insert or change at all secondary markers."
+  (let* ((markers meow--multiedit-replay-markers)
+         (command meow--multiedit-replay-command)
+         (inserted-text (buffer-substring-no-properties meow--insert-pos (point))))
+    (setq-local meow--multiedit-replay-markers nil
+                meow--multiedit-replay-command nil)
+    (when defining-kbd-macro
+      (end-kbd-macro))
+    (let ((use-macro (and last-kbd-macro
+                          (> (length last-kbd-macro) 0))))
+      (meow--switch-state 'normal)
+      (meow--wrap-collapse-undo
+        (save-mark-and-excursion
+          (dolist (marker markers)
+            (when (marker-buffer marker)
+              (goto-char marker)
+              (if use-macro
+                  (progn
+                    (meow--multiedit-enter-insert-state-at-point command)
+                    (call-interactively #'kmacro-call-macro)
+                    (meow-escape-or-normal-modal))
+                (meow--insert inserted-text)))))))
+    (when meow--multicursor-active
+      (meow--multicursor-reset-state))
+    (meow--switch-state 'normal)))
+
+(defun meow--multiedit-apply-target (range)
+  "Select RANGE as the current active multi-edit target."
+  (setq-local meow--multiedit-primary range
+              meow--multiedit-search-head range)
+  (thread-first
+    (meow--make-selection '(expand . char) (car range) (cdr range))
+    (meow--select t meow--multiedit-backward))
+  (setq-local meow--visual-type 'char)
+  (meow--multiedit-render-overlays)
+  (meow--ensure-visible))
+
+(defun meow--multiedit-start-session ()
+  "Start a multi-edit session from the current charwise VISUAL selection."
+  (unless (meow--multiedit-valid-seed-p)
+    (user-error "Multi-edit requires an active charwise visual selection"))
+  (let ((range (meow--multiedit-current-range)))
+    (setq-local meow--multiedit-seed
+                (buffer-substring-no-properties (car range) (cdr range))
+                meow--multiedit-direction 'forward
+                meow--multiedit-targets (list range)
+                meow--multiedit-primary range
+                meow--multiedit-search-head range
+                meow--multiedit-backward (meow--direction-backward-p))
+    (add-hook 'post-command-hook #'meow--multiedit-post-command nil t)
+    (meow--multiedit-render-overlays)))
+
+(defun meow--multiedit-ensure-session ()
+  "Ensure there is an active multi-edit session."
+  (unless (meow--multiedit-active-p)
+    (meow--multiedit-start-session)))
+
+(defun meow--multiedit-find-next-match (&optional direction)
+  "Return the next unselected match in DIRECTION.
+
+When DIRECTION is nil, use the current multi-edit direction."
+  (let ((case-fold-search nil)
+        (direction (or direction meow--multiedit-direction))
+        (regexp (regexp-quote meow--multiedit-seed)))
+    (save-excursion
+      (goto-char (if (eq direction 'backward)
+                     (car meow--multiedit-search-head)
+                   (cdr meow--multiedit-search-head)))
+      (catch 'match
+        (while (if (eq direction 'backward)
+                   (re-search-backward regexp nil t)
+                 (re-search-forward regexp nil t))
+          (let ((range (cons (match-beginning 0) (match-end 0))))
+            (unless (meow--multiedit-target-member-p range)
+              (throw 'match range))))
+        nil))))
+
+(defun meow--multiedit-post-command ()
+  "Deactivate multi-edit after unsupported commands."
+  (unless (or (not (meow--multiedit-active-p))
+              (memq this-command
+                    '(meow-multiedit-match-next
+                      meow-multiedit-unmatch-last
+                      meow-multiedit-skip-match
+                      meow-multiedit-reverse-direction
+                      meow-multiedit-clear
+                      meow-visual-inner-of-thing
+                      meow-visual-bounds-of-thing
+                      meow-multicursor-spawn
+                      meow-visual-search-next-or-multicursor
+                      meow-visual-exit)))
+    (meow--multiedit-deactivate)))
+
+(defun meow--multicursor-overlay-start (pos)
+  "Return the display start position for a fake cursor at POS."
+  (cond
+   ((<= (point-max) (point-min))
+    (point-min))
+   ((>= pos (point-max))
+    (1- (point-max)))
+   ((and meow-use-cursor-position-hack
+         (> pos (point-min)))
+    (1- pos))
+   (t pos)))
+
+(defun meow--multicursor-overlay-end (start)
+  "Return the display end position for a fake cursor starting at START."
+  (if (< start (point-max))
+      (1+ start)
+    start))
+
+(defun meow--multicursor-add-overlay (pos)
+  "Add a fake cursor overlay for actual point POS."
+  (let* ((start (meow--multicursor-overlay-start pos))
+         (ov (make-overlay start (meow--multicursor-overlay-end start) nil t)))
+    (overlay-put ov 'face 'meow-beacon-fake-cursor)
+    (overlay-put ov 'meow-multicursor-point pos)
+    (push ov meow--beacon-overlays)))
+
+(defun meow--multicursor-move-overlay (ov pos)
+  "Move fake cursor overlay OV to actual point POS."
+  (let ((start (meow--multicursor-overlay-start pos)))
+    (move-overlay ov start (meow--multicursor-overlay-end start))
+    (overlay-put ov 'meow-multicursor-point pos)))
+
+(defun meow--multicursor-secondary-overlays ()
+  "Return multi-cursor overlays sorted from buffer end to start."
+  (sort (copy-sequence meow--beacon-overlays)
+        (lambda (left right)
+          (> (overlay-get left 'meow-multicursor-point)
+             (overlay-get right 'meow-multicursor-point)))))
+
+(defun meow--multicursor-reset-state ()
+  "Reset the current multi-cursor state."
+  (remove-hook 'post-command-hook #'meow--multicursor-post-command t)
+  (setq-local meow--multicursor-active nil
+              meow--multicursor-replaying nil
+              meow--multicursor-last-command nil)
+  (meow--beacon-remove-overlays))
+
+(defun meow-multicursor-cancel ()
+  "Cancel the current multi-cursor session and return to NORMAL."
+  (interactive)
+  (meow--multicursor-reset-state)
+  (when (region-active-p)
+    (meow--cancel-selection))
+  (meow--switch-state 'normal))
+
+(defun meow--multicursor-primary-offset ()
+  "Return the current point offset inside the primary multi-edit target."
+  (let* ((range meow--multiedit-primary)
+         (offset (- (point) (car range))))
+    (max 0 (min offset (- (cdr range) (car range))))))
+
+(defun meow--multicursor-position-for-target (target offset)
+  "Return the multi-cursor point for TARGET using OFFSET."
+  (max (car target)
+       (min (cdr target)
+            (+ (car target) offset))))
+
+(defun meow--multicursor-insert-kind ()
+  "Return the current multi-cursor insert command kind, or nil."
+  (pcase this-command
+    ('meow-insert 'insert)
+    ('meow-append 'append)
+    ('meow-insert-beginning-of-line 'insert-bol)
+    ('meow-append-end-of-line 'append-eol)
+    (_ nil)))
+
+(defun meow--multicursor-marker-for-overlay (ov kind)
+  "Return a replay marker for cursor overlay OV under KIND."
+  (save-excursion
+    (goto-char (overlay-get ov 'meow-multicursor-point))
+    (copy-marker
+     (pcase kind
+       ('insert (point))
+       ('append (if (< (point) (point-max))
+                    (1+ (point))
+                  (point)))
+       ('insert-bol (line-beginning-position))
+       ('append-eol (line-end-position))))))
+
+(defun meow--multicursor-prepare-insert-replay (kind)
+  "Prepare replay markers for multi-cursor insert KIND."
+  (remove-hook 'post-command-hook #'meow--multicursor-post-command t)
+  (setq-local meow--multiedit-replay-markers
+              (mapcar (lambda (ov)
+                        (meow--multicursor-marker-for-overlay ov kind))
+                      (meow--multicursor-secondary-overlays))
+              meow--multiedit-replay-command
+              (if (memq kind '(append append-eol))
+                  'append
+                'insert))
+  (setq last-kbd-macro nil)
+  (call-interactively #'kmacro-start-macro))
+
+(defun meow--multicursor-replay-keyseq (keys)
+  "Replay KEYS across all secondary multi-cursor overlays."
+  (setq-local meow--multicursor-replaying t)
+  (unwind-protect
+      (meow--wrap-collapse-undo
+        (save-mark-and-excursion
+          (dolist (ov (meow--multicursor-secondary-overlays))
+            (when (and (overlayp ov)
+                       (overlay-buffer ov))
+              (goto-char (overlay-get ov 'meow-multicursor-point))
+              (execute-kbd-macro keys)
+              (meow--multicursor-move-overlay ov (point))))))
+    (setq-local meow--multicursor-replaying nil))
+  (when meow--multicursor-active
+    (meow--switch-state 'multicursor)))
+
+(defun meow--multicursor-move-secondary-cursors (mover)
+  "Apply cursor MOVER to every secondary multi-cursor overlay."
+  (save-mark-and-excursion
+    (dolist (ov (meow--multicursor-secondary-overlays))
+      (when (and (overlayp ov)
+                 (overlay-buffer ov))
+        (goto-char (overlay-get ov 'meow-multicursor-point))
+        (funcall mover)
+        (meow--multicursor-move-overlay ov (point))))))
+
+(defun meow--multicursor-find-char-on-line (char)
+  "Move point to the next CHAR on the current line.
+
+If no later CHAR exists on the current line, leave point unchanged."
+  (let ((origin (point))
+        (limit (line-end-position))
+        (target (char-to-string (if (eq char 13) ?\n char))))
+    (goto-char (min (1+ origin) (point-max)))
+    (unless (and (<= (point) limit)
+                 (search-forward target limit t 1))
+      (goto-char origin))
+    (when (> (point) origin)
+      (backward-char 1))))
+
+(defun meow--goto-next-space-on-line (&optional repeat-p)
+  "Move point to the next space on the current line.
+
+When REPEAT-P is non-nil, skip the current point before searching so a
+repeated command advances to the following space. If no later space
+exists on the current line, move to the end of the line."
+  (let* ((origin (point))
+         (limit (line-end-position))
+         (start (if repeat-p
+                    (min (1+ origin) (point-max))
+                  origin)))
+    (goto-char start)
+    (unless (and (<= (point) limit)
+                 (search-forward " " limit t 1))
+      (goto-char limit))
+    (when (> (point) start)
+      (backward-char 1))))
+
+(defun meow--multicursor-find-next-space-on-line ()
+  "Move point to the next space on the current line for multi-cursor `W'."
+  (meow--goto-next-space-on-line
+   (eq meow--multicursor-last-command 'meow-multicursor-next-space)))
+
+(defun meow-next-space ()
+  "Move point to the next space on the current line."
+  (interactive)
+  (meow--goto-next-space-on-line (eq last-command 'meow-next-space))
+  (meow--ensure-visible))
+
+(defun meow-multicursor-jump-char (char)
+  "Move every multi-cursor to the next CHAR on its current line."
+  (interactive (list (read-char "Multi-cursor find char: " t)))
+  (meow--multicursor-move-secondary-cursors
+   (lambda ()
+     (meow--multicursor-find-char-on-line char)))
+  (meow--multicursor-find-char-on-line char)
+  (setq-local meow--multicursor-last-command 'meow-multicursor-jump-char)
+  (meow--ensure-visible)
+  (meow--switch-state 'multicursor))
+
+(defun meow-multicursor-next-space ()
+  "Move every multi-cursor to the next space on its current line."
+  (interactive)
+  (meow--multicursor-move-secondary-cursors
+   #'meow--multicursor-find-next-space-on-line)
+  (meow--multicursor-find-next-space-on-line)
+  (setq-local meow--multicursor-last-command 'meow-multicursor-next-space)
+  (meow--ensure-visible)
+  (meow--switch-state 'multicursor))
+
+(defun meow--multicursor-post-command ()
+  "Replay supported normal-mode commands across all secondary cursors."
+  (when (and meow--multicursor-active
+             (not meow--multicursor-replaying))
+    (setq-local meow--multicursor-last-command this-command)
+    (let ((insert-kind (meow--multicursor-insert-kind)))
+      (cond
+       ((memq this-command
+              '(meow-multicursor-spawn
+                meow-multicursor-cancel
+                meow-multicursor-jump-char
+                meow-multicursor-next-space
+                meow-visual-search-next-or-multicursor
+                ignore))
+        nil)
+       ((and insert-kind (meow-insert-mode-p))
+        (meow--multicursor-prepare-insert-replay insert-kind))
+       ((not (meow-multicursor-mode-p))
+        (meow--multicursor-reset-state))
+       (t
+        (let ((keys (this-command-keys-vector)))
+          (when (> (length keys) 0)
+            (meow--multicursor-replay-keyseq keys))))))))
+
+(defun meow-multicursor-spawn ()
+  "Promote the current multi-edit targets into a multi-cursor NORMAL state."
+  (interactive)
+  (meow--multiedit-ensure-session)
+  (let* ((targets meow--multiedit-targets)
+         (primary meow--multiedit-primary)
+         (offset (meow--multicursor-primary-offset))
+         (primary-pos (meow--multicursor-position-for-target primary offset)))
+    (meow--multiedit-reset-state)
+    (when (region-active-p)
+      (meow--cancel-selection))
+    (meow--multicursor-reset-state)
+    (goto-char primary-pos)
+    (dolist (target targets)
+      (unless (meow--multiedit-range-equal-p target primary)
+        (meow--multicursor-add-overlay
+         (meow--multicursor-position-for-target target offset))))
+    (setq-local meow--multicursor-active t
+                meow--multicursor-replaying nil)
+    (add-hook 'post-command-hook #'meow--multicursor-post-command nil t)
+    (meow--switch-state 'multicursor)))
+
+(defun meow-multiedit-clear ()
+  "Clear the current multi-edit session and return to NORMAL."
+  (interactive)
+  (meow--multiedit-reset-state)
+  (when (region-active-p)
+    (meow--cancel-selection))
+  (meow--switch-state 'normal))
+
+(defun meow-multiedit-reverse-direction ()
+  "Reverse multi-edit builder direction.
+
+When no multi-edit session is active yet, seed one from the current
+charwise VISUAL selection first."
+  (interactive)
+  (meow--multiedit-ensure-session)
+  (setq-local meow--multiedit-direction
+              (if (eq meow--multiedit-direction 'forward)
+                  'backward
+                'forward)
+              meow--multiedit-search-head meow--multiedit-primary)
+  (message "Multi-edit direction: %s" meow--multiedit-direction))
+
+(defun meow-multiedit-skip-match ()
+  "Skip the next match in the current multi-edit direction."
+  (interactive)
+  (meow--multiedit-ensure-session)
+  (if-let ((candidate (meow--multiedit-find-next-match)))
+      (progn
+        (setq-local meow--multiedit-search-head candidate)
+        (message "Skipped one %s multi-edit match"
+                 meow--multiedit-direction))
+    (message "No more %s multi-edit matches" meow--multiedit-direction)))
+
+(defun meow-multiedit-unmatch-last ()
+  "Remove the most recently added multi-edit target."
+  (interactive)
+  (meow--multiedit-ensure-session)
+  (if (= (length meow--multiedit-targets) 1)
+      (message "No newer multi-edit match to remove")
+    (let ((remaining (butlast meow--multiedit-targets)))
+      (meow--multiedit-set-targets remaining (car (last remaining))))))
+
+(defun meow-multiedit-match-next ()
+  "Add the next exact match of the current multi-edit seed."
+  (interactive)
+  (meow--multiedit-ensure-session)
+  (if-let ((candidate (meow--multiedit-find-next-match)))
+      (progn
+        (setq-local meow--multiedit-targets
+                    (append meow--multiedit-targets (list candidate)))
+        (meow--multiedit-apply-target candidate))
+    (message "No more %s multi-edit matches" meow--multiedit-direction)))
+
+(defun meow-visual-search-next-or-multicursor ()
+  "Repeat the last visual search, or spawn multi-cursors from multi-edit."
+  (interactive)
+  (if (meow--multiedit-active-p)
+      (meow-multicursor-spawn)
+    (meow-visual-search-next)))
+
 (defun meow-visual-exit ()
   "Leave VISUAL state and return to NORMAL."
   (interactive)
-  (when (bound-and-true-p rectangle-mark-mode)
-    (rectangle-mark-mode -1))
-  (meow--switch-state 'normal))
+  (if (meow--multiedit-active-p)
+      (meow-multiedit-clear)
+    (progn
+      (when (bound-and-true-p rectangle-mark-mode)
+        (rectangle-mark-mode -1))
+      (meow--switch-state 'normal))))
 
 (defun meow--visual-move-char (command)
   "Run charwise visual COMMAND, starting VISUAL if necessary."
@@ -1669,31 +2251,40 @@ argument starts in backward direction."
 (defun meow-visual-yank ()
   "Yank the active VISUAL selection."
   (interactive)
-  (if (eq meow--visual-type 'block)
+  (if (meow--multiedit-active-p)
+      (progn
+        (meow-save)
+        (meow--multiedit-deactivate)
+        (meow--visual-finish-action))
+    (if (eq meow--visual-type 'block)
       (progn
         (copy-rectangle-as-kill (region-beginning) (region-end))
         (meow--visual-finish-action))
-    (meow-save)
-    (meow--visual-finish-action)))
+      (meow-save)
+      (meow--visual-finish-action))))
 
 (defun meow-visual-delete ()
   "Delete the active VISUAL selection."
   (interactive)
-  (if (eq meow--visual-type 'block)
+  (if (meow--multiedit-active-p)
+      (meow--multiedit-delete-all-targets)
+    (if (eq meow--visual-type 'block)
       (progn
         (kill-rectangle (region-beginning) (region-end))
         (meow--visual-finish-action))
-    (meow-kill)
-    (meow--visual-finish-action)))
+      (meow-kill)
+      (meow--visual-finish-action))))
 
 (defun meow-visual-change ()
   "Change the active VISUAL selection."
   (interactive)
-  (if (eq meow--visual-type 'block)
+  (if (meow--multiedit-active-p)
+      (meow--multiedit-start-change)
+    (if (eq meow--visual-type 'block)
       (progn
         (kill-rectangle (region-beginning) (region-end))
         (meow--enter-insert-state))
-    (meow-change)))
+      (meow-change))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2564,20 +3155,24 @@ To search backward, use \\[negative-argument]."
 (defun meow-visual-inner-of-thing ()
   "Select the inner Vim-style text object in VISUAL mode."
   (interactive)
-  (let* ((ch (meow--read-vim-text-object-char "Visual inner object: "))
-         (thing (meow--vim-text-object-for-char ch)))
-    (meow--select-vim-text-object 'inner thing)
-    (setq-local meow--visual-type 'char)
-    (meow--switch-state 'visual)))
+  (if (meow--multiedit-active-p)
+      (meow--multiedit-start-insert-or-append 'insert)
+    (let* ((ch (meow--read-vim-text-object-char "Visual inner object: "))
+           (thing (meow--vim-text-object-for-char ch)))
+      (meow--select-vim-text-object 'inner thing)
+      (setq-local meow--visual-type 'char)
+      (meow--switch-state 'visual))))
 
 (defun meow-visual-bounds-of-thing ()
   "Select the bounds Vim-style text object in VISUAL mode."
   (interactive)
-  (let* ((ch (meow--read-vim-text-object-char "Visual around object: "))
-         (thing (meow--vim-text-object-for-char ch)))
-    (meow--select-vim-text-object 'bounds thing)
-    (setq-local meow--visual-type 'char)
-    (meow--switch-state 'visual)))
+  (if (meow--multiedit-active-p)
+      (meow--multiedit-start-insert-or-append 'append)
+    (let* ((ch (meow--read-vim-text-object-char "Visual around object: "))
+           (thing (meow--vim-text-object-for-char ch)))
+      (meow--select-vim-text-object 'bounds thing)
+      (setq-local meow--visual-type 'char)
+      (meow--switch-state 'visual))))
 
 (defun meow--operator-select-range (beg end)
   "Create an operator selection spanning BEG to END."

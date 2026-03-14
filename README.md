@@ -25,6 +25,7 @@ No setup function is required for the default layout.
 - `%` jumps to the matching delimiter for `(`/`)`, `[`/`]`, `{`/`}`, `"` and `'`
 - `x` deletes the current character
 - `f` jumps to a visible character with numbered hints; press `;` during the hint loop to reverse direction, and `C-o` / `C-i` can jump back and forward through it
+- `W` moves to the next space on the current line, or to line end when no later space remains
 - `u` undoes with Emacs's native undo command
 - `w` selects the current word and jumps between its visible occurrences with numbered hints; when you stop jumping, the result stays in charwise visual selection with point at the word end so movement keys, `d`, `c`, and `y` work on it
 - `y y`, `d d`, and `c c` are linewise operator forms
@@ -44,11 +45,26 @@ No setup function is required for the default layout.
 - `C-v` starts block selection with `rectangle-mark-mode`
 - `h` and `l` stay on the current line while extending the selection
 - `f` extends the active visual selection to a visible character with numbered hints; `;` reverses direction during the hint loop
+- `m` starts or extends a multi-edit session from the current charwise visual selection by adding the next exact match of the original seed text
+- `,` removes the most recently added multi-edit target
+- `;` reverses the multi-edit builder direction for later `m` and `s`
+- `s` skips one multi-edit match in the current direction without adding it
+- `n` promotes the current multi-edit target set into a normal-like multi-cursor state
 - `g g`, `G`, `/`, `?`, `n`, and `N` keep extending the active visual selection
 - `$` extends the active visual selection to the end of the current line
 - `%` extends the active visual selection to the matching delimiter
 - `d`, `c`, and `y` operate on the active visual selection
-- `i` and `a` retarget the visual selection to inner/around text objects
+- `i` and `a` retarget the visual selection to inner/around text objects; while multi-edit is active, `i` inserts at the beginning of every target and `a` appends after every target
+- `ESC` clears an active multi-edit session and exits visual mode
+
+### Multi-cursor mode
+
+- Visual `n` promotes an active multi-edit target set into a normal-like multi-cursor state
+- Multi-cursor mode inherits normal bindings and replays deterministic normal-mode key sequences across all secondary cursors
+- Multi-cursor `f` reads one character and moves every cursor to the next occurrence of that character on its own line
+- Multi-cursor `W` advances every cursor to the next space on its own line, or to line end when no later space remains
+- Insert-like commands such as `i`, `a`, `I`, `A`, and `c` replay the primary insert session to the secondary cursors when you press `ESC`
+- `ESC` cancels the full multi-cursor session and returns to normal mode
 
 ### Insert mode
 
@@ -71,6 +87,18 @@ No setup function is required for the default layout.
 - `f` and `w` use a Meow-native visible-jump loop with digits `1` through `9`; no external `avy.el` runtime dependency is required.
 - `w` now promotes its target into Meow's actual visual state, keeps point at the end of the selected word, never numbers the current occurrence as a jump target, and lets `ESC` and visual movement/action keys keep working normally.
 - Because `w` ends in real visual state, visual `f` can keep extending that selection instead of replacing it.
+- Charwise visual selections, including selections created by `w`, can now seed a multi-edit builder with `m`, `;`, and `s`.
+- Multi-edit visual `,` removes the newest added target.
+- Multi-edit v1 uses the original selected text as an immutable seed, matches exact case-sensitive occurrences in the current buffer, and renders older matches as secondary overlays.
+- Multi-edit `s` advances only the hidden search head; it does not visibly jump to the skipped match.
+- Multi-edit visual `d` deletes all current targets, and multi-edit visual `c` deletes all current targets then replays the primary insert session to the rest on `ESC`.
+- Multi-edit visual `i` enters INSERT at the beginning of every current target, and multi-edit visual `a` enters INSERT after every current target.
+- Multi-edit `y` still yanks only the primary active target; full multi-target yank is still deferred.
+- Multi-edit text-object retargeting is deferred until it gets a dedicated binding that does not conflict with Vim-style insert/append.
+- Visual `n` can promote the current multi-edit target set into a multi-cursor normal state with fake cursors on the secondary targets.
+- Multi-cursor mode currently focuses on deterministic normal-mode key replay plus replay-backed insert entry; full live-cursor parity for every command that leaves normal mode is still deferred.
+- Multi-cursor `f` and `W` are implemented as native multi-cursor motions instead of using the generic key replay path, so they stay line-local for every cursor.
+- Normal `W` shares the same next-space and line-end fallback semantics as multi-cursor `W`, but applies only to the primary cursor.
 - `V` reuses the same visible-jump loop for lines, so digits jump the active linewise selection to visible lines, `;` reverses direction, and `ESC` exits the selection.
 - When `V` has fewer than 9 visible line hints in the active direction but the buffer still has more lines there, it recenters the window to expose up to 9 numbered line targets.
 - Reverse visual `f` skips the character currently under the visual cursor, so `f<char> ; 1` goes to the previous match instead of staying on the current one.
@@ -81,4 +109,4 @@ No setup function is required for the default layout.
 - Block `c` uses Emacs rectangle deletion and then enters insert mode at point; it is not a full Vim-style block-insert implementation yet.
 - The `.org` documentation from upstream is still present as legacy reference material and does not yet fully describe this fork.
 - The living implementation tracker is in `.plan/PLAN.md`.
-- `tests/meow-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f` and `w` visible-jump targets.
+- `tests/meow-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and multi-edit targets.

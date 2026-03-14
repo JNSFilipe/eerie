@@ -73,6 +73,7 @@ This doesn't affect how keypad works on recording or executing a kmacro."
     (motion . "MOTION")
     (keypad . "KEYPAD")
     (insert . "INSERT")
+    (multicursor . "MULTI")
     (beacon . "BEACON"))
   "A list of mappings for how to display state in indicator."
   :group 'meow
@@ -85,6 +86,7 @@ This doesn't affect how keypad works on recording or executing a kmacro."
     (motion . meow-motion-indicator)
     (keypad . meow-keypad-indicator)
     (insert . meow-insert-indicator)
+    (multicursor . meow-beacon-indicator)
     (beacon . meow-beacon-indicator))
   "Alist of meow states -> faces")
 
@@ -351,6 +353,7 @@ Nil means find the command by key binding."
     (insert . meow-insert-mode)
     (keypad . meow-keypad-mode)
     (motion . meow-motion-mode)
+    (multicursor . meow-multicursor-mode)
     (beacon . meow-beacon-mode))
   "Alist of meow states -> modes")
 
@@ -362,6 +365,7 @@ Nil means find the command by key binding."
     (meow-normal-mode-p  . meow--update-cursor-normal)
     (meow-motion-mode-p  . meow--update-cursor-motion)
     (meow-keypad-mode-p  . meow--update-cursor-motion)
+    (meow-multicursor-mode-p . meow--update-cursor-beacon)
     (meow-beacon-mode-p  . meow--update-cursor-beacon)
     ((lambda () t)       . meow--update-cursor-default))
   "Alist of predicates to functions that set cursor type and color.")
@@ -634,6 +638,42 @@ The value can be nil, quick or record.")
 (defvar-local meow--insert-activate-mark nil
   "Whether we should activate the selection after exiting INSERT state.")
 
+(defvar-local meow--multiedit-seed nil
+  "Original text used to grow the current multi-edit session.")
+
+(defvar-local meow--multiedit-direction 'forward
+  "Direction used by the current multi-edit builder.")
+
+(defvar-local meow--multiedit-targets nil
+  "List of selected ranges in the current multi-edit session.")
+
+(defvar-local meow--multiedit-primary nil
+  "Currently active range in the current multi-edit session.")
+
+(defvar-local meow--multiedit-search-head nil
+  "Range used as the next search origin in the current multi-edit session.")
+
+(defvar-local meow--multiedit-overlays nil
+  "Overlays used to render secondary multi-edit targets.")
+
+(defvar-local meow--multiedit-backward nil
+  "Whether the active multi-edit selection is backward.")
+
+(defvar-local meow--multiedit-replay-markers nil
+  "Markers used to replay the current multi-edit insert or change.")
+
+(defvar-local meow--multiedit-replay-command nil
+  "Command symbol used to replay the current multi-edit insert or change.")
+
+(defvar-local meow--multicursor-active nil
+  "Whether a Meow multi-cursor session is active in the current buffer.")
+
+(defvar-local meow--multicursor-replaying nil
+  "Whether Meow is currently replaying a multi-cursor command.")
+
+(defvar-local meow--multicursor-last-command nil
+  "Most recent primary command executed in the current multi-cursor session.")
+
 (defvar meow-full-width-number-position-chars
   '((0 . "０")
     (1 . "１")
@@ -698,6 +738,14 @@ The value can be nil, quick or record.")
     (meow-visual-start . "visual")
     (meow-visual-line-start . "visual-ln")
     (meow-visual-block-start . "visual-blk")
+    (meow-multiedit-match-next . "multi+")
+    (meow-multiedit-unmatch-last . "multi-")
+    (meow-multiedit-skip-match . "multi-skip")
+    (meow-multiedit-reverse-direction . "multi-dir")
+    (meow-multicursor-spawn . "mc-spawn")
+    (meow-multicursor-cancel . "mc-cancel")
+    (meow-multicursor-jump-char . "mc-find")
+    (meow-multicursor-next-space . "mc-W")
     (meow-block . "block")
     (meow-to-block "→block")
     (meow-line . "line")
@@ -709,6 +757,7 @@ The value can be nil, quick or record.")
     (meow-search-prev . "<-search")
     (meow-jump-char . "jump-char")
     (meow-jump-word-occurrence . "jump-word")
+    (meow-next-space . "W")
     (meow-undo . "undo")
     (meow-undo-in-selection . "undo-sel")
     (meow-pop-search . "popsearch")

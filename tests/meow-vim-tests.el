@@ -44,10 +44,16 @@
     (call-interactively command)))
 
 (defmacro meow-test-with-read-keys (keys &rest body)
-  "Run BODY while `read-key' returns KEYS in sequence."
+  "Run BODY while `read-key' and `read-char' return KEYS in sequence."
   (declare (indent 1) (debug t))
   `(let ((events ,keys))
      (cl-letf (((symbol-function 'read-key)
+                (lambda (&rest _)
+                  (if events
+                      (prog1 (car events)
+                        (setq events (cdr events)))
+                    ?\C-g)))
+               ((symbol-function 'read-char)
                 (lambda (&rest _)
                   (if events
                       (prog1 (car events)
@@ -67,6 +73,37 @@
     (when (/= delta 0)
       (window-resize (selected-window) delta nil t))))
 
+(defun meow-test-range-of (needle &optional occurrence)
+  "Return the range of NEEDLE at OCCURRENCE in the current buffer."
+  (let ((count (or occurrence 1)))
+    (save-excursion
+      (goto-char (point-min))
+      (dotimes (_ count)
+        (search-forward needle nil t))
+      (cons (- (point) (length needle)) (point)))))
+
+(defun meow-test-start-charwise-visual (range &optional backward)
+  "Start charwise VISUAL on RANGE, optionally in BACKWARD direction."
+  (thread-first
+    (meow--make-selection '(expand . char) (car range) (cdr range))
+    (meow--select t backward))
+  (setq-local meow--visual-type 'char)
+  (meow--switch-state 'visual))
+
+(defun meow-test-sort-ranges (ranges)
+  "Return RANGES sorted by their starting position."
+  (sort (copy-sequence ranges)
+        (lambda (left right)
+          (< (car left) (car right)))))
+
+(defun meow-test-multicursor-points ()
+  "Return all active multi-cursor points sorted by buffer position."
+  (sort (cons (point)
+              (mapcar (lambda (ov)
+                        (overlay-get ov 'meow-multicursor-point))
+                      meow--beacon-overlays))
+        #'<))
+
 (ert-deftest meow-default-normal-keymap-is-vim-like ()
   (should (eq (lookup-key meow-normal-state-keymap (kbd "h")) 'meow-left))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "j")) 'meow-next))
@@ -76,6 +113,7 @@
   (should (eq (lookup-key meow-normal-state-keymap (kbd "d")) 'meow-operator-delete))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "y")) 'meow-operator-yank))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "f")) 'meow-jump-char))
+  (should (eq (lookup-key meow-normal-state-keymap (kbd "W")) 'meow-next-space))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "v")) 'meow-visual-start))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "w")) 'meow-jump-word-occurrence))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "C-v")) 'meow-visual-block-start))
@@ -90,9 +128,21 @@
               'meow-visual-goto-buffer-start))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "G")) 'meow-visual-goto-buffer-end))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "f")) 'meow-visual-jump-char))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd "m")) 'meow-multiedit-match-next))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd ",")) 'meow-multiedit-unmatch-last))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd ";")) 'meow-multiedit-reverse-direction))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd "s")) 'meow-multiedit-skip-match))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "/")) 'meow-visual-search-forward))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd "n"))
+              'meow-visual-search-next-or-multicursor))
   (should (eq (lookup-key meow-visual-state-keymap (kbd "$")) 'meow-visual-goto-line-end))
-  (should (eq (lookup-key meow-visual-state-keymap (kbd "%")) 'meow-visual-jump-matching)))
+  (should (eq (lookup-key meow-visual-state-keymap (kbd "%")) 'meow-visual-jump-matching))
+  (should (eq (lookup-key meow-multicursor-state-keymap (kbd "f"))
+              'meow-multicursor-jump-char))
+  (should (eq (lookup-key meow-multicursor-state-keymap (kbd "W"))
+              'meow-multicursor-next-space))
+  (should (eq (lookup-key meow-multicursor-state-keymap (kbd "<escape>"))
+              'meow-multicursor-cancel)))
 
 (ert-deftest meow-left-and-right-stay-on-current-line ()
   (meow-test-with-buffer "ab\ncd\n"
@@ -114,12 +164,262 @@
                          (goto-char (point-min))
                          (line-end-position))))))
 
+(ert-deftest meow-next-space-advances-on-current-line ()
+  (meow-test-with-buffer "foo bar baz\n"
+    (call-interactively #'meow-next-space)
+    (should (= (point)
+               (save-excursion
+                 (goto-char (point-min))
+                 (search-forward " ")
+                 (1- (point)))))
+    (let ((last-command 'meow-next-space))
+      (call-interactively #'meow-next-space)
+      (should (= (point)
+                 (save-excursion
+                   (goto-char (point-min))
+                   (search-forward "bar ")
+                   (1- (point))))))))
+
+(ert-deftest meow-next-space-falls-back-to-line-end ()
+  (meow-test-with-buffer "foo bar\n"
+    (call-interactively #'meow-next-space)
+    (let ((last-command 'meow-next-space))
+      (call-interactively #'meow-next-space)
+      (should (= (point)
+                 (save-excursion
+                   (goto-char (point-min))
+                   (end-of-line)
+                   (1- (point))))))))
+
 (ert-deftest meow-visual-start-enters-visual-state ()
   (meow-test-with-buffer "alpha"
     (call-interactively #'meow-visual-start)
     (should (meow-visual-mode-p))
     (should (eq meow--visual-type 'char))
     (should (region-active-p))))
+
+(ert-deftest meow-multiedit-match-next-adds-next-exact-match ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (let ((range-1 (meow-test-range-of "foo" 1))
+          (range-2 (meow-test-range-of "foo" 2)))
+      (meow-test-start-charwise-visual range-1)
+      (call-interactively #'meow-multiedit-match-next)
+      (should (meow-visual-mode-p))
+      (should (equal meow--multiedit-seed "foo"))
+      (should (equal meow--multiedit-primary range-2))
+      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
+                     (list range-1 range-2)))
+      (should (= (length meow--multiedit-overlays) 1))
+      (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                     "foo")))))
+
+(ert-deftest meow-multiedit-match-next-repeats-forward ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (let ((range-1 (meow-test-range-of "foo" 1))
+          (range-2 (meow-test-range-of "foo" 2))
+          (range-3 (meow-test-range-of "foo" 3)))
+      (meow-test-start-charwise-visual range-1)
+      (call-interactively #'meow-multiedit-match-next)
+      (call-interactively #'meow-multiedit-match-next)
+      (should (equal meow--multiedit-primary range-3))
+      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
+                     (list range-1 range-2 range-3)))
+      (should (= (length meow--multiedit-overlays) 2)))))
+
+(ert-deftest meow-multiedit-reverse-direction-before-first-match ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (let ((range-1 (meow-test-range-of "foo" 1))
+          (range-2 (meow-test-range-of "foo" 2)))
+      (meow-test-start-charwise-visual range-2)
+      (call-interactively #'meow-multiedit-reverse-direction)
+      (call-interactively #'meow-multiedit-match-next)
+      (should (eq meow--multiedit-direction 'backward))
+      (should (equal meow--multiedit-primary range-1))
+      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
+                     (list range-1 range-2))))))
+
+(ert-deftest meow-multiedit-skip-match-advances-search-head ()
+  (meow-test-with-buffer "foo aa foo bb foo cc foo\n"
+    (let ((range-1 (meow-test-range-of "foo" 1))
+          (range-2 (meow-test-range-of "foo" 2))
+          (range-4 (meow-test-range-of "foo" 4)))
+      (meow-test-start-charwise-visual range-1)
+      (call-interactively #'meow-multiedit-match-next)
+      (call-interactively #'meow-multiedit-skip-match)
+      (call-interactively #'meow-multiedit-match-next)
+      (should (equal meow--multiedit-primary range-4))
+      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
+                     (list range-1 range-2 range-4))))))
+
+(ert-deftest meow-multiedit-clear-on-visual-exit ()
+  (meow-test-with-buffer "foo xx foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-exit)
+    (should (meow-normal-mode-p))
+    (should-not (region-active-p))
+    (should-not meow--multiedit-seed)
+    (should-not meow--multiedit-overlays)))
+
+(ert-deftest meow-multiedit-match-next-works-from-w-selection ()
+  (meow-test-with-buffer "foo x foo y foo\n"
+    (meow-test-with-read-keys '(?\C-g)
+      (meow-jump-word-occurrence nil))
+    (call-interactively #'meow-multiedit-match-next)
+    (should (meow-visual-mode-p))
+    (should (equal (meow-test-sort-ranges meow--multiedit-targets)
+                   (list (meow-test-range-of "foo" 1)
+                         (meow-test-range-of "foo" 2))))))
+
+(ert-deftest meow-multiedit-unmatch-last-removes-newest-target ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (let ((range-1 (meow-test-range-of "foo" 1))
+          (range-2 (meow-test-range-of "foo" 2)))
+      (meow-test-start-charwise-visual range-1)
+      (call-interactively #'meow-multiedit-match-next)
+      (call-interactively #'meow-multiedit-match-next)
+      (call-interactively #'meow-multiedit-unmatch-last)
+      (should (equal meow--multiedit-primary range-2))
+      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
+                     (list range-1 range-2)))
+      (should (= (length meow--multiedit-overlays) 1)))))
+
+(ert-deftest meow-multiedit-visual-delete-removes-all-targets ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-delete)
+    (should (meow-normal-mode-p))
+    (should-not (region-active-p))
+    (should (equal (buffer-string) " xx  yy foo\n"))))
+
+(ert-deftest meow-multiedit-visual-change-replays-insert-on-all-targets ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-change)
+    (insert "Z")
+    (call-interactively #'meow-insert-exit)
+    (should (meow-normal-mode-p))
+    (should-not meow--multiedit-replay-command)
+    (should (equal (buffer-string) "Z xx Z yy foo\n"))))
+
+(ert-deftest meow-multiedit-visual-insert-replays-on-all-targets ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-inner-of-thing)
+    (insert "Z")
+    (call-interactively #'meow-insert-exit)
+    (should (meow-normal-mode-p))
+    (should-not meow--multiedit-replay-command)
+    (should (equal (buffer-string) "Zfoo xx Zfoo yy foo\n"))))
+
+(ert-deftest meow-multiedit-visual-append-replays-on-all-targets ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-bounds-of-thing)
+    (insert "Z")
+    (call-interactively #'meow-insert-exit)
+    (should (meow-normal-mode-p))
+    (should-not meow--multiedit-replay-command)
+    (should (equal (buffer-string) "fooZ xx fooZ yy foo\n"))))
+
+(ert-deftest meow-multicursor-spawn-from-multiedit-via-visual-n ()
+  (meow-test-with-buffer "foo xx foo yy foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-search-next-or-multicursor)
+    (should (meow-multicursor-mode-p))
+    (should meow--multicursor-active)
+    (should-not (region-active-p))
+    (should-not meow--multiedit-seed)
+    (should (= (length meow--beacon-overlays) 1))
+    (execute-kbd-macro (kbd "<escape>"))
+    (should (meow-normal-mode-p))
+    (should-not meow--multicursor-active)
+    (should-not meow--beacon-overlays)))
+
+(ert-deftest meow-multicursor-replays-normal-commands-to-secondary-cursors ()
+  (meow-test-with-buffer "foo xx foo\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-search-next-or-multicursor)
+    (execute-kbd-macro (kbd "h"))
+    (execute-kbd-macro (kbd "x"))
+    (should (meow-multicursor-mode-p))
+    (should (equal (buffer-string) "fo xx fo\n"))))
+
+(ert-deftest meow-multicursor-replays-insert-session-to-secondary-cursors ()
+  (meow-test-with-buffer "foo one\nfoo two\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-search-next-or-multicursor)
+    (execute-kbd-macro (kbd "A"))
+    (insert "!")
+    (call-interactively #'meow-insert-exit)
+    (should (meow-normal-mode-p))
+    (should-not meow--multicursor-active)
+    (should-not meow--beacon-overlays)
+    (should (equal (buffer-string) "foo one!\nfoo two!\n"))))
+
+(ert-deftest meow-multicursor-jump-char-moves-all-cursors-on-their-lines ()
+  (meow-test-with-buffer "foo a x\nfoo b x\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-search-next-or-multicursor)
+    (meow-multicursor-jump-char ?x)
+    (should (meow-multicursor-mode-p))
+    (should (equal (meow-test-multicursor-points)
+                   (list (save-excursion
+                           (goto-char (point-min))
+                           (search-forward "x")
+                           (1- (point)))
+                         (save-excursion
+                           (goto-char (point-min))
+                           (forward-line 1)
+                           (search-forward "x")
+                           (1- (point))))))))
+
+(ert-deftest meow-multicursor-next-space-advances-all-cursors ()
+  (meow-test-with-buffer "foo bar baz\nfoo zip zap\n"
+    (meow-test-start-charwise-visual (meow-test-range-of "foo" 1))
+    (call-interactively #'meow-multiedit-match-next)
+    (call-interactively #'meow-visual-search-next-or-multicursor)
+    (call-interactively #'meow-multicursor-next-space)
+    (should (equal (meow-test-multicursor-points)
+                   (list (save-excursion
+                           (goto-char (point-min))
+                           (search-forward " ")
+                           (1- (point)))
+                         (save-excursion
+                           (goto-char (point-min))
+                           (forward-line 1)
+                           (search-forward " ")
+                           (1- (point))))))
+    (call-interactively #'meow-multicursor-next-space)
+    (should (equal (meow-test-multicursor-points)
+                   (list (save-excursion
+                           (goto-char (point-min))
+                           (search-forward "bar ")
+                           (1- (point)))
+                         (save-excursion
+                           (goto-char (point-min))
+                           (forward-line 1)
+                           (search-forward "zip ")
+                           (1- (point))))))
+    (call-interactively #'meow-multicursor-next-space)
+    (should (equal (meow-test-multicursor-points)
+                   (list (save-excursion
+                           (goto-char (point-min))
+                           (end-of-line)
+                           (1- (point)))
+                         (save-excursion
+                           (goto-char (point-min))
+                           (forward-line 1)
+                           (end-of-line)
+                           (1- (point))))))))
 
 (ert-deftest meow-visual-line-start-enters-linewise-visual-state ()
   (meow-test-with-buffer "one\ntwo\n"

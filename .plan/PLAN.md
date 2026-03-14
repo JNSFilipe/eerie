@@ -32,6 +32,14 @@ Turn this Meow fork into a Vim-first modal editing package with:
 22. Visual `f` same-loop reverse refresh fix
 23. Visible line hints for `V`
 24. `V` recentering for full 9 line hints
+25. Multi-edit session core
+26. Multi-edit occurrence builder with `m`, `;`, and `s`
+27. Multi-edit target management
+28. Multi-edit delete/change execution
+29. Multi-edit insert/append entry semantics
+30. Multi-cursor spawn from multi-edit
+31. Shared `W` next-space motion
+32. `W` line-end fallback
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -44,12 +52,107 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
 - Deferred items:
-  - full Vim-style block change/insert behavior
-  - rewriting the legacy upstream `.org` docs
+  - bulk multi-edit builders such as add-all and edit-lines
+  - multi-edit yank across all targets
+- linewise and blockwise multi-edit seeds
+- multi-edit text-object retargeting under a dedicated binding
+- full live-cursor parity for commands that leave multi-cursor normal mode
+- full Vim-style block change/insert behavior
+- rewriting the legacy upstream `.org` docs
   - operator counts and additional Vim motions beyond the Stage 7 scope
   - search motions as operator targets
   - full Vim search options such as `*`, `#`, and search offset syntax
   - cross-session persistence of jump history
+
+## Stage 29 Summary
+- Goal: make multi-edit `i` and `a` follow Vim-style insert and append semantics instead of reusing visual text-object retargeting.
+- Implemented scope:
+  - made multi-edit visual `i` enter INSERT at the beginning of every selected target
+  - made multi-edit visual `a` enter INSERT after every selected target
+  - reused the same replay path as multi-edit `c`, but switched it to exact insertion positions so append does not drift by one character
+  - kept plain visual `i` and `a` working as inner and around text-object selectors when multi-edit is not active
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for multi-edit insert and append replay
+
+## Stage 30 Summary
+- Goal: let an active multi-edit target set promote into a normal-like multi-cursor state so broader Vim-style actions can run across all selected matches.
+- Implemented scope:
+  - added visual `n` as a multi-edit-aware dispatcher that promotes the current multi-edit target set into a dedicated multi-cursor state, while still falling back to normal visual search repeat when multi-edit is inactive
+  - added a dedicated `multicursor` Meow state with its own keymap, indicator name, and `ESC` cancellation path
+  - reused Meow fake-cursor overlays for secondary cursors and replayed deterministic normal-mode key sequences across them from the primary cursor
+  - added dedicated multi-cursor `f` and `W` motions so line-local character finding and next-space movement work across all cursors without depending on the generic key replay path
+  - wired insert-like commands such as `i`, `a`, `I`, `A`, and `c` into the existing replay-backed insert machinery so the primary insert session is replayed to the secondary cursors on `ESC`
+  - cleaned up multi-edit and multi-cursor state during mode shutdown so temporary overlays and hooks are not left behind
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for visual `n` promotion, normal-mode replay, multi-cursor `f`, multi-cursor `W`, insert replay, and `ESC` cancellation
+
+## Stage 31 Summary
+- Goal: make `W` a first-class normal-mode motion and align its semantics with the dedicated multi-cursor `W` motion.
+- Implemented scope:
+  - added normal-mode `W` as a next-space motion on the current line
+  - refactored the line-local next-space behavior into a shared helper so normal `W` and multi-cursor `W` follow the same first-jump and repeat semantics
+  - kept multi-cursor `W` as a dedicated multicursor-native command while exposing the same motion in regular normal mode
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for normal `W` and multi-cursor `W`
+
+## Stage 32 Summary
+- Goal: make `W` fall back to the end of the current line when no later spaces remain.
+- Implemented scope:
+  - changed the shared next-space helper so both normal `W` and multi-cursor `W` move to `line-end-position` when no later space is available on that line
+  - kept repeated `W` advancing through later spaces first, then falling back to line end once the final word is reached
+  - updated the manual smoke notes and docs so the line-end fallback is part of the documented behavior
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for normal `W` line-end fallback and multi-cursor `W` line-end fallback
+
+## Stage 28 Summary
+- Goal: make the first destructive multi-edit commands actually operate across the whole target set instead of only the active visual region.
+- Implemented scope:
+  - made multi-edit visual `d` delete every selected target in one command while leaving point at the primary target start
+  - added replay-backed multi-edit visual `c` so all selected targets are deleted and the primary insert session is replayed to the other targets on `ESC`
+  - kept the replay path Meow-owned, with a direct text insertion fallback when no keyboard macro was recorded
+  - preserved the existing charwise visual workflow by clearing the multi-edit session once the action completes
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for multi-edit delete and replay-backed change
+
+## Stage 27 Summary
+- Goal: make the multi-edit target set manageable before destructive actions.
+- Implemented scope:
+  - added visual `,` to remove the most recently added multi-edit target and restore the previous primary target
+  - kept target ordering and overlap handling predictable so later actions apply to a stable target set
+  - kept the existing immutable seed text for later `m` / `s` matching
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for `,`
+
+## Stage 26 Summary
+- Goal: add the first user-facing multi-edit builder so a charwise visual selection can grow into a set of exact-match targets with `m`, `;`, and `s`.
+- Implemented scope:
+  - added visual `m` to start or extend a buffer-local multi-edit session from the current charwise visual selection
+  - froze the original seed text when the session starts and used it for exact, case-sensitive, non-overlapping current-buffer matching
+  - made repeated `m` add the next unselected match in the active direction and move the primary visual selection to that newest target
+  - added visual `;` to reverse the multi-edit builder direction persistently for later `m` and `s`
+  - added visual `s` to skip one unselected match in the current direction without adding it to the session
+  - prevented duplicate and overlapping targets and kept previously added matches visible through Meow selection overlays
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for forward growth, repeated forward growth, reverse growth, skip behavior, and `w`-started seeds
+
+## Stage 25 Summary
+- Goal: introduce a first-class multi-edit session lifecycle that integrates with the existing visual workflow without yet implementing full multi-target editing.
+- Implemented scope:
+  - added buffer-local multi-edit session state for the immutable seed text, active direction, primary target, secondary targets, and search head
+  - added secondary-target overlay rendering using Meow's existing fake-selection face so extra matches stay visible without creating live cursors
+  - restricted v1 multi-edit startup to active charwise visual selections, including selections created by normal `w`
+  - made `ESC` clear the full multi-edit session, remove overlays, cancel the active selection, and return to normal mode
+  - added a post-command guard that clears extra multi-edit targets when unsupported commands leave the builder flow, instead of carrying stale session state through arbitrary visual commands
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for visual-exit cleanup and charwise session startup
 
 ## Stage 16 Summary
 - Goal: replace the useful visible-jump parts of the user-provided `avy.el` with Meow-native commands so the fork no longer needs that file for `f` and `w`.

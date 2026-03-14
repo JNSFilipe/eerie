@@ -76,6 +76,12 @@
   :keymap meow-motion-state-keymap
   :face meow-motion-cursor)
 
+(meow-define-state multicursor
+  "Meow multi-cursor NORMAL-like state."
+  :lighter " [MC]"
+  :keymap meow-multicursor-state-keymap
+  :face meow-beacon-cursor)
+
 (meow-define-state keypad
   "Meow KEYPAD state minor mode."
   :lighter " [K]"
@@ -152,6 +158,8 @@ there's no chance for meow to call an init function."
 
 (defun meow--disable ()
   "Disable Meow."
+  (meow--multiedit-reset-state)
+  (meow--multicursor-reset-state)
   (remove-hook 'kill-buffer-hook #'meow--disable-jump-tracking t)
   (meow--disable-jump-tracking)
   (mapc (lambda (state-mode) (funcall (cdr state-mode) -1)) meow-state-mode-alist)
@@ -187,6 +195,8 @@ there's no chance for meow to call an init function."
                        `((meow-normal-mode . ,meow-normal-state-keymap)))
   (add-to-ordered-list 'emulation-mode-map-alists
                        `((meow-visual-mode . ,meow-visual-state-keymap)))
+  (add-to-ordered-list 'emulation-mode-map-alists
+                       `((meow-multicursor-mode . ,meow-multicursor-state-keymap)))
   (add-to-ordered-list 'emulation-mode-map-alists
                        `((meow-beacon-mode . ,meow-beacon-state-keymap)))
   (when meow-use-cursor-position-hack
