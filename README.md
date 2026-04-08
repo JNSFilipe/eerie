@@ -51,11 +51,13 @@ No setup function is required for the default layout.
 - `%` extends the active visual selection to the matching delimiter
 - `d`, `c`, and `y` operate on the active visual selection
 - `i` and `a` retarget the visual selection to inner/around text objects
+- `m` enters the canonical multicursor session from the current charwise visual selection and uses that selection as the frozen exact-match seed
 - `ESC` exits visual mode
 
 ### Multi-cursor mode
 
 - Normal `m` starts the canonical multicursor session and shows a persistent keypad-style cheat sheet while the session is active
+- Visual `m` starts that same canonical multicursor session from the current charwise visual selection instead of making you restart from normal mode
 - Inside multicursor visual mode, the first charwise selection becomes the immutable exact-match seed for the builder
 - Multicursor visual `.` adds the next exact match of that seed
 - Multicursor visual `,` removes the newest marked match

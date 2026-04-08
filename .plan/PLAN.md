@@ -47,6 +47,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 37. Match builder remap to `.`, `,`, and `-`
 38. Canonical multicursor action flow and mirrored mode execution
 39. Multicursor redesign cleanup and documentation sync
+40. Visual `m` entry into canonical multicursor mode
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -112,6 +113,17 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - fixed the canonical `m w .` regression so the marked target set survives the real command-loop path instead of only direct helper calls
   - updated the interactive demo buffer for the new flow
   - added regression coverage for the new entry, promotion, direct normal-mode marked-target edits, real `m w .` builder execution, and exit behavior
+- Verification:
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 40 Summary
+- Goal: let plain visual selections enter the canonical multicursor session directly with `m`, using the current selection as the exact-match seed.
+- Implemented scope:
+  - bound visual `m` to a dedicated multicursor entry command instead of leaving visual mode without a direct handoff
+  - preserved the current charwise visual selection while switching into `multicursor-visual`, then seeded the canonical exact-match builder from that restored selection
+  - kept the new visual-entry command alive across the multicursor and multiedit post-command cleanup hooks so the seeded session survives the command boundary
+  - added regression coverage for direct visual `m` entry and the real `m.` key sequence from visual mode
 - Verification:
   - batch load smoke test passes
   - full ERT suite passes

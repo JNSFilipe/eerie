@@ -34,6 +34,7 @@
 - Normal `m` now enters the canonical multicursor session and keeps a persistent keypad-style multicursor cheat sheet visible while that session is active.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.
 - Visual mode currently supports charwise, anchor-based linewise, and block selection, plus `d`, `c`, `y`, `i`, `a`, and `$`.
+- Visual `m` should enter the canonical multicursor session from the current charwise visual selection and use that selection as the immutable exact-match seed.
 - Charwise visual selections inside the multicursor session, including selections created by normal `w`, now seed the canonical exact-match builder.
 - Multicursor visual `.` adds the next exact match of the original seed text, multicursor visual `,` removes the newest target, and multicursor visual `-` skips one match without adding it.
 - The canonical `m w .` path must preserve that marked target set through the real command loop, keep both matches highlighted, and let a follow-up visual `d` or `c` consume the full set.

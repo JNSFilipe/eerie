@@ -1504,6 +1504,25 @@ numeric, repeat times.
   (meow--switch-state 'multicursor)
   (meow--multicursor-display-menu))
 
+(defun meow-visual-enter-multicursor ()
+  "Enter the canonical multicursor session from the current VISUAL selection."
+  (interactive)
+  (unless (meow--multiedit-valid-seed-p)
+    (user-error "Multicursor from visual requires an active charwise visual selection"))
+  (let ((range (meow--multiedit-current-range))
+        (backward (meow--direction-backward-p)))
+    (meow--multiedit-reset-state)
+    (meow--multicursor-reset-state)
+    (meow--multicursor-activate)
+    (meow--switch-state 'multicursor-visual)
+    (thread-first
+      (meow--make-selection '(expand . char) (car range) (cdr range))
+      (meow--select t backward))
+    (setq-local meow--visual-type 'char
+                meow--visual-line-anchor nil)
+    (meow--multiedit-start-session)
+    (meow--multicursor-display-menu)))
+
 (defun meow-visual-start ()
   "Enter charwise VISUAL state."
   (interactive)
@@ -1816,6 +1835,7 @@ When DIRECTION is nil, use the current multi-edit direction."
                       meow-multiedit-unmatch-last
                       meow-multiedit-skip-match
                       meow-multiedit-reverse-direction
+                      meow-visual-enter-multicursor
                       meow-multicursor-match-next
                       meow-multicursor-unmatch-last
                       meow-multicursor-skip-match
@@ -2348,6 +2368,7 @@ exists on the current line, move to the end of the line."
                  (not (memq command
                             '(meow-multicursor-start
                               meow-multicursor-spawn
+                              meow-visual-enter-multicursor
                               meow-multicursor-match-next
                               meow-multicursor-unmatch-last
                               meow-multicursor-skip-match
