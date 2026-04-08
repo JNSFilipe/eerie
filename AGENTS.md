@@ -31,22 +31,32 @@
 - Normal `f` and `w` use a Meow-native visible-jump loop with digits `1` through `9`, and `;` reverses direction while the loop is active.
 - Normal `f` should participate in the Meow jumplist so `C-o` / `C-i` round-trip through it.
 - Normal `w` should leave an active charwise VISUAL selection behind with point at the end of the selected word, never assign a numbered hint to the currently selected occurrence, and still let movement keys extend it, visual `d` / `c` / `y` work on it, and `ESC` exit it cleanly.
+- Normal `m` now enters the canonical multicursor session and keeps a persistent keypad-style multicursor cheat sheet visible while that session is active.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.
 - Visual mode currently supports charwise, anchor-based linewise, and block selection, plus `d`, `c`, `y`, `i`, `a`, and `$`.
-- Charwise visual selections, including selections created by normal `w`, can now start a multi-edit session with `m`.
-- While multi-edit is active, visual `m` adds the next exact match of the original seed text, visual `,` removes the newest target, visual `;` reverses the builder direction, and visual `s` skips one match without adding it.
-- Multi-edit v1 is buffer-local, exact, case-sensitive, non-overlapping, and limited to charwise seeds; older matches are rendered as secondary overlays instead of live cursors.
-- While multi-edit is active, visual `n` promotes the current target set into a normal-like multi-cursor state.
-- Multi-cursor mode inherits normal bindings, replays deterministic normal-mode key sequences across the secondary cursors, and replays the primary insert session to them after insert-like commands such as `i`, `a`, `I`, `A`, and `c`.
-- Multi-cursor `f` should read one character and move every cursor to the next occurrence of that character on its own line.
-- Multi-cursor `W` should advance every cursor to the next space on its own line, or to line end when no later space remains.
+- Charwise visual selections inside the multicursor session, including selections created by normal `w`, now seed the canonical exact-match builder.
+- Multicursor visual `.` adds the next exact match of the original seed text, multicursor visual `,` removes the newest target, and multicursor visual `-` skips one match without adding it.
+- The canonical `m w .` path must preserve that marked target set through the real command loop, keep both matches highlighted, and let a follow-up visual `d` or `c` consume the full set.
+- The canonical multicursor builder is buffer-local, exact, case-sensitive, non-overlapping, and limited to charwise seeds; older matches are rendered as secondary overlays instead of live cursors until promotion into multicursor normal.
+- Plain visual `n` is visual search repeat again; it no longer promotes the old builder into multi-cursor mode.
+- Multi-cursor mode now mirrors the normal keymap, and multi-cursor visual mode mirrors the visual keymap.
+- Multicursor visual `v` should promote the active marked target set into multicursor normal instead of clearing the session.
+- Promoted marked targets should remain highlighted through the initial multicursor-normal transition.
+- While a promoted marked target set is still active in multicursor normal mode, bare `d`, `c`, `i`, and `a` should consume that full marked set instead of operating only on the primary cursor.
+- Multi-cursor visual-entry and visual-retargeting commands such as `v`, `V`, `C-v`, `vi(`, and `va"` should stay in `multicursor-visual` during live command execution instead of dropping through plain `visual`.
+- Multi-cursor replay should preserve selection entry and visual flows such as `v`, `V`, `C-v`, `vi(`, `va"`, and normal `f<char>1`.
+- Multi-cursor replay should reuse recorded follow-up `read-key`, `read-char`, and `read-from-minibuffer` inputs when it replays supported commands across secondary cursors.
+- Multi-cursor insert-like commands such as `i`, `a`, `I`, `A`, and `c` still replay the primary insert session to the secondary cursors on `ESC`.
+- Direct marked-target `y` in multicursor normal still yanks only the primary active target; full multi-target yank remains deferred.
+- Multi-cursor `W` should share the same next-space and line-end fallback semantics as normal `W`, but apply to every cursor in the active set.
 - Normal `W` should share the same next-space and line-end fallback semantics as multi-cursor `W`, but only move the primary cursor.
+- `W` should skip the immediate separator when point is sitting on the `w`-style end-of-word boundary just before that separator, so `w`-seeded multicursor spawns visibly advance on the first `W`.
 - `ESC` should cancel the full multi-cursor session and return to normal mode.
-- While multi-edit is active, visual `i` enters INSERT at the beginning of every current target and visual `a` enters INSERT after every current target.
-- While multi-edit is active, visual `d` deletes all targets and visual `c` deletes all targets then replays the primary insert session to the others on `ESC`.
+- While the canonical multicursor builder is active, visual `i` enters INSERT at the beginning of every current target and visual `a` enters INSERT after every current target.
+- While the canonical multicursor builder is active, visual `d` deletes all targets and visual `c` deletes all targets then replays the primary insert session to the others on `ESC`.
 - Multi-edit `y` still acts only on the primary active target; full multi-target yank remains deferred.
-- `ESC` should clear the full multi-edit session, cancel the active selection, and return to normal mode.
-- Unsupported commands currently clear extra multi-edit targets instead of trying to preserve the session through arbitrary visual commands.
+- `ESC` should clear the full multi-cursor session, cancel the active selection, and return to normal mode.
+- Unsupported commands currently still clear extra target-builder state instead of trying to preserve the session through arbitrary interactive flows.
 - `V` should start linewise visual mode, immediately show numbered visible-line hints, support `;` direction reversal inside that hint loop, and keep the same anchored linewise selection behavior once a line is chosen.
 - `V` should recenter the window when needed so forward or reverse line hints can expose up to 9 numbered targets before the real buffer boundary is reached.
 - Visual mode currently also supports `f` as a visible character jump that extends the active selection, including selections that were started by `w`.
@@ -61,4 +71,4 @@
 - Yank operators such as `yy` should preserve the original cursor position after copying.
 - `%` should work for nested delimiters and when point is just after a closing delimiter at end of line or end of buffer.
 - The interactive manual smoke buffer lives at `tests/meow-interactive-demo.el` and includes visible-jump targets for `f` and `w`.
-- Counts, search-repeat motion targets inside operators, word text-object aliases like `iw` / `aw`, fuller Vim search syntax, bulk multi-edit builders, full multi-target yank, multi-edit text-object retargeting under a dedicated binding, linewise/blockwise multi-edit seeds, and full live-cursor parity for every command that leaves multi-cursor normal mode beyond the dedicated `f` and `W` overrides remain deferred until they exist.
+- Counts, search-repeat motion targets inside operators, word text-object aliases like `iw` / `aw`, fuller Vim search syntax, bulk multi-edit builders, full multi-target yank, multi-edit text-object retargeting under a dedicated binding, linewise/blockwise multicursor match seeds, and broader arbitrary interactive multi-cursor flows beyond the current mirrored normal/visual replay coverage remain deferred until they exist.

@@ -28,6 +28,7 @@ No setup function is required for the default layout.
 - `W` moves to the next space on the current line, or to line end when no later space remains
 - `u` undoes with Emacs's native undo command
 - `w` selects the current word and jumps between its visible occurrences with numbered hints; when you stop jumping, the result stays in charwise visual selection with point at the word end so movement keys, `d`, `c`, and `y` work on it
+- `m` enters the canonical multicursor session and keeps a persistent multicursor help popup visible until you leave it
 - `y y`, `d d`, and `c c` are linewise operator forms
 - motion-based operators support `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`
 - `/` and `?` search forward and backward with Emacs regexes
@@ -45,24 +46,30 @@ No setup function is required for the default layout.
 - `C-v` starts block selection with `rectangle-mark-mode`
 - `h` and `l` stay on the current line while extending the selection
 - `f` extends the active visual selection to a visible character with numbered hints; `;` reverses direction during the hint loop
-- `m` starts or extends a multi-edit session from the current charwise visual selection by adding the next exact match of the original seed text
-- `,` removes the most recently added multi-edit target
-- `;` reverses the multi-edit builder direction for later `m` and `s`
-- `s` skips one multi-edit match in the current direction without adding it
-- `n` promotes the current multi-edit target set into a normal-like multi-cursor state
 - `g g`, `G`, `/`, `?`, `n`, and `N` keep extending the active visual selection
 - `$` extends the active visual selection to the end of the current line
 - `%` extends the active visual selection to the matching delimiter
 - `d`, `c`, and `y` operate on the active visual selection
-- `i` and `a` retarget the visual selection to inner/around text objects; while multi-edit is active, `i` inserts at the beginning of every target and `a` appends after every target
-- `ESC` clears an active multi-edit session and exits visual mode
+- `i` and `a` retarget the visual selection to inner/around text objects
+- `ESC` exits visual mode
 
 ### Multi-cursor mode
 
-- Visual `n` promotes an active multi-edit target set into a normal-like multi-cursor state
-- Multi-cursor mode inherits normal bindings and replays deterministic normal-mode key sequences across all secondary cursors
-- Multi-cursor `f` reads one character and moves every cursor to the next occurrence of that character on its own line
-- Multi-cursor `W` advances every cursor to the next space on its own line, or to line end when no later space remains
+- Normal `m` starts the canonical multicursor session and shows a persistent keypad-style cheat sheet while the session is active
+- Inside multicursor visual mode, the first charwise selection becomes the immutable exact-match seed for the builder
+- Multicursor visual `.` adds the next exact match of that seed
+- Multicursor visual `,` removes the newest marked match
+- Multicursor visual `-` skips the next exact match without adding it
+- The same builder state survives the real `m w .` key sequence, so `w` can seed the builder, both matches stay highlighted, and a follow-up `d` or `c` still acts on the full marked set
+- Multicursor visual `v` promotes the current marked target set into multicursor normal mode instead of clearing the session
+- After that promotion, the marked targets stay highlighted until you consume them with a direct marked-target edit or replace them with another multicursor action
+- Multi-cursor normal mode inherits the normal keymap and applies the same deterministic command flow across all secondary cursors
+- While those marked targets are still active in multicursor normal mode, bare `d`, `c`, `i`, and `a` consume the whole marked set instead of falling back to operator-pending on only the primary cursor
+- Multi-cursor visual mode inherits the visual keymap, so selections and visual actions can keep extending and acting across the full cursor set
+- Commands that enter or retarget visual selections now stay in the multi-cursor visual state, so live keypress flows such as `v`, `V`, `C-v`, `vi(`, and `va"` keep applying across the whole cursor set instead of dropping back to the primary cursor
+- Nested-input commands such as normal `f<char>1`, `d i (`, `c a "`, and visual `v i (` reuse the same recorded follow-up inputs across all cursors
+- `W` keeps the same next-space and line-end fallback semantics as normal mode, but applies to every cursor
+- When a normal or multicursor cursor is sitting on the `w`-style end-of-word boundary just before a space, `W` now skips that immediate separator and advances to the following space or line end instead of appearing stuck
 - Insert-like commands such as `i`, `a`, `I`, `A`, and `c` replay the primary insert session to the secondary cursors when you press `ESC`
 - `ESC` cancels the full multi-cursor session and returns to normal mode
 
@@ -87,18 +94,21 @@ No setup function is required for the default layout.
 - `f` and `w` use a Meow-native visible-jump loop with digits `1` through `9`; no external `avy.el` runtime dependency is required.
 - `w` now promotes its target into Meow's actual visual state, keeps point at the end of the selected word, never numbers the current occurrence as a jump target, and lets `ESC` and visual movement/action keys keep working normally.
 - Because `w` ends in real visual state, visual `f` can keep extending that selection instead of replacing it.
-- Charwise visual selections, including selections created by `w`, can now seed a multi-edit builder with `m`, `;`, and `s`.
-- Multi-edit visual `,` removes the newest added target.
-- Multi-edit v1 uses the original selected text as an immutable seed, matches exact case-sensitive occurrences in the current buffer, and renders older matches as secondary overlays.
-- Multi-edit `s` advances only the hidden search head; it does not visibly jump to the skipped match.
-- Multi-edit visual `d` deletes all current targets, and multi-edit visual `c` deletes all current targets then replays the primary insert session to the rest on `ESC`.
-- Multi-edit visual `i` enters INSERT at the beginning of every current target, and multi-edit visual `a` enters INSERT after every current target.
+- Charwise selections created inside multicursor mode, including selections created by `w`, become exact, case-sensitive, current-buffer match seeds for the multicursor builder.
+- Multicursor visual `.` / `,` / `-` replace the old visual `m` / `;` / `s` builder flow.
+- The marked target set still uses the original selected text as an immutable seed, matches non-overlapping current-buffer occurrences, and stays highlighted through the initial multicursor-normal promotion with `v`.
+- Multicursor visual `d` deletes all current targets, and multicursor visual `c` deletes all current targets then replays the primary insert session to the rest on `ESC`.
+- Multicursor visual `i` enters INSERT at the beginning of every current target, and multicursor visual `a` enters INSERT after every current target.
+- In multicursor normal mode, direct marked-target `y` still yanks only the primary active target; full multi-target yank is still deferred.
 - Multi-edit `y` still yanks only the primary active target; full multi-target yank is still deferred.
 - Multi-edit text-object retargeting is deferred until it gets a dedicated binding that does not conflict with Vim-style insert/append.
-- Visual `n` can promote the current multi-edit target set into a multi-cursor normal state with fake cursors on the secondary targets.
-- Multi-cursor mode currently focuses on deterministic normal-mode key replay plus replay-backed insert entry; full live-cursor parity for every command that leaves normal mode is still deferred.
-- Multi-cursor `f` and `W` are implemented as native multi-cursor motions instead of using the generic key replay path, so they stay line-local for every cursor.
+- Plain visual `n` is back to plain visual search repeat.
+- Multi-cursor mode now mirrors the normal and visual keymaps, including selection entry and visual text-object flows like `vi(`.
+- Multi-cursor commands that switch into visual-like behavior now stay in the multi-cursor visual state instead of temporarily falling back to plain visual mode, so destructive follow-up keys still apply across every active cursor.
+- Multi-cursor replay records nested `read-key`, `read-char`, and `read-from-minibuffer` inputs so follow-up prompts can be replayed across secondary cursors for supported commands.
+- Multi-cursor replay still focuses on deterministic command flows; broader arbitrary interactive sessions beyond the covered normal/visual command set may still need follow-up work.
 - Normal `W` shares the same next-space and line-end fallback semantics as multi-cursor `W`, but applies only to the primary cursor.
+- `W` now also skips the immediate separator when point comes from a `w`-style end-of-word boundary, so `w -> m -> n -> W` visibly advances instead of looking inert.
 - `V` reuses the same visible-jump loop for lines, so digits jump the active linewise selection to visible lines, `;` reverses direction, and `ESC` exits the selection.
 - When `V` has fewer than 9 visible line hints in the active direction but the buffer still has more lines there, it recenters the window to expose up to 9 numbered line targets.
 - Reverse visual `f` skips the character currently under the visual cursor, so `f<char> ; 1` goes to the previous match instead of staying on the current one.
@@ -109,4 +119,4 @@ No setup function is required for the default layout.
 - Block `c` uses Emacs rectangle deletion and then enters insert mode at point; it is not a full Vim-style block-insert implementation yet.
 - The `.org` documentation from upstream is still present as legacy reference material and does not yet fully describe this fork.
 - The living implementation tracker is in `.plan/PLAN.md`.
-- `tests/meow-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and multi-edit targets.
+- `tests/meow-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and the normal-`m` multicursor flow.

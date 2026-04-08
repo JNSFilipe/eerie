@@ -74,6 +74,7 @@ This doesn't affect how keypad works on recording or executing a kmacro."
     (keypad . "KEYPAD")
     (insert . "INSERT")
     (multicursor . "MULTI")
+    (multicursor-visual . "MULTI-V")
     (beacon . "BEACON"))
   "A list of mappings for how to display state in indicator."
   :group 'meow
@@ -87,6 +88,7 @@ This doesn't affect how keypad works on recording or executing a kmacro."
     (keypad . meow-keypad-indicator)
     (insert . meow-insert-indicator)
     (multicursor . meow-beacon-indicator)
+    (multicursor-visual . meow-beacon-indicator)
     (beacon . meow-beacon-indicator))
   "Alist of meow states -> faces")
 
@@ -354,6 +356,7 @@ Nil means find the command by key binding."
     (keypad . meow-keypad-mode)
     (motion . meow-motion-mode)
     (multicursor . meow-multicursor-mode)
+    (multicursor-visual . meow-multicursor-visual-mode)
     (beacon . meow-beacon-mode))
   "Alist of meow states -> modes")
 
@@ -366,6 +369,7 @@ Nil means find the command by key binding."
     (meow-motion-mode-p  . meow--update-cursor-motion)
     (meow-keypad-mode-p  . meow--update-cursor-motion)
     (meow-multicursor-mode-p . meow--update-cursor-beacon)
+    (meow-multicursor-visual-mode-p . meow--update-cursor-beacon)
     (meow-beacon-mode-p  . meow--update-cursor-beacon)
     ((lambda () t)       . meow--update-cursor-default))
   "Alist of predicates to functions that set cursor type and color.")
@@ -674,6 +678,21 @@ The value can be nil, quick or record.")
 (defvar-local meow--multicursor-last-command nil
   "Most recent primary command executed in the current multi-cursor session.")
 
+(defvar-local meow--multicursor-command-keys nil
+  "Top-level key sequence for the current multi-cursor primary command.")
+
+(defvar-local meow--multicursor-read-events nil
+  "Extra events read by the current multi-cursor primary command.")
+
+(defvar-local meow--multicursor-command nil
+  "Primary command being replayed in the current multi-cursor session.")
+
+(defvar-local meow--multicursor-prefix-arg nil
+  "Primary prefix argument being replayed in the current multi-cursor session.")
+
+(defvar-local meow--multicursor-replay-inputs nil
+  "Remaining interactive inputs for the current replayed multi-cursor command.")
+
 (defvar meow-full-width-number-position-chars
   '((0 . "０")
     (1 . "１")
@@ -738,6 +757,11 @@ The value can be nil, quick or record.")
     (meow-visual-start . "visual")
     (meow-visual-line-start . "visual-ln")
     (meow-visual-block-start . "visual-blk")
+    (meow-multicursor-start . "mc-start")
+    (meow-multicursor-match-next . "mc+")
+    (meow-multicursor-unmatch-last . "mc-")
+    (meow-multicursor-skip-match . "mc-skip")
+    (meow-multicursor-visual-exit . "mc-ready")
     (meow-multiedit-match-next . "multi+")
     (meow-multiedit-unmatch-last . "multi-")
     (meow-multiedit-skip-match . "multi-skip")

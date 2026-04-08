@@ -40,6 +40,13 @@ Turn this Meow fork into a Vim-first modal editing package with:
 30. Multi-cursor spawn from multi-edit
 31. Shared `W` next-space motion
 32. `W` line-end fallback
+33. Multi-cursor normal and visual parity
+34. Live multi-cursor visual-state retention
+35. `W` boundary advance after `w`-seeded spawn
+36. Dedicated multicursor-mark entry and persistent menu
+37. Match builder remap to `.`, `,`, and `-`
+38. Canonical multicursor action flow and mirrored mode execution
+39. Multicursor redesign cleanup and documentation sync
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -54,15 +61,60 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Deferred items:
   - bulk multi-edit builders such as add-all and edit-lines
   - multi-edit yank across all targets
-- linewise and blockwise multi-edit seeds
-- multi-edit text-object retargeting under a dedicated binding
-- full live-cursor parity for commands that leave multi-cursor normal mode
-- full Vim-style block change/insert behavior
-- rewriting the legacy upstream `.org` docs
+  - linewise and blockwise multicursor match seeds
+  - broader arbitrary interactive multicursor flows beyond the mirrored normal/visual command set
+  - full Vim-style block change/insert behavior
+  - rewriting the legacy upstream `.org` docs
   - operator counts and additional Vim motions beyond the Stage 7 scope
   - search motions as operator targets
   - full Vim search options such as `*`, `#`, and search offset syntax
   - cross-session persistence of jump history
+  - old internal compatibility helpers such as `meow-multiedit-*`,
+    `meow-multicursor-spawn`, and `meow-visual-search-next-or-multicursor`
+    still exist, but normal `m` plus multicursor `.` / `,` / `-` is now the canonical user-facing flow
+## Stage 36 Summary
+- Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
+- Implemented scope:
+  - bound normal `m` to `meow-multicursor-start`
+  - reused the existing multicursor normal and visual states as the canonical user-facing mode
+  - added a persistent keypad-style multicursor help popup that refreshes while the session is active and clears on exit
+  - kept `ESC` as a full session cancel back to normal
+- Verification:
+  - batch load smoke test passes
+  - ERT suite passes with coverage for normal `m` entry, menu display, and `ESC` teardown
+
+## Stage 37 Summary
+- Goal: replace the old visual multi-edit builder keys with the new canonical `.`, `,`, and `-` flow inside multicursor visual mode.
+- Implemented scope:
+  - bound multicursor visual `.` to add the next exact match of the current seed, `,` to remove the newest target, and `-` to skip the next exact match
+  - kept the seed immutable, exact, case-sensitive, current-buffer, and charwise
+  - removed the old visual `m`, `;`, `s`, and visual `n` builder path from the shipped keymaps
+  - restored plain visual `n` to plain visual search repeat
+- Verification:
+  - batch load smoke test passes
+  - ERT suite passes with coverage for the new `.` / `,` / `-` flow from normal `m`
+
+## Stage 38 Summary
+- Goal: make the normal `m` flow hand off cleanly into mirrored multicursor normal replay so broader Vim-style actions work without a second explicit spawn key.
+- Implemented scope:
+  - added multicursor visual `v` as a dedicated exit command that promotes the active marked target set into multicursor normal instead of clearing it
+  - kept mirrored normal and visual replay available after that promotion for flows like `vi(` and visible `f<char>1`
+  - preserved the replay-backed insert and change path for `i`, `a`, `I`, `A`, and `c`
+- Verification:
+  - batch load smoke test passes
+  - ERT suite passes with coverage for multicursor visual `v` promotion and new-flow `vi(`
+
+## Stage 39 Summary
+- Goal: sync the living docs, interactive demo, and stage trackers to the shipped multicursor redesign.
+- Implemented scope:
+  - updated README, AGENTS, and the stage tracker to describe normal `m`, multicursor `.` / `,` / `-`, and multicursor visual `v`
+  - documented that promoted marked targets stay highlighted in multicursor normal long enough for direct `d` / `c` / `i` / `a` to consume the whole marked set
+  - fixed the canonical `m w .` regression so the marked target set survives the real command-loop path instead of only direct helper calls
+  - updated the interactive demo buffer for the new flow
+  - added regression coverage for the new entry, promotion, direct normal-mode marked-target edits, real `m w .` builder execution, and exit behavior
+- Verification:
+  - batch load smoke test passes
+  - full ERT suite passes
 
 ## Stage 29 Summary
 - Goal: make multi-edit `i` and `a` follow Vim-style insert and append semantics instead of reusing visual text-object retargeting.
@@ -107,6 +159,40 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Verification:
   - batch load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes with coverage for normal `W` line-end fallback and multi-cursor `W` line-end fallback
+
+## Stage 33 Summary
+- Goal: make multi-cursor normal mode mirror the normal and visual command set closely enough for selection entry and nested-input commands like `f<char>1` and `vi(`.
+- Implemented scope:
+  - replaced the old dedicated multi-cursor `f` / `W` override model with mirrored multi-cursor normal and visual states that inherit the regular normal and visual keymaps
+  - added a per-cursor snapshot model so secondary cursors can preserve their own normal or visual state, active region, and visual metadata across replayed commands
+  - extended multi-cursor replay to capture nested `read-key`, `read-char`, and `read-from-minibuffer` inputs and reuse them across secondary cursors for supported commands
+  - added explicit replay support for normal visible `f<char>…` jumps and visual text-object selection commands such as `vi(` and `va"`
+  - fixed multi-cursor visual actions so finishing a visual command returns to multi-cursor normal instead of dropping out of the multi-cursor state
+  - kept replay-backed insert handoff working by fully disabling the multi-cursor command-capture hooks before entering insert replay
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for multi-cursor visual entry, nested-input `f<char>1`, `vi(`, normal replay, insert replay, and state restoration
+
+## Stage 34 Summary
+- Goal: keep real multi-cursor visual-entry and visual-retargeting commands in the multi-cursor visual state so live keypress flows do not silently fall back to the primary cursor only.
+- Implemented scope:
+  - added a shared visual-target helper so visual-entry commands such as `v`, `V`, `C-v`, visible `w`, and visual text-object retargeting commands choose `multicursor-visual` whenever a multi-cursor session is active
+  - fixed the specific live-command bug where commands like `vi(` switched through plain `visual`, which triggered the multi-cursor visual teardown path and cleared the primary selection before replay
+  - converted the multicursor regression coverage for `v` and `vi(` to real key-sequence tests so the suite exercises the actual command-loop replay path instead of only the helper path
+  - hardened the test harness around unread events and keyboard-macro state so command-loop state from one test does not leak into later tests
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with live key-sequence coverage for multi-cursor `v`, `vi(`, and nested-input `f<char>1`
+
+## Stage 35 Summary
+- Goal: make `W` advance correctly when a normal or multicursor cursor is sitting on the `w`-style end-of-word boundary immediately before a space.
+- Implemented scope:
+  - changed the shared `W` motion helper so a non-repeated `W` skips the immediate separator when point is already on the end-of-word boundary before that separator
+  - kept repeated `W` behavior and the existing line-end fallback intact
+  - added regression coverage for the normal boundary case and for the `w -> m -> n -> W` multicursor path
+- Verification:
+  - batch load smoke test passes
+  - ERT suite in `tests/meow-vim-tests.el` passes with coverage for normal `W`, multicursor `W`, and the `w`-seeded spawn boundary case
 
 ## Stage 28 Summary
 - Goal: make the first destructive multi-edit commands actually operate across the whole target set instead of only the active visual region.

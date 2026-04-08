@@ -42,6 +42,7 @@
 (declare-function meow-motion-mode "meow-core")
 (declare-function meow-normal-mode "meow-core")
 (declare-function meow-visual-mode "meow-core")
+(declare-function meow-multicursor-visual-mode "meow-core")
 (declare-function meow-keypad-mode "meow-core")
 (declare-function meow-beacon-mode "meow-core")
 (declare-function meow-mode "meow-core")
@@ -207,6 +208,7 @@ Looks up the state in meow-replace-state-name-list"
   "Whether selection overlays should use modal display affordances."
   (or (meow-normal-mode-p)
       (meow-visual-mode-p)
+      (bound-and-true-p meow-multicursor-visual-mode)
       (meow-beacon-mode-p)))
 
 (defun meow--should-update-display-p ()
