@@ -16,58 +16,58 @@
 ;;; Commentary:
 ;; In the terminal, ESC can be used as META, because they send the
 ;; same keycode.  To allow both usages simulataneously, you can
-;; customize meow-esc-delay, the maximum time between ESC and the
+;; customize eerie-esc-delay, the maximum time between ESC and the
 ;; keypress that should be treated as a meta combo. If the time is
 ;; longer than the delay, it's treated as pressing ESC and then the
 ;; key separately.
 ;;; Code:
 
-(defvar meow-esc-delay 0.1)
-(defvar meow--escape-key-seq [?\e])
+(defvar eerie-esc-delay 0.1)
+(defvar eerie--escape-key-seq [?\e])
 
 ;;;###autoload
-(define-minor-mode meow-esc-mode
+(define-minor-mode eerie-esc-mode
   "Mode that ensures ESC works in the terminal"
   :init-value nil
   :global t
-  :group 'meow
+  :group 'eerie
   :keymap nil
-  (if meow-esc-mode
+  (if eerie-esc-mode
       (progn
-        (setq meow-esc-mode t)
-        (add-hook 'after-make-frame-functions #'meow--init-esc-if-tui)
-        (mapc #'meow--init-esc-if-tui (frame-list)))
+        (setq eerie-esc-mode t)
+        (add-hook 'after-make-frame-functions #'eerie--init-esc-if-tui)
+        (mapc #'eerie--init-esc-if-tui (frame-list)))
     (progn
-      (remove-hook 'after-make-frame-functions #'meow--init-esc-if-tui)
-      (mapc #'meow--deinit-esc-if-tui (frame-list))
-      (setq meow-esc-mode nil))))
+      (remove-hook 'after-make-frame-functions #'eerie--init-esc-if-tui)
+      (mapc #'eerie--deinit-esc-if-tui (frame-list))
+      (setq eerie-esc-mode nil))))
 
 
-(defun meow--init-esc-if-tui (frame)
+(defun eerie--init-esc-if-tui (frame)
   (with-selected-frame frame
     (unless window-system
       (let ((term (frame-terminal frame)))
-        (when (not (terminal-parameter term 'meow-esc-map))
-          (let ((meow-esc-map (lookup-key input-decode-map [?\e])))
-            (set-terminal-parameter term 'meow-esc-map meow-esc-map)
-            (define-key input-decode-map meow--escape-key-seq
-                        `(menu-item "" ,meow-esc-map :filter ,#'meow-esc))))))))
+        (when (not (terminal-parameter term 'eerie-esc-map))
+          (let ((eerie-esc-map (lookup-key input-decode-map [?\e])))
+            (set-terminal-parameter term 'eerie-esc-map eerie-esc-map)
+            (define-key input-decode-map eerie--escape-key-seq
+                        `(menu-item "" ,eerie-esc-map :filter ,#'eerie-esc))))))))
 
-(defun meow--deinit-esc-if-tui (frame)
+(defun eerie--deinit-esc-if-tui (frame)
   (with-selected-frame frame
     (unless window-system
       (let ((term (frame-terminal frame)))
         (when (terminal-live-p term)
-          (let ((meow-esc-map (terminal-parameter term 'meow-esc-map)))
-            (when meow-esc-map
-              (define-key input-decode-map meow--escape-key-seq meow-esc-map)
-              (set-terminal-parameter term 'meow-esc-map nil))))))))
+          (let ((eerie-esc-map (terminal-parameter term 'eerie-esc-map)))
+            (when eerie-esc-map
+              (define-key input-decode-map eerie--escape-key-seq eerie-esc-map)
+              (set-terminal-parameter term 'eerie-esc-map nil))))))))
 
-(defun meow-esc (map)
+(defun eerie-esc (map)
   (if (and (let ((keys (this-single-command-keys)))
              (and (> (length keys) 0)
                   (= (aref keys (1- (length keys))) ?\e)))
-           (sit-for meow-esc-delay))
+           (sit-for eerie-esc-delay))
       (prog1 [escape]
         (when defining-kbd-macro
           (end-kbd-macro)

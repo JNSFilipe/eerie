@@ -1,4 +1,4 @@
-;;; eerie-keypad.el --- Meow keypad mode -*- lexical-binding: t -*-
+;;; eerie-keypad.el --- Eerie keypad mode -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -22,10 +22,10 @@
 ;;
 ;; Useful commands:
 ;;
-;; meow-keypad
+;; eerie-keypad
 ;; Enter keypad state.
 ;;
-;; meow-keypad-start
+;; eerie-keypad-start
 ;; Enter keypad state, and simulate this key with Control modifier.
 ;;
 ;;; Code:
@@ -37,7 +37,7 @@
 (require 'eerie-helpers)
 (require 'eerie-beacon)
 
-(defun meow--keypad-format-upcase (k)
+(defun eerie--keypad-format-upcase (k)
   "Return S-k for upcase K."
   (let ((case-fold-search nil))
     (if (and (stringp k)
@@ -45,92 +45,92 @@
         (format "S-%s" (downcase k))
       k)))
 
-(defun meow--keypad-format-key-1 (key)
+(defun eerie--keypad-format-key-1 (key)
   "Return a display format for input KEY."
   (cl-case (car key)
     (meta (format "M-%s" (cdr key)))
-    (control (format "C-%s" (meow--keypad-format-upcase (cdr key))))
-    (both (format "C-M-%s" (meow--keypad-format-upcase (cdr key))))
+    (control (format "C-%s" (eerie--keypad-format-upcase (cdr key))))
+    (both (format "C-M-%s" (eerie--keypad-format-upcase (cdr key))))
     (literal (cdr key))))
 
-(defun meow--keypad-format-prefix ()
+(defun eerie--keypad-format-prefix ()
   "Return a display format for current prefix."
   (cond
-   ((equal '(4) meow--prefix-arg)
+   ((equal '(4) eerie--prefix-arg)
     "C-u ")
-   (meow--prefix-arg
-    (format "%s " meow--prefix-arg))
+   (eerie--prefix-arg
+    (format "%s " eerie--prefix-arg))
    (t "")))
 
-(defun meow--keypad-lookup-key (keys)
+(defun eerie--keypad-lookup-key (keys)
   "Lookup the command which is bound at KEYS."
-  (let* ((keybind (if meow--keypad-base-keymap
-		      (lookup-key meow--keypad-base-keymap keys)
+  (let* ((keybind (if eerie--keypad-base-keymap
+		      (lookup-key eerie--keypad-base-keymap keys)
 		    (key-binding keys))))
     keybind))
 
-(defun meow--keypad-has-sub-meta-keymap-p ()
+(defun eerie--keypad-has-sub-meta-keymap-p ()
   "Check if there's a keymap belongs to Meta prefix.
 
 A key sequences starts with ESC is accessible via Meta key."
-  (and (not meow--use-literal)
-       (not meow--use-both)
-       (not meow--use-meta)
-       (or (not meow--keypad-keys)
-           (let* ((key-str (meow--keypad-format-keys nil))
-                  (keymap (meow--keypad-lookup-key (kbd key-str))))
+  (and (not eerie--use-literal)
+       (not eerie--use-both)
+       (not eerie--use-meta)
+       (or (not eerie--keypad-keys)
+           (let* ((key-str (eerie--keypad-format-keys nil))
+                  (keymap (eerie--keypad-lookup-key (kbd key-str))))
              (and (keymapp keymap)
                   (lookup-key keymap ""))))))
 
-(defun meow--keypad-format-keys (&optional prompt)
+(defun eerie--keypad-format-keys (&optional prompt)
   "Return a display format for current input keys.
 
 The message is prepended with an optional PROMPT."
   (let ((result ""))
     (setq result
           (thread-first
-              (mapcar #'meow--keypad-format-key-1 meow--keypad-keys)
+              (mapcar #'eerie--keypad-format-key-1 eerie--keypad-keys)
             (reverse)
             (string-join " ")))
     (cond
-     (meow--use-both
+     (eerie--use-both
       (setq result
             (if (string-empty-p result)
                 "C-M-"
               (concat result " C-M-"))))
-     (meow--use-meta
+     (eerie--use-meta
       (setq result
             (if (string-empty-p result)
                 "M-"
               (concat result " M-"))))
-     (meow--use-literal
+     (eerie--use-literal
       (setq result (concat result " ○")))
 
      (prompt
       (setq result (concat result " C-"))))
     result))
 
-(defun meow--keypad-quit ()
+(defun eerie--keypad-quit ()
   "Quit keypad state."
-  (setq meow--keypad-keys nil
-        meow--use-literal nil
-        meow--use-meta nil
-        meow--use-both nil
-        meow--keypad-help nil)
-  (meow--keypad-clear-message)
-  (meow--exit-keypad-state)
+  (setq eerie--keypad-keys nil
+        eerie--use-literal nil
+        eerie--use-meta nil
+        eerie--use-both nil
+        eerie--keypad-help nil)
+  (eerie--keypad-clear-message)
+  (eerie--exit-keypad-state)
   ;; Return t to indicate the keypad loop should be stopped
   t)
 
-(defun meow-keypad-quit ()
+(defun eerie-keypad-quit ()
   "Quit keypad state."
   (interactive)
   (setq this-command last-command)
-  (when meow-keypad-message
+  (when eerie-keypad-message
     (message "KEYPAD exit"))
-  (meow--keypad-quit))
+  (eerie--keypad-quit))
 
-(defun meow--make-keymap-for-describe (keymap control)
+(defun eerie--make-keymap-for-describe (keymap control)
   "Parse the KEYMAP to make it suitable for describe.
 
 Argument CONTROL, non-nils stands for current input is prefixed with Control."
@@ -142,109 +142,109 @@ Argument CONTROL, non-nils stands for current input is prefixed with Control."
          (unless (member (event-basic-type key) '(127))
            (when (if control (member 'control (event-modifiers key))
                    (not (member 'control (event-modifiers key))))
-             (define-key km (vector (meow--get-event-key key))
-                         (funcall meow-keypad-get-title-function def)))))
+             (define-key km (vector (eerie--get-event-key key))
+                         (funcall eerie-keypad-get-title-function def)))))
        keymap))
     km))
 
-(defun meow--keypad-get-keymap-for-describe ()
+(defun eerie--keypad-get-keymap-for-describe ()
   "Get a keymap for describe."
   (let* ((input (thread-first
-                  (mapcar #'meow--keypad-format-key-1 meow--keypad-keys)
+                  (mapcar #'eerie--keypad-format-key-1 eerie--keypad-keys)
                   (reverse)
                   (string-join " ")))
-         (meta-both-keymap (meow--keypad-lookup-key
+         (meta-both-keymap (eerie--keypad-lookup-key
                             (read-kbd-macro
                              (if (string-blank-p input)
                                  "ESC"
                                (concat input " ESC"))))))
     (cond
-     (meow--use-meta
+     (eerie--use-meta
       (when meta-both-keymap
-        (meow--make-keymap-for-describe meta-both-keymap nil)))
-     (meow--use-both
+        (eerie--make-keymap-for-describe meta-both-keymap nil)))
+     (eerie--use-both
       (when meta-both-keymap
-        (meow--make-keymap-for-describe meta-both-keymap t)))
-     (meow--use-literal
-      (when-let* ((keymap (meow--keypad-lookup-key (read-kbd-macro input))))
+        (eerie--make-keymap-for-describe meta-both-keymap t)))
+     (eerie--use-literal
+      (when-let* ((keymap (eerie--keypad-lookup-key (read-kbd-macro input))))
         (when (keymapp keymap)
-          (meow--make-keymap-for-describe keymap nil))))
+          (eerie--make-keymap-for-describe keymap nil))))
 
      ;; For leader popup
-     ;; meow-keypad-leader-dispatch can be string, keymap or nil
+     ;; eerie-keypad-leader-dispatch can be string, keymap or nil
      ;; - string, dynamically find the keymap
      ;; - keymap, just use it
-     ;; - nil, take the one in meow-keymap-alist
-     ;; Leader keymap may contain meow-dispatch commands
+     ;; - nil, take the one in eerie-keymap-alist
+     ;; Leader keymap may contain eerie-dispatch commands
      ;; translated names based on the commands they refer to
-     ((null meow--keypad-keys)
-      (when-let* ((keymap (if (stringp meow-keypad-leader-dispatch)
-                              (meow--keypad-lookup-key (read-kbd-macro meow-keypad-leader-dispatch))
-                            (or meow-keypad-leader-dispatch
-                                (alist-get 'leader meow-keymap-alist)))))
+     ((null eerie--keypad-keys)
+      (when-let* ((keymap (if (stringp eerie-keypad-leader-dispatch)
+                              (eerie--keypad-lookup-key (read-kbd-macro eerie-keypad-leader-dispatch))
+                            (or eerie-keypad-leader-dispatch
+                                (alist-get 'leader eerie-keymap-alist)))))
         (let ((km (make-keymap)))
           (suppress-keymap km t)
           (map-keymap
            (lambda (key def)
              (when (and (not (member 'control (event-modifiers key)))
-                        (not (member key (list meow-keypad-meta-prefix
-                                               meow-keypad-ctrl-meta-prefix
-                                               meow-keypad-literal-prefix)))
-                        (not (alist-get key meow-keypad-start-keys)))
-               (let ((keys (vector (meow--get-event-key key))))
+                        (not (member key (list eerie-keypad-meta-prefix
+                                               eerie-keypad-ctrl-meta-prefix
+                                               eerie-keypad-literal-prefix)))
+                        (not (alist-get key eerie-keypad-start-keys)))
+               (let ((keys (vector (eerie--get-event-key key))))
                  (unless (lookup-key km keys)
-                   (define-key km keys (funcall meow-keypad-get-title-function def))))))
+                   (define-key km keys (funcall eerie-keypad-get-title-function def))))))
            keymap)
           km)))
 
      (t
-      (when-let* ((keymap (meow--keypad-lookup-key (read-kbd-macro input))))
+      (when-let* ((keymap (eerie--keypad-lookup-key (read-kbd-macro input))))
         (when (keymapp keymap)
           (let* ((km (make-keymap))
-                 (has-sub-meta (meow--keypad-has-sub-meta-keymap-p))
+                 (has-sub-meta (eerie--keypad-has-sub-meta-keymap-p))
                  (ignores (if has-sub-meta
-                              (list meow-keypad-meta-prefix
-                                    meow-keypad-ctrl-meta-prefix
-                                    meow-keypad-literal-prefix
+                              (list eerie-keypad-meta-prefix
+                                    eerie-keypad-ctrl-meta-prefix
+                                    eerie-keypad-literal-prefix
                                     127)
-                            (list meow-keypad-literal-prefix 127))))
+                            (list eerie-keypad-literal-prefix 127))))
             (suppress-keymap km t)
             (map-keymap
              (lambda (key def)
                (when (member 'control (event-modifiers key))
-                 (unless (member (meow--event-key key) ignores)
+                 (unless (member (eerie--event-key key) ignores)
                    (when def
-                     (let ((k (vector (meow--get-event-key key))))
+                     (let ((k (vector (eerie--get-event-key key))))
                        (unless (lookup-key km k)
-                         (define-key km k (funcall meow-keypad-get-title-function def))))))))
+                         (define-key km k (funcall eerie-keypad-get-title-function def))))))))
              keymap)
             (map-keymap
              (lambda (key def)
                (unless (member 'control (event-modifiers key))
                  (unless (member key ignores)
-                   (let ((k (vector (meow--get-event-key key))))
+                   (let ((k (vector (eerie--get-event-key key))))
                      (unless (lookup-key km k)
-                       (define-key km (vector (meow--get-event-key key)) (funcall meow-keypad-get-title-function def)))))))
+                       (define-key km (vector (eerie--get-event-key key)) (funcall eerie-keypad-get-title-function def)))))))
              keymap)
             km)))))))
 
-(defun meow--keypad-clear-message ()
-  "Clear displayed message by calling `meow-keypad-clear-describe-keymap-function'."
-  (when meow-keypad-clear-describe-keymap-function
-    (funcall meow-keypad-clear-describe-keymap-function)))
+(defun eerie--keypad-clear-message ()
+  "Clear displayed message by calling `eerie-keypad-clear-describe-keymap-function'."
+  (when eerie-keypad-clear-describe-keymap-function
+    (funcall eerie-keypad-clear-describe-keymap-function)))
 
-(defun meow--keypad-display-message ()
+(defun eerie--keypad-display-message ()
   "Display a message for current input state."
-  (when meow-keypad-describe-keymap-function
+  (when eerie-keypad-describe-keymap-function
     (when (or
-           meow--keypad-keymap-description-activated
+           eerie--keypad-keymap-description-activated
 
-           (setq meow--keypad-keymap-description-activated
-                 (sit-for meow-keypad-describe-delay t)))
-      (let ((keymap (meow--keypad-get-keymap-for-describe)))
-        (funcall meow-keypad-describe-keymap-function keymap)))))
+           (setq eerie--keypad-keymap-description-activated
+                 (sit-for eerie-keypad-describe-delay t)))
+      (let ((keymap (eerie--keypad-get-keymap-for-describe)))
+        (funcall eerie-keypad-describe-keymap-function keymap)))))
 
-(defun meow--describe-keymap-format (pairs &optional width)
+(defun eerie--describe-keymap-format (pairs &optional width)
   (let* ((fw (or width (frame-width)))
          (cnt (length pairs))
          (best-col-w nil)
@@ -252,7 +252,7 @@ Argument CONTROL, non-nils stands for current input is prefixed with Control."
     (cl-loop for col from 5 downto 2  do
              (let* ((row (1+ (/ cnt col)))
                     (v-parts (seq-partition pairs row))
-                    (rows (meow--transpose-lists v-parts))
+                    (rows (eerie--transpose-lists v-parts))
                     (col-w (thread-last
                              v-parts
                              (mapcar
@@ -266,7 +266,7 @@ Argument CONTROL, non-nils stands for current input is prefixed with Control."
                          ;; 4 is for the width of arrow(3) between key and command
                          ;; and the end tab or newline(1)
                          (mapcar (lambda (it) (+ (car it) (cdr it) 4)))
-                         (meow--sum))))
+                         (eerie--sum))))
                (when (<= w fw)
                  (setq best-col-w col-w
                        best-rows rows)
@@ -285,20 +285,20 @@ Argument CONTROL, non-nils stands for current input is prefixed with Control."
                          (l-r (nth idx best-col-w))
                          (l (car l-r))
                          (r (cdr l-r))
-                         (key (meow--string-pad key-str l 32 t))
-                         (def (meow--string-pad def-str r 32)))
+                         (key (eerie--string-pad key-str l 32 t))
+                         (def (eerie--string-pad def-str r 32)))
                     (format "%s%s%s"
                             key
                             (propertize " → " 'face 'font-lock-comment-face)
                             def))))
-               (meow--string-join " "))))
-          (meow--string-join "\n"))
-      (propertize "Frame is too narrow for KEYPAD popup" 'face 'meow-keypad-cannot-display))))
+               (eerie--string-join " "))))
+          (eerie--string-join "\n"))
+      (propertize "Frame is too narrow for KEYPAD popup" 'face 'eerie-keypad-cannot-display))))
 
 
 
-(defun meow-describe-keymap (keymap)
-  (when (and keymap (not defining-kbd-macro) (not meow--keypad-help))
+(defun eerie-describe-keymap (keymap)
+  (when (and keymap (not defining-kbd-macro) (not eerie--keypad-help))
     (let* ((rst))
       (map-keymap
        (lambda (key def)
@@ -324,128 +324,128 @@ Argument CONTROL, non-nils stands for current input is prefixed with Control."
              (push (cons key-str def-str) rst))))
        keymap)
       (setq rst (reverse rst))
-      (let ((msg (meow--describe-keymap-format rst)))
+      (let ((msg (eerie--describe-keymap-format rst)))
         (let ((message-log-max)
               (max-mini-window-height 1.0))
           (save-window-excursion
             (with-temp-message
                 (format "%s\n%s%s%s"
                         msg
-                        meow-keypad-message-prefix
-                        (let ((pre (meow--keypad-format-prefix)))
+                        eerie-keypad-message-prefix
+                        (let ((pre (eerie--keypad-format-prefix)))
                           (if (string-blank-p pre)
                               ""
                             (propertize pre 'face 'font-lock-comment-face)))
-                        (propertize (meow--keypad-format-keys nil) 'face 'font-lock-string-face))
+                        (propertize (eerie--keypad-format-keys nil) 'face 'font-lock-string-face))
               (sit-for 1000000 t))))))))
 
-(defun meow-keypad-get-title (def)
+(defun eerie-keypad-get-title (def)
   "Return a symbol as title or DEF.
 
 Returning DEF will result in a generated title."
   (if-let* ((cmd (and (symbolp def)
                       (commandp def)
-                      (get def 'meow-dispatch))))
-      (meow--keypad-lookup-key (kbd cmd))
+                      (get def 'eerie-dispatch))))
+      (eerie--keypad-lookup-key (kbd cmd))
     def))
 
-(defun meow-keypad-undo ()
+(defun eerie-keypad-undo ()
   "Pop the last input."
   (interactive)
   (setq this-command last-command)
   (cond
-   (meow--use-both
-    (setq meow--use-both nil))
-   (meow--use-literal
-    (setq meow--use-literal nil))
-   (meow--use-meta
-    (setq meow--use-meta nil))
+   (eerie--use-both
+    (setq eerie--use-both nil))
+   (eerie--use-literal
+    (setq eerie--use-literal nil))
+   (eerie--use-meta
+    (setq eerie--use-meta nil))
    (t
-    (pop meow--keypad-keys)))
-  (if meow--keypad-keys
+    (pop eerie--keypad-keys)))
+  (if eerie--keypad-keys
       (progn
-        (meow--update-indicator)
-        (meow--keypad-display-message))
-    (when meow-keypad-message
+        (eerie--update-indicator)
+        (eerie--keypad-display-message))
+    (when eerie-keypad-message
       (message "KEYPAD exit"))
-    (meow--keypad-quit)))
+    (eerie--keypad-quit)))
 
-(defun meow--keypad-show-message ()
+(defun eerie--keypad-show-message ()
   "Show message for current keypad input."
   (let ((message-log-max))
     (message "%s%s%s%s"
-             meow-keypad-message-prefix
-             (if meow--keypad-help "(describe key)" "")
-             (let ((pre (meow--keypad-format-prefix)))
+             eerie-keypad-message-prefix
+             (if eerie--keypad-help "(describe key)" "")
+             (let ((pre (eerie--keypad-format-prefix)))
                (if (string-blank-p pre)
                    ""
                  (propertize pre 'face 'font-lock-comment-face)))
-             (propertize (meow--keypad-format-keys nil) 'face 'font-lock-string-face))))
+             (propertize (eerie--keypad-format-keys nil) 'face 'font-lock-string-face))))
 
-(defun meow--keypad-in-beacon-p ()
+(defun eerie--keypad-in-beacon-p ()
   "Return whether keypad is started from BEACON state."
-  (and (meow--beacon-inside-secondary-selection)
-       meow--beacon-overlays))
+  (and (eerie--beacon-inside-secondary-selection)
+       eerie--beacon-overlays))
 
-(defun meow--keypad-execute (command)
+(defun eerie--keypad-execute (command)
   "Execute the COMMAND.
 
 If there are beacons, execute it at every beacon."
-  (if (meow--keypad-in-beacon-p)
+  (if (eerie--keypad-in-beacon-p)
       (cond
        ((member command '(kmacro-start-macro kmacro-start-macro-or-insert-counter))
-        (call-interactively 'meow-beacon-start))
-       ((member command '(kmacro-end-macro meow-end-kmacro))
-        (call-interactively 'meow-beacon-end-and-apply-kmacro))
+        (call-interactively 'eerie-beacon-start))
+       ((member command '(kmacro-end-macro eerie-end-kmacro))
+        (call-interactively 'eerie-beacon-end-and-apply-kmacro))
        ((and (not defining-kbd-macro)
              (not executing-kbd-macro)
-             meow-keypad-execute-on-beacons)
+             eerie-keypad-execute-on-beacons)
         (call-interactively command)
-        (meow--beacon-apply-command command)))
+        (eerie--beacon-apply-command command)))
     (call-interactively command)))
 
-(defun meow--keypad-try-execute ()
+(defun eerie--keypad-try-execute ()
   "Try execute command, return t when the translation progress can be ended.
 
 This function supports a fallback behavior, where it allows to use `SPC
 x f' to execute `C-x C-f' or `C-x f' when `C-x C-f' is not bound."
-  (unless (or meow--use-literal
-              meow--use-meta
-              meow--use-both)
-    (let* ((key-str (meow--keypad-format-keys nil))
-           (cmd (meow--keypad-lookup-key (kbd key-str))))
+  (unless (or eerie--use-literal
+              eerie--use-meta
+              eerie--use-both)
+    (let* ((key-str (eerie--keypad-format-keys nil))
+           (cmd (eerie--keypad-lookup-key (kbd key-str))))
       (cond
        ((keymapp cmd)
-        (when meow-keypad-message (meow--keypad-show-message))
-        (meow--keypad-display-message)
+        (when eerie-keypad-message (eerie--keypad-show-message))
+        (eerie--keypad-display-message)
         nil)
        ((commandp cmd t)
-        (setq current-prefix-arg meow--prefix-arg
-              meow--prefix-arg nil)
-        (if meow--keypad-help
+        (setq current-prefix-arg eerie--prefix-arg
+              eerie--prefix-arg nil)
+        (if eerie--keypad-help
             (progn
-              (meow--keypad-quit)
+              (eerie--keypad-quit)
               (describe-function cmd)
               t)
-          (let ((meow--keypad-this-command cmd))
-            (meow--keypad-quit)
+          (let ((eerie--keypad-this-command cmd))
+            (eerie--keypad-quit)
             (setq real-this-command cmd
                   this-command cmd)
-            (meow--keypad-execute cmd)
+            (eerie--keypad-execute cmd)
             t)))
-       ((equal 'control (caar meow--keypad-keys))
-        (setcar meow--keypad-keys (cons 'literal (cdar meow--keypad-keys)))
-        (meow--keypad-try-execute))
+       ((equal 'control (caar eerie--keypad-keys))
+        (setcar eerie--keypad-keys (cons 'literal (cdar eerie--keypad-keys)))
+        (eerie--keypad-try-execute))
        (t
-        (setq meow--prefix-arg nil)
-        (meow--keypad-quit)
-        (if (or (eq t meow-keypad-leader-transparent)
-                (eq meow--keypad-previous-state meow-keypad-leader-transparent))
-          (let* ((key (meow--parse-input-event last-input-event))
+        (setq eerie--prefix-arg nil)
+        (eerie--keypad-quit)
+        (if (or (eq t eerie-keypad-leader-transparent)
+                (eq eerie--keypad-previous-state eerie-keypad-leader-transparent))
+          (let* ((key (eerie--parse-input-event last-input-event))
                  (origin-cmd (cl-some (lambda (m)
-                                        (when (and (not (eq m meow-normal-state-keymap))
-                                                   (not (eq m meow-visual-state-keymap))
-                                                   (not (eq m meow-motion-state-keymap)))
+                                        (when (and (not (eq m eerie-normal-state-keymap))
+                                                   (not (eq m eerie-visual-state-keymap))
+                                                   (not (eq m eerie-motion-state-keymap)))
                                           (let ((cmd (lookup-key m (kbd key))))
                                             (when (commandp cmd)
                                               cmd))))
@@ -454,118 +454,118 @@ x f' to execute `C-x C-f' or `C-x f' when `C-x C-f' is not bound."
                  (cmd-to-call (if (member remapped-cmd '(undefined nil))
                                   (or origin-cmd 'undefined)
                                 remapped-cmd)))
-            (meow--keypad-execute cmd-to-call))
+            (eerie--keypad-execute cmd-to-call))
           (message "%s is undefined" key-str))
         t)))))
 
-(defun meow--keypad-handle-input-with-keymap (input-event)
-  "Handle INPUT-EVENT with `meow-keypad-state-keymap'.
+(defun eerie--keypad-handle-input-with-keymap (input-event)
+  "Handle INPUT-EVENT with `eerie-keypad-state-keymap'.
 
 Return t if handling is completed."
   (if (equal 'escape last-input-event)
-      (meow--keypad-quit)
+      (eerie--keypad-quit)
     (setq last-command-event last-input-event)
     (let ((kbd (single-key-description input-event)))
-      (if-let* ((cmd (lookup-key meow-keypad-state-keymap (read-kbd-macro kbd))))
+      (if-let* ((cmd (lookup-key eerie-keypad-state-keymap (read-kbd-macro kbd))))
           (call-interactively cmd)
-        (meow--keypad-handle-input-event input-event)))))
+        (eerie--keypad-handle-input-event input-event)))))
 
-(defun meow--keypad-handle-input-event (input-event)
+(defun eerie--keypad-handle-input-event (input-event)
   "Handle the INPUT-EVENT.
 
 Add a parsed key and its modifier to current key sequence. Then invoke a
 command when there's one available on current key sequence."
-  (meow--keypad-clear-message)
+  (eerie--keypad-clear-message)
   (when-let* ((key (single-key-description input-event)))
-    (let ((has-sub-meta (meow--keypad-has-sub-meta-keymap-p)))
+    (let ((has-sub-meta (eerie--keypad-has-sub-meta-keymap-p)))
       (cond
-       (meow--use-literal
+       (eerie--use-literal
         (push (cons 'literal key)
-              meow--keypad-keys)
-        (setq meow--use-literal nil))
-       (meow--use-both
-        (push (cons 'both key) meow--keypad-keys)
-        (setq meow--use-both nil))
-       (meow--use-meta
-        (push (cons 'meta key) meow--keypad-keys)
-        (setq meow--use-meta nil))
-       ((and (equal input-event meow-keypad-meta-prefix)
-             (not meow--use-meta)
+              eerie--keypad-keys)
+        (setq eerie--use-literal nil))
+       (eerie--use-both
+        (push (cons 'both key) eerie--keypad-keys)
+        (setq eerie--use-both nil))
+       (eerie--use-meta
+        (push (cons 'meta key) eerie--keypad-keys)
+        (setq eerie--use-meta nil))
+       ((and (equal input-event eerie-keypad-meta-prefix)
+             (not eerie--use-meta)
              has-sub-meta)
-        (setq meow--use-meta t))
-       ((and (equal input-event meow-keypad-ctrl-meta-prefix)
-             (not meow--use-both)
+        (setq eerie--use-meta t))
+       ((and (equal input-event eerie-keypad-ctrl-meta-prefix)
+             (not eerie--use-both)
              has-sub-meta)
-        (setq meow--use-both t))
-       ((and (equal input-event meow-keypad-literal-prefix)
-             (not meow--use-literal)
-             meow--keypad-keys)
-        (setq meow--use-literal t))
-       (meow--keypad-keys
-        (push (cons 'control key) meow--keypad-keys))
-       ((alist-get input-event meow-keypad-start-keys)
-        (push (cons 'control (meow--parse-input-event
-                              (alist-get input-event meow-keypad-start-keys)))
-              meow--keypad-keys))
+        (setq eerie--use-both t))
+       ((and (equal input-event eerie-keypad-literal-prefix)
+             (not eerie--use-literal)
+             eerie--keypad-keys)
+        (setq eerie--use-literal t))
+       (eerie--keypad-keys
+        (push (cons 'control key) eerie--keypad-keys))
+       ((alist-get input-event eerie-keypad-start-keys)
+        (push (cons 'control (eerie--parse-input-event
+                              (alist-get input-event eerie-keypad-start-keys)))
+              eerie--keypad-keys))
        (t
-        (if-let* ((keymap (meow--get-leader-keymap)))
-            (setq meow--keypad-base-keymap keymap)
-          (setq meow--keypad-keys (meow--parse-string-to-keypad-keys meow-keypad-leader-dispatch)))
-        (push (cons 'literal key) meow--keypad-keys))))
+        (if-let* ((keymap (eerie--get-leader-keymap)))
+            (setq eerie--keypad-base-keymap keymap)
+          (setq eerie--keypad-keys (eerie--parse-string-to-keypad-keys eerie-keypad-leader-dispatch)))
+        (push (cons 'literal key) eerie--keypad-keys))))
 
     ;; Try execute if the input is valid.
-    (if (or meow--use-literal
-            meow--use-meta
-            meow--use-both)
+    (if (or eerie--use-literal
+            eerie--use-meta
+            eerie--use-both)
         (progn
-          (when meow-keypad-message (meow--keypad-show-message))
-          (meow--keypad-display-message)
+          (when eerie-keypad-message (eerie--keypad-show-message))
+          (eerie--keypad-display-message)
           nil)
-      (meow--keypad-try-execute))))
+      (eerie--keypad-try-execute))))
 
-(defun meow-keypad ()
+(defun eerie-keypad ()
   "Enter keypad state and convert inputs."
   (interactive)
-  (meow-keypad-start-with nil))
+  (eerie-keypad-start-with nil))
 
-(defun meow-keypad-start ()
+(defun eerie-keypad-start ()
   "Enter keypad state with current input as initial key sequences."
   (interactive)
   (setq this-command last-command
-        meow--keypad-keys nil
-        meow--keypad-previous-state (meow--current-state)
-        meow--prefix-arg current-prefix-arg)
-  (meow--switch-state 'keypad)
+        eerie--keypad-keys nil
+        eerie--keypad-previous-state (eerie--current-state)
+        eerie--prefix-arg current-prefix-arg)
+  (eerie--switch-state 'keypad)
   (unwind-protect
       (progn
-        (meow--keypad-handle-input-with-keymap last-input-event)
-        (while (not (meow--keypad-handle-input-with-keymap (read-key)))))
-    (when (bound-and-true-p meow-keypad-mode)
-      (meow--keypad-quit))))
+        (eerie--keypad-handle-input-with-keymap last-input-event)
+        (while (not (eerie--keypad-handle-input-with-keymap (read-key)))))
+    (when (bound-and-true-p eerie-keypad-mode)
+      (eerie--keypad-quit))))
 
-(defun meow-keypad-start-with (input)
+(defun eerie-keypad-start-with (input)
   "Enter keypad state with INPUT.
 
 A string INPUT, stands for initial keys.
 When INPUT is nil, start without initial keys."
   (setq this-command last-command
-        meow--keypad-keys (when input (meow--parse-string-to-keypad-keys input))
-        meow--keypad-previous-state (meow--current-state)
-        meow--prefix-arg current-prefix-arg)
-  (meow--switch-state 'keypad)
+        eerie--keypad-keys (when input (eerie--parse-string-to-keypad-keys input))
+        eerie--keypad-previous-state (eerie--current-state)
+        eerie--prefix-arg current-prefix-arg)
+  (eerie--switch-state 'keypad)
   (unwind-protect
       (progn
-        (meow--keypad-show-message)
-        (meow--keypad-display-message)
-        (while (not (meow--keypad-handle-input-with-keymap (read-key)))))
-    (when (bound-and-true-p meow-keypad-mode)
-      (meow--keypad-quit))))
+        (eerie--keypad-show-message)
+        (eerie--keypad-display-message)
+        (while (not (eerie--keypad-handle-input-with-keymap (read-key)))))
+    (when (bound-and-true-p eerie-keypad-mode)
+      (eerie--keypad-quit))))
 
-(defun meow-keypad-describe-key ()
+(defun eerie-keypad-describe-key ()
   "Describe key via KEYPAD input."
   (interactive)
-  (setq meow--keypad-help t)
-  (meow-keypad))
+  (setq eerie--keypad-help t)
+  (eerie-keypad))
 
 (provide 'eerie-keypad)
 ;;; eerie-keypad.el ends here

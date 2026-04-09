@@ -4,7 +4,7 @@
 ;; Keywords: convenience, modal-editing
 ;; Package-Requires: ((emacs "27.1"))
 ;; Version: 1.5.0
-;; URL: https://www.github.com/DogLooksGood/meow
+;; URL: https://www.github.com/DogLooksGood/eerie
 ;;
 ;; This file is not part of GNU Emacs.
 

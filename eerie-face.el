@@ -1,4 +1,4 @@
-;;; eerie-face.el --- Faces for Meow  -*- lexical-binding: t; -*-
+;;; eerie-face.el --- Faces for Eerie  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -18,266 +18,266 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;; Faces for Meow.
+;; Faces for Eerie.
 
 ;;; Code:
 
 (require 'eerie-var)
 
-(declare-function meow--mix-color "eerie-util")
+(declare-function eerie--mix-color "eerie-util")
 
-(defface meow-normal-indicator
+(defface eerie-normal-indicator
   '((((class color) (background dark))
      ())
     (((class color) (background light))
      ()))
   "Normal state indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-visual-indicator
+(defface eerie-visual-indicator
   '((((class color) (background dark))
      ())
     (((class color) (background light))
      ()))
   "Visual state indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-beacon-indicator
+(defface eerie-beacon-indicator
   '((((class color) (background dark))
      ())
     (((class color) (background light))
      ()))
   "Cursor state indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-keypad-indicator
+(defface eerie-keypad-indicator
   '((((class color) (background dark))
      ())
     (((class color) (background light))
      ()))
   "Keypad state indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-insert-indicator
+(defface eerie-insert-indicator
   '((((class color) (background dark))
      ())
     (((class color) (background light))
      ()))
   "Insert state indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-motion-indicator
+(defface eerie-motion-indicator
   '((((class color) (background dark))
      ())
     (((class color) (background light))
      ()))
   "Motion state indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-normal-cursor
+(defface eerie-normal-cursor
   '((((class color) (background dark))
      (:inherit cursor))
     (((class color) (background light))
      (:inherit cursor)))
   "Normal state cursor."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-visual-cursor
+(defface eerie-visual-cursor
   '((((class color) (background dark))
      (:inherit region))
     (((class color) (background light))
      (:inherit region)))
   "Visual state cursor."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-insert-cursor
+(defface eerie-insert-cursor
   '((((class color) (background dark))
      (:inherit cursor))
     (((class color) (background light))
      (:inherit cursor)))
   "Insert state cursor."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-motion-cursor
+(defface eerie-motion-cursor
   '((((class color) (background dark))
      (:inherit cursor))
     (((class color) (background light))
      (:inherit cursor)))
   "Motion state cursor."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-keypad-cursor
+(defface eerie-keypad-cursor
   '((((class color) (background dark))
      (:inherit cursor))
     (((class color) (background light))
      (:inherit cursor)))
   "Keypad state cursor."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-keypad-cannot-display
+(defface eerie-keypad-cannot-display
   '((((class color) (background dark))
      (:foreground "grey90"))
     (((class color) (background light))
      (:foreground "grey10")))
-  "Face for Meow keypad message when cannot display popup."
-  :group 'meow)
+  "Face for Eerie keypad message when cannot display popup."
+  :group 'eerie)
 
-(defface meow-beacon-cursor
+(defface eerie-beacon-cursor
   '((t (:inherit cursor)))
   "BEACON cursor face."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-beacon-fake-selection
+(defface eerie-beacon-fake-selection
   '((t (:inherit region)))
   "BEACON selection face."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-beacon-fake-cursor
+(defface eerie-beacon-fake-cursor
   '((t (:inherit region :extend nil)))
   "BEACON selection face."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-unknown-cursor
+(defface eerie-unknown-cursor
   '((((class color) (background dark))
      (:inherit cursor))
     (((class color) (background light))
      (:inherit cursor)))
   "Unknown state cursor."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-region-cursor-1
+(defface eerie-region-cursor-1
   `((((class color) (background dark)))
     (((class color) (background light))))
   "Indicator for region direction."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-region-cursor-2
+(defface eerie-region-cursor-2
   `((((class color) (background dark)))
     (((class color) (background light))))
   "Indicator for region direction."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-region-cursor-3
+(defface eerie-region-cursor-3
   `((((class color) (background dark)))
     (((class color) (background light))))
   "Indicator for region direction."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-kmacro-cursor
+(defface eerie-kmacro-cursor
   `((t (:underline t)))
   "Indicator for region direction."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-search-highlight
+(defface eerie-search-highlight
   '((t (:inherit lazy-highlight)))
   "Search target highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-number
+(defface eerie-position-highlight-number
   '((((class color) (background dark))
      (:inherit default))
     (((class color) (background light))
      (:inherit default)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-number-1
-  '((t (:inherit meow-position-highlight-number)))
+(defface eerie-position-highlight-number-1
+  '((t (:inherit eerie-position-highlight-number)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-number-2
-  '((t (:inherit meow-position-highlight-number)))
+(defface eerie-position-highlight-number-2
+  '((t (:inherit eerie-position-highlight-number)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-number-3
-  '((t (:inherit meow-position-highlight-number)))
+(defface eerie-position-highlight-number-3
+  '((t (:inherit eerie-position-highlight-number)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-reverse-number-1
-  '((t (:inherit meow-position-highlight-number-1)))
+(defface eerie-position-highlight-reverse-number-1
+  '((t (:inherit eerie-position-highlight-number-1)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-reverse-number-2
-  '((t (:inherit meow-position-highlight-number-2)))
+(defface eerie-position-highlight-reverse-number-2
+  '((t (:inherit eerie-position-highlight-number-2)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-position-highlight-reverse-number-3
-  '((t (:inherit meow-position-highlight-number-3)))
+(defface eerie-position-highlight-reverse-number-3
+  '((t (:inherit eerie-position-highlight-number-3)))
   "Num position highlight."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-search-indicator
+(defface eerie-search-indicator
   '((((class color) (background dark))
      (:foreground "grey40"))
     (((class color) (background light))
      (:foreground "grey60")))
   "Face for search indicator."
-  :group 'meow)
+  :group 'eerie)
 
-(defface meow-cheatsheet-command
+(defface eerie-cheatsheet-command
   '((t (:inherit fixed-pitch :height 90)))
-  "Face for Meow cheatsheet command."
-  :group 'meow)
+  "Face for Eerie cheatsheet command."
+  :group 'eerie)
 
-(defface meow-cheatsheet-highlight
+(defface eerie-cheatsheet-highlight
   '((((class color) (background dark))
-     (:foreground "grey90" :inherit meow-cheatsheet-command))
+     (:foreground "grey90" :inherit eerie-cheatsheet-command))
     (((class color) (background light))
-     (:foreground "grey10" :inherit meow-cheatsheet-command)))
-  "Face for Meow cheatsheet highlight text."
-  :group 'meow)
+     (:foreground "grey10" :inherit eerie-cheatsheet-command)))
+  "Face for Eerie cheatsheet highlight text."
+  :group 'eerie)
 
-(defun meow--prepare-face (&rest _ignore)
+(defun eerie--prepare-face (&rest _ignore)
   "Calculate faces based on current theme dynamically.
 
 This function will be called after each time the theme changed."
-  (when meow-use-dynamic-face-color
+  (when eerie-use-dynamic-face-color
     (when-let* ((r (face-background 'region nil t))
                 (c (face-background 'cursor nil t))
                 (s (face-background 'secondary-selection nil t))
                 (b (face-background 'default nil t))
                 (f (face-foreground 'default nil t))
-                (bc (face-background 'meow-beacon-cursor nil t)))
+                (bc (face-background 'eerie-beacon-cursor nil t)))
       (when (and (color-defined-p r)
                  (color-defined-p c))
-        (let* ((clrs (meow--mix-color c r 3))
+        (let* ((clrs (eerie--mix-color c r 3))
                (c1 (car clrs))
                (c2 (cadr clrs))
                (c3 (caddr clrs)))
-          (set-face-attribute 'meow-region-cursor-1 nil :background c1 :foreground f :distant-foreground b)
-          (set-face-attribute 'meow-region-cursor-2 nil :background c2 :foreground f :distant-foreground b)
-          (set-face-attribute 'meow-region-cursor-3 nil :background c3 :foreground f :distant-foreground b)))
+          (set-face-attribute 'eerie-region-cursor-1 nil :background c1 :foreground f :distant-foreground b)
+          (set-face-attribute 'eerie-region-cursor-2 nil :background c2 :foreground f :distant-foreground b)
+          (set-face-attribute 'eerie-region-cursor-3 nil :background c3 :foreground f :distant-foreground b)))
 
-      (set-face-attribute 'meow-position-highlight-number nil :foreground b :distant-foreground f)
+      (set-face-attribute 'eerie-position-highlight-number nil :foreground b :distant-foreground f)
 
       (when (and (color-defined-p c)
                  (color-defined-p b))
-        (let ((c-b-3 (meow--mix-color c b 3)))
-          (set-face-background 'meow-position-highlight-number-1 (car c-b-3))
-          (set-face-background 'meow-position-highlight-number-2 (cadr c-b-3))
-          (set-face-background 'meow-position-highlight-number-3 (caddr c-b-3))))
+        (let ((c-b-3 (eerie--mix-color c b 3)))
+          (set-face-background 'eerie-position-highlight-number-1 (car c-b-3))
+          (set-face-background 'eerie-position-highlight-number-2 (cadr c-b-3))
+          (set-face-background 'eerie-position-highlight-number-3 (caddr c-b-3))))
 
       (when (and (color-defined-p r)
                  (color-defined-p s))
-        (set-face-attribute 'meow-beacon-fake-selection
+        (set-face-attribute 'eerie-beacon-fake-selection
                             nil
                             :foreground b
                             :distant-foreground f
-                            :background (car (meow--mix-color r s 1))))
+                            :background (car (eerie--mix-color r s 1))))
 
       (when (and (color-defined-p bc)
                  (color-defined-p s))
-        (set-face-attribute 'meow-beacon-fake-cursor
+        (set-face-attribute 'eerie-beacon-fake-cursor
                             nil
                             :foreground b
                             :distant-foreground f
                             :extend nil
-                            :background (car (meow--mix-color bc s 1)))))))
+                            :background (car (eerie--mix-color bc s 1)))))))
 
 (provide 'eerie-face)
 ;;; eerie-face.el ends here

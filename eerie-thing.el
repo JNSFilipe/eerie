@@ -1,4 +1,4 @@
-;;; eerie-thing.el --- Calculate bounds of thing in Meow  -*- lexical-binding: t -*-
+;;; eerie-thing.el --- Calculate bounds of thing in Eerie  -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -23,11 +23,11 @@
 (require 'eerie-var)
 (require 'eerie-util)
 
-(declare-function meow--visual-line-end-position "eerie-command")
-(declare-function meow--visual-line-beginning-position "eerie-command")
+(declare-function eerie--visual-line-end-position "eerie-command")
+(declare-function eerie--visual-line-beginning-position "eerie-command")
 
-(defun meow--bounds-of-symbol ()
-  (when-let* ((bounds (bounds-of-thing-at-point meow-symbol-thing)))
+(defun eerie--bounds-of-symbol ()
+  (when-let* ((bounds (bounds-of-thing-at-point eerie-symbol-thing)))
     (let ((beg (car bounds))
           (end (cdr bounds)))
       (save-mark-and-excursion
@@ -40,29 +40,29 @@
             (goto-char (cl-decf beg))))
         (cons beg end)))))
 
-(defun meow--bounds-of-string-1 ()
+(defun eerie--bounds-of-string-1 ()
   "Return the bounds of the string under the cursor.
 
 The thing `string' is not available in Emacs 27.'"
   (if (version< emacs-version "28")
-      (when (meow--in-string-p)
+      (when (eerie--in-string-p)
         (let (beg end)
           (save-mark-and-excursion
-            (while (meow--in-string-p)
+            (while (eerie--in-string-p)
               (backward-char 1))
             (setq beg (point)))
           (save-mark-and-excursion
-            (while (meow--in-string-p)
+            (while (eerie--in-string-p)
               (forward-char 1))
             (setq end (point)))
           (cons beg end)))
     (bounds-of-thing-at-point 'string)))
 
-(defun meow--inner-of-symbol ()
-  (bounds-of-thing-at-point meow-symbol-thing))
+(defun eerie--inner-of-symbol ()
+  (bounds-of-thing-at-point eerie-symbol-thing))
 
-(defun meow--bounds-of-string (&optional inner)
-  (when-let* ((bounds (meow--bounds-of-string-1)))
+(defun eerie--bounds-of-string (&optional inner)
+  (when-let* ((bounds (eerie--bounds-of-string-1)))
     (let ((beg (car bounds))
           (end (cdr bounds)))
       (cons
@@ -75,36 +75,36 @@ The thing `string' is not available in Emacs 27.'"
          (funcall (if inner #'skip-syntax-backward #'skip-syntax-forward) "\"|")
          (point))))))
 
-(defun meow--inner-of-string ()
-  (meow--bounds-of-string t))
+(defun eerie--inner-of-string ()
+  (eerie--bounds-of-string t))
 
-(defun meow--inner-of-window ()
+(defun eerie--inner-of-window ()
   (cons (window-start) (window-end)))
 
-(defun meow--inner-of-line ()
+(defun eerie--inner-of-line ()
   (cons (save-mark-and-excursion (back-to-indentation) (point))
         (line-end-position)))
 
-(defun meow--inner-of-visual-line ()
-  (cons (meow--visual-line-beginning-position)
-        (meow--visual-line-end-position)))
+(defun eerie--inner-of-visual-line ()
+  (cons (eerie--visual-line-beginning-position)
+        (eerie--visual-line-end-position)))
 
 ;;; Registry
 
-(defvar meow--thing-registry nil
+(defvar eerie--thing-registry nil
   "Thing registry.
 
 This is a plist mapping from thing to (inner-fn . bounds-fn).
 Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
 
-(defun meow--thing-register (thing inner-fn bounds-fn)
+(defun eerie--thing-register (thing inner-fn bounds-fn)
   "Register INNER-FN and BOUNDS-FN to a THING."
-  (setq meow--thing-registry
-        (plist-put meow--thing-registry
+  (setq eerie--thing-registry
+        (plist-put eerie--thing-registry
                    thing
                    (cons inner-fn bounds-fn))))
 
-(defun meow--thing-syntax-function (syntax)
+(defun eerie--thing-syntax-function (syntax)
   (cons
    (save-mark-and-excursion
      (when (use-region-p)
@@ -117,7 +117,7 @@ Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
      (skip-syntax-forward (cdr syntax))
      (point))))
 
-(defun meow--thing-regexp-function (b-re f-re near)
+(defun eerie--thing-regexp-function (b-re f-re near)
   (let ((beg (save-mark-and-excursion
                (when (use-region-p)
                  (goto-char (region-beginning)))
@@ -131,7 +131,7 @@ Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
     (when (and beg end)
       (cons beg end))))
 
-(defun meow--thing-parse-pair-search (push-token pop-token back near)
+(defun eerie--thing-parse-pair-search (push-token pop-token back near)
   (let* ((search-fn (if back #'re-search-backward #'re-search-forward))
          (match-fn (if back #'match-end #'match-beginning))
          (cmp-fn (if back #'> #'<))
@@ -161,14 +161,14 @@ Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
       (goto-char pop-next-pos)
       (cons 'pop pop-pos)))))
 
-(defun meow--thing-pair-function (push-token pop-token near)
+(defun eerie--thing-pair-function (push-token pop-token near)
   (let* ((found nil)
          (depth  0)
          (beg (save-mark-and-excursion
                 (prog1
                     (let ((case-fold-search nil))
                       (while (and (<= depth 0)
-                                  (setq found (meow--thing-parse-pair-search push-token pop-token t near)))
+                                  (setq found (eerie--thing-parse-pair-search push-token pop-token t near)))
                         (let ((push-or-pop (car found)))
                           (if (eq 'push push-or-pop)
                               (cl-incf depth)
@@ -179,7 +179,7 @@ Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
          (end (save-mark-and-excursion
                 (let ((case-fold-search nil))
                   (while (and (>= depth 0)
-                              (setq found (meow--thing-parse-pair-search push-token pop-token nil near)))
+                              (setq found (eerie--thing-parse-pair-search push-token pop-token nil near)))
                     (let ((push-or-pop (car found)))
                       (if (eq 'push push-or-pop)
                           (cl-incf depth)
@@ -189,30 +189,30 @@ Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
       (cons beg end))))
 
 
-(defun meow--thing-make-syntax-function (x)
-  (lambda () (meow--thing-syntax-function x)))
+(defun eerie--thing-make-syntax-function (x)
+  (lambda () (eerie--thing-syntax-function x)))
 
-(defun meow--thing-make-regexp-function (x near)
+(defun eerie--thing-make-regexp-function (x near)
   (let* ((b-re (cadr x))
          (f-re (caddr x)))
-    (lambda () (meow--thing-regexp-function b-re f-re near))))
+    (lambda () (eerie--thing-regexp-function b-re f-re near))))
 
-(defun meow--thing-make-pair-function (x near)
+(defun eerie--thing-make-pair-function (x near)
   (let* ((push-token (let ((tokens (cadr x)))
                        (string-join (mapcar #'regexp-quote tokens) "\\|")))
          (pop-token (let ((tokens (caddr x)))
                       (string-join (mapcar #'regexp-quote tokens) "\\|"))))
-    (lambda () (meow--thing-pair-function push-token pop-token near))))
+    (lambda () (eerie--thing-pair-function push-token pop-token near))))
 
-(defun meow--thing-make-pair-regexp-function (x near)
+(defun eerie--thing-make-pair-regexp-function (x near)
   (let* ((push-token (let ((tokens (cadr x)))
                        (string-join  tokens "\\|")))
          (pop-token (let ((tokens (caddr x)))
                       (string-join  tokens "\\|"))))
-    (lambda () (meow--thing-pair-function push-token pop-token near))))
+    (lambda () (eerie--thing-pair-function push-token pop-token near))))
 
-(defun meow--thing-parse-multi (xs near)
-  (let ((chained-fns (mapcar (lambda (x) (meow--thing-parse x near)) xs)))
+(defun eerie--thing-parse-multi (xs near)
+  (let ((chained-fns (mapcar (lambda (x) (eerie--thing-parse x near)) xs)))
     (lambda ()
       (let ((fns chained-fns)
             ret)
@@ -221,31 +221,31 @@ Both inner-fn and bounds-fn returns a cons of (start . end) for that thing.")
                 fns (cdr fns)))
         ret))))
 
-(defun meow--thing-parse (x near)
+(defun eerie--thing-parse (x near)
   (cond
    ((functionp x)
     x)
    ((symbolp x)
     (lambda () (bounds-of-thing-at-point x)))
    ((equal 'syntax (car x))
-    (meow--thing-make-syntax-function x))
+    (eerie--thing-make-syntax-function x))
    ((equal 'regexp (car x))
-    (meow--thing-make-regexp-function x near))
+    (eerie--thing-make-regexp-function x near))
    ((equal 'pair (car x))
-    (meow--thing-make-pair-function x near))
+    (eerie--thing-make-pair-function x near))
    ((equal 'pair-regexp (car x))
-    (meow--thing-make-pair-regexp-function x near))
+    (eerie--thing-make-pair-regexp-function x near))
    ((listp x)
-    (meow--thing-parse-multi x near))
+    (eerie--thing-parse-multi x near))
    (t
     (lambda ()
-      (message "Meow: THING definition broken")
+      (message "Eerie: THING definition broken")
       (cons (point) (point))))))
 
-(defun meow-thing-register (thing inner bounds)
+(defun eerie-thing-register (thing inner bounds)
   "Register a THING with INNER and BOUNDS.
 
-Argument THING should be symbol, which specified in `meow-char-thing-table'.
+Argument THING should be symbol, which specified in `eerie-char-thing-table'.
 Argument INNER and BOUNDS support following expressions:
 
   EXPR ::= FUNCTION | SYMBOL | SYNTAX-EXPR | REGEXP-EXPR
@@ -265,13 +265,13 @@ SYMBOL is a symbol represent a builtin thing.
 
   Example: url
 
-    (meow-thing-register \\='url \\='url \\='url)
+    (eerie-thing-register \\='url \\='url \\='url)
 
 SYNTAX-EXPR contains a syntax description used by `skip-syntax-forward'
 
   Example: non-whitespaces
 
-    (meow-thing-register \\='non-whitespace
+    (eerie-thing-register \\='non-whitespace
                          \\='(syntax . \"^-\")
                          \\='(syntax . \"^-\"))
 
@@ -285,7 +285,7 @@ REGEXP-EXPR contains two regexps, the first is used for
 
   Example: quoted
 
-    (meow-thing-register \\='quoted
+    (eerie-thing-register \\='quoted
                          \\='(regexp \"\\=`\" \"\\=`\\\\|\\='\")
                          \\='(regexp \"\\=`\" \"\\=`\\\\|\\='\"))
 
@@ -296,7 +296,7 @@ PAIR-EXPR contains two string token lists. The tokens in first
 
   Example: do/end block
 
-    (meow-thing-register \\='do/end
+    (eerie-thing-register \\='do/end
                          \\='(pair (\"do\") (\"end\"))
                          \\='(pair (\"do\") (\"end\")))
 
@@ -307,62 +307,62 @@ PAIR-REGEXP-EXPR contains two regexp lists. The regexp in first
 
   Example: The inner block of `{}` will ignore newlines and spaces
            after \\='{\\=' before \\='}\\='.
-    (meow-thing-register \\='code-block
+    (eerie-thing-register \\='code-block
                          \\='(pair-regexp (\"{[\\n\\t ]*\")  (\"[\\n\\t ]*}\") )
                          \\='(pair (\"{\") (\"}\")))"
-    (let ((inner-fn (meow--thing-parse inner t))
-          (bounds-fn (meow--thing-parse bounds nil)))
-      (meow--thing-register thing inner-fn bounds-fn)))
+    (let ((inner-fn (eerie--thing-parse inner t))
+          (bounds-fn (eerie--thing-parse bounds nil)))
+      (eerie--thing-register thing inner-fn bounds-fn)))
 
-(meow-thing-register 'round
+(eerie-thing-register 'round
                      '(pair ("(") (")"))
                      '(pair ("(") (")")))
 
-(meow-thing-register 'square
+(eerie-thing-register 'square
                      '(pair ("[") ("]"))
                      '(pair ("[") ("]")))
 
-(meow-thing-register 'curly
+(eerie-thing-register 'curly
                      '(pair ("{") ("}"))
                      '(pair ("{") ("}")))
 
-(meow-thing-register 'double-quote
+(eerie-thing-register 'double-quote
                      '(regexp "\"" "\"")
                      '(regexp "\"" "\""))
 
-(meow-thing-register 'single-quote
+(eerie-thing-register 'single-quote
                      '(regexp "'" "'")
                      '(regexp "'" "'"))
 
-(meow-thing-register 'paragraph 'paragraph 'paragraph)
+(eerie-thing-register 'paragraph 'paragraph 'paragraph)
 
-(meow-thing-register 'sentence 'sentence 'sentence)
+(eerie-thing-register 'sentence 'sentence 'sentence)
 
-(meow-thing-register 'buffer 'buffer 'buffer)
+(eerie-thing-register 'buffer 'buffer 'buffer)
 
-(meow-thing-register 'defun 'defun 'defun)
+(eerie-thing-register 'defun 'defun 'defun)
 
-(meow-thing-register meow-symbol-thing #'meow--inner-of-symbol #'meow--bounds-of-symbol)
+(eerie-thing-register eerie-symbol-thing #'eerie--inner-of-symbol #'eerie--bounds-of-symbol)
 
-(meow-thing-register 'string #'meow--inner-of-string #'meow--bounds-of-string)
+(eerie-thing-register 'string #'eerie--inner-of-string #'eerie--bounds-of-string)
 
-(meow-thing-register 'window #'meow--inner-of-window #'meow--inner-of-window)
+(eerie-thing-register 'window #'eerie--inner-of-window #'eerie--inner-of-window)
 
-(meow-thing-register 'line #'meow--inner-of-line 'line)
+(eerie-thing-register 'line #'eerie--inner-of-line 'line)
 
-(meow-thing-register 'visual-line #'meow--inner-of-visual-line #'meow--inner-of-visual-line)
+(eerie-thing-register 'visual-line #'eerie--inner-of-visual-line #'eerie--inner-of-visual-line)
 
-(defun meow--parse-inner-of-thing-char (ch)
-  (when-let* ((ch-to-thing (assoc ch meow-char-thing-table)))
-    (meow--parse-range-of-thing (cdr ch-to-thing) t)))
+(defun eerie--parse-inner-of-thing-char (ch)
+  (when-let* ((ch-to-thing (assoc ch eerie-char-thing-table)))
+    (eerie--parse-range-of-thing (cdr ch-to-thing) t)))
 
-(defun meow--parse-bounds-of-thing-char (ch)
-  (when-let* ((ch-to-thing (assoc ch meow-char-thing-table)))
-    (meow--parse-range-of-thing (cdr ch-to-thing) nil)))
+(defun eerie--parse-bounds-of-thing-char (ch)
+  (when-let* ((ch-to-thing (assoc ch eerie-char-thing-table)))
+    (eerie--parse-range-of-thing (cdr ch-to-thing) nil)))
 
-(defun meow--parse-range-of-thing (thing inner)
+(defun eerie--parse-range-of-thing (thing inner)
   "Parse either inner or bounds of THING. If INNER is non-nil then parse inner."
-  (when-let* ((bounds-fn-pair (plist-get meow--thing-registry thing)))
+  (when-let* ((bounds-fn-pair (plist-get eerie--thing-registry thing)))
     (if inner
         (funcall (car bounds-fn-pair))
       (funcall (cdr bounds-fn-pair)))))

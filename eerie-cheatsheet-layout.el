@@ -1,4 +1,4 @@
-;;; eerie-cheatsheet-layout.el --- Cheatsheet layouts for Meow  -*- lexical-binding: t; -*-
+;;; eerie-cheatsheet-layout.el --- Cheatsheet layouts for Eerie  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -18,11 +18,11 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;; Cheatsheet layouts for Meow.
+;; Cheatsheet layouts for Eerie.
 
 ;;; Code:
 
-(defconst meow-cheatsheet-physical-layout-ansi
+(defconst eerie-cheatsheet-physical-layout-ansi
   "
 ┏━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━┓
 ┃  <TLDE> │  <AE01> │  <AE02> │  <AE03> │  <AE04> │  <AE05> │  <AE06> │  <AE07> │  <AE08> │  <AE09> │  <AE10> │  <AE11> │  <AE12> │        BKSP ┃
@@ -55,7 +55,7 @@
                                                     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ")
 
-(defconst meow-cheatsheet-physical-layout-iso
+(defconst eerie-cheatsheet-physical-layout-iso
   "
 ┏━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━┓
 ┃  <TLDE> │  <AE01> │  <AE02> │  <AE03> │  <AE04> │  <AE05> │  <AE06> │  <AE07> │  <AE08> │  <AE09> │  <AE10> │  <AE11> │  <AE12> │        BKSP ┃
@@ -88,7 +88,7 @@
                                                     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ")
 
-(defconst meow-cheatsheet-layout-qwerty
+(defconst eerie-cheatsheet-layout-qwerty
   '((<TLDE> "`"	"~")
     (<AE01> "1"	"!")
     (<AE02> "2"	"@")
@@ -137,7 +137,7 @@
     (<AB10> "/"	"?")
     (<BKSL> "\\" "|")))
 
-(defconst meow-cheatsheet-layout-qwertz
+(defconst eerie-cheatsheet-layout-qwertz
   '((<TLDE> "^"	"°")
     (<AE01> "1"	"!")
     (<AE02> "2"	"\"")
@@ -187,7 +187,7 @@
     (<AB09> "."	":")
     (<AB10> "-"	"_")))
 
-(defconst meow-cheatsheet-layout-dvorak
+(defconst eerie-cheatsheet-layout-dvorak
   '((<TLDE> "`"	"~")
     (<AE01> "1"	"!")
     (<AE02> "2"	"@")
@@ -236,7 +236,7 @@
     (<AB10> "z"	"Z")
     (<BKSL> "\\" "|")))
 
-(defconst meow-cheatsheet-layout-colemak
+(defconst eerie-cheatsheet-layout-colemak
   '((<TLDE> "`" "~")
     (<AE01> "1" "!")
     (<AE02> "2" "@")
@@ -286,7 +286,7 @@
     (<AB10> "/" "?")
     (<LSGT> "-" "_")))
 
-(defconst meow-cheatsheet-layout-colemak-dh
+(defconst eerie-cheatsheet-layout-colemak-dh
   '((<TLDE> "`" "~")
     (<AE01> "1" "!")
     (<AE02> "2" "@")
@@ -336,7 +336,7 @@
     (<AB10> "/" "?")
     (<LSGT> "z" "Z")))
 
-(defconst meow-cheatsheet-layout-colemak-dh-wide
+(defconst eerie-cheatsheet-layout-colemak-dh-wide
   '((<TLDE> "`" "~")
     (<AE01> "1" "!")
     (<AE02> "2" "@")
@@ -386,7 +386,7 @@
     (<AB10> "." ">")
     (<LSGT> "z" "Z")))
 
-(defconst meow-cheatsheet-layout-dvp
+(defconst eerie-cheatsheet-layout-dvp
   '((<TLDE> "$" "~")
     (<AE01> "&" "%")
     (<AE02> "{" "7")
@@ -435,7 +435,7 @@
     (<AB10> "z"	"Z")
     (<BKSL> "\\" "|")))
 
-(defconst meow-cheatsheet-layout-norman
+(defconst eerie-cheatsheet-layout-norman
   '((<TLDE> "`"	"~")
     (<AE01> "1"	"!")
     (<AE02> "2"	"@")
@@ -484,7 +484,7 @@
     (<AB10> "/"	"?")
     (<BKSL> "\\" "|")))
 
-(defconst meow-cheatsheet-layout-fwyr
+(defconst eerie-cheatsheet-layout-fwyr
   '((<TLDE> "`"	"~")
     (<AE01> "1"	"!")
     (<AE02> "2"	"@")

@@ -1,4 +1,4 @@
-;;; eerie-commands.el --- Commands in Meow -*- lexical-binding: t -*-
+;;; eerie-commands.el --- Commands in Eerie -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -18,7 +18,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;; Implementation for all commands in Meow.
+;; Implementation for all commands in Eerie.
 
 ;;; Code:
 
@@ -34,19 +34,19 @@
 (require 'eerie-keypad)
 (require 'array)
 
-(defun meow--selection-fallback ()
+(defun eerie--selection-fallback ()
   "Run selection fallback commands."
-  (if-let* ((fallback (alist-get this-command meow-selection-command-fallback)))
+  (if-let* ((fallback (alist-get this-command eerie-selection-command-fallback)))
       (call-interactively fallback)
     (error "No selection")))
 
-(defun meow--pop-selection ()
-  "Pop a selection from variable `meow--selection-history' and activate."
-  (when meow--selection-history
-    (let ((sel (pop meow--selection-history)))
-      (meow--select-without-history sel))))
+(defun eerie--pop-selection ()
+  "Pop a selection from variable `eerie--selection-history' and activate."
+  (when eerie--selection-history
+    (let ((sel (pop eerie--selection-history)))
+      (eerie--select-without-history sel))))
 
-(defun meow--make-selection (type mark pos &optional expand)
+(defun eerie--make-selection (type mark pos &optional expand)
   "Make a selection with TYPE, MARK and POS.
 
 The direction of selection is MARK -> POS."
@@ -58,7 +58,7 @@ The direction of selection is MARK -> POS."
           (list type (max orig-mark orig-pos) pos)))
     (list type mark pos)))
 
-(defun meow--set-mark (&optional location nomsg activate)
+(defun eerie--set-mark (&optional location nomsg activate)
   "As `push-mark', but don't push old mark to mark ring."
   (setq location (or location (point)))
   (if (or activate (not transient-mark-mode))
@@ -68,19 +68,19 @@ The direction of selection is MARK -> POS."
       (message "Mark set"))
   nil)
 
-(defun meow--select (selection &optional activate backward)
+(defun eerie--select (selection &optional activate backward)
   "Mark the SELECTION."
-  (let* ((old-sel-type (meow--selection-type))
+  (let* ((old-sel-type (eerie--selection-type))
         (sel-type (car selection))
         (beg (cadr selection))
         (end (caddr selection))
         (to-go (if backward beg end))
         (to-mark (if backward end beg)))
     (when sel-type
-      (if meow--selection
-          (unless (equal meow--selection (car meow--selection-history))
-            (push meow--selection meow--selection-history))
-        (push (meow--make-selection nil (point) (point)) meow--selection-history))
+      (if eerie--selection
+          (unless (equal eerie--selection (car eerie--selection-history))
+            (push eerie--selection eerie--selection-history))
+        (push (eerie--make-selection nil (point) (point)) eerie--selection-history))
       (cond
        ((null old-sel-type)
         (goto-char to-go)
@@ -88,10 +88,10 @@ The direction of selection is MARK -> POS."
        (t
         (goto-char to-go)
         (set-mark to-mark)))
-      (setq meow--selection selection))))
+      (setq eerie--selection selection))))
 
-(defun meow--select-without-history (selection)
-  "Mark the SELECTION without recording it in `meow--selection-history'."
+(defun eerie--select-without-history (selection)
+  "Mark the SELECTION without recording it in `eerie--selection-history'."
   (let ((sel-type (car selection))
         (mark (cadr selection))
         (pos (caddr selection)))
@@ -100,187 +100,187 @@ The direction of selection is MARK -> POS."
         (progn
           (deactivate-mark)
           (message "No previous selection.")
-          (meow--cancel-selection))
+          (eerie--cancel-selection))
       (push-mark mark t t)
-      (setq meow--selection selection))))
+      (setq eerie--selection selection))))
 
-(defun meow--cancel-selection ()
+(defun eerie--cancel-selection ()
   "Cancel current selection, clear selection history and deactivate the mark.
 
 If there's a selection history, move the mark to the beginning position
 in the history before deactivation."
-  (when meow--selection-history
-    (let ((orig-pos (cadar (last meow--selection-history))))
+  (when eerie--selection-history
+    (let ((orig-pos (cadar (last eerie--selection-history))))
       (set-marker (mark-marker) orig-pos)))
-  (setq meow--selection-history nil
-        meow--selection nil)
+  (setq eerie--selection-history nil
+        eerie--selection nil)
   (deactivate-mark t))
 
-(defun meow-undo ()
+(defun eerie-undo ()
   "Cancel current selection then undo."
   (interactive)
   (when (region-active-p)
-    (meow--cancel-selection))
+    (eerie--cancel-selection))
   (if (fboundp 'undo-only)
       (undo-only 1)
     (undo 1)))
 
-(defun meow-undo-in-selection ()
+(defun eerie-undo-in-selection ()
   "Cancel undo in current region."
   (interactive)
   (when (region-active-p)
     (undo-in-region (region-beginning) (region-end))))
 
-(defun meow-pop-selection ()
+(defun eerie-pop-selection ()
   (interactive)
-  (meow--with-selection-fallback
-   (meow--pop-selection)
-   (when (and (region-active-p) meow--expand-nav-function)
-     (meow--maybe-highlight-num-positions))))
+  (eerie--with-selection-fallback
+   (eerie--pop-selection)
+   (when (and (region-active-p) eerie--expand-nav-function)
+     (eerie--maybe-highlight-num-positions))))
 
-(defun meow-pop-all-selection ()
+(defun eerie-pop-all-selection ()
   (interactive)
-  (while (meow--pop-selection)))
+  (while (eerie--pop-selection)))
 
 ;;; exchange mark and point
 
-(defun meow-reverse ()
+(defun eerie-reverse ()
   "Just exchange point and mark.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (meow--with-selection-fallback
-   (meow--execute-kbd-macro meow--kbd-exchange-point-and-mark)
+  (eerie--with-selection-fallback
+   (eerie--execute-kbd-macro eerie--kbd-exchange-point-and-mark)
    (if (member last-command
-               '(meow-visit meow-search meow-mark-symbol meow-mark-word))
-       (meow--highlight-regexp-in-buffer (car regexp-search-ring))
-     (meow--maybe-highlight-num-positions))))
+               '(eerie-visit eerie-search eerie-mark-symbol eerie-mark-word))
+       (eerie--highlight-regexp-in-buffer (car regexp-search-ring))
+     (eerie--maybe-highlight-num-positions))))
 
 ;;; Buffer
 
-(defun meow-find-ref ()
+(defun eerie-find-ref ()
   "Xref find."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-find-ref))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-find-ref))
 
-(defun meow-pop-marker ()
+(defun eerie-pop-marker ()
   "Pop marker."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-pop-marker))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-pop-marker))
 
-(defun meow--jump-marker-live-p (marker)
+(defun eerie--jump-marker-live-p (marker)
   "Whether MARKER still points to a live buffer position."
   (and (markerp marker)
        (marker-buffer marker)
        (buffer-live-p (marker-buffer marker))))
 
-(defconst meow--jump-back-stack-window-parameter 'meow-jump-back-stack
+(defconst eerie--jump-back-stack-window-parameter 'eerie-jump-back-stack
   "Window parameter used to store backward jump history.")
 
-(defconst meow--jump-forward-stack-window-parameter 'meow-jump-forward-stack
+(defconst eerie--jump-forward-stack-window-parameter 'eerie-jump-forward-stack
   "Window parameter used to store forward jump history.")
 
-(defconst meow--explicit-jump-commands
-  '(meow-goto-buffer-start
-    meow-goto-buffer-end
-    meow-goto-definition
-    meow-goto-line
-    meow-jump-char
-    meow-jump-word-occurrence
-    meow-pop-to-mark
-    meow-unpop-to-mark
-    meow-pop-to-global-mark
-    meow-search-forward
-    meow-search-backward
-    meow-search-next
-    meow-search-prev)
+(defconst eerie--explicit-jump-commands
+  '(eerie-goto-buffer-start
+    eerie-goto-buffer-end
+    eerie-goto-definition
+    eerie-goto-line
+    eerie-jump-char
+    eerie-jump-word-occurrence
+    eerie-pop-to-mark
+    eerie-unpop-to-mark
+    eerie-pop-to-global-mark
+    eerie-search-forward
+    eerie-search-backward
+    eerie-search-next
+    eerie-search-prev)
   "Commands that manage jump recording explicitly.")
 
-(defun meow--jump-stack-parameter (direction)
+(defun eerie--jump-stack-parameter (direction)
   "Return the window parameter symbol for jump stack DIRECTION."
   (pcase direction
-    ('back meow--jump-back-stack-window-parameter)
-    ('forward meow--jump-forward-stack-window-parameter)
+    ('back eerie--jump-back-stack-window-parameter)
+    ('forward eerie--jump-forward-stack-window-parameter)
     (_ (error "Unknown jump direction: %S" direction))))
 
-(defun meow--jump-stack-variable (direction)
+(defun eerie--jump-stack-variable (direction)
   "Return the compatibility variable symbol for jump stack DIRECTION."
   (pcase direction
-    ('back 'meow--jump-back-stack)
-    ('forward 'meow--jump-forward-stack)
+    ('back 'eerie--jump-back-stack)
+    ('forward 'eerie--jump-forward-stack)
     (_ (error "Unknown jump direction: %S" direction))))
 
-(defun meow--get-jump-stack (direction &optional window)
+(defun eerie--get-jump-stack (direction &optional window)
   "Return the jump stack for DIRECTION in WINDOW."
   (window-parameter (or window (selected-window))
-                    (meow--jump-stack-parameter direction)))
+                    (eerie--jump-stack-parameter direction)))
 
-(defun meow--set-jump-stack (direction stack &optional window)
+(defun eerie--set-jump-stack (direction stack &optional window)
   "Set the jump STACK for DIRECTION in WINDOW."
   (let ((window (or window (selected-window))))
-    (set-window-parameter window (meow--jump-stack-parameter direction) stack)
+    (set-window-parameter window (eerie--jump-stack-parameter direction) stack)
     (when (eq window (selected-window))
-      (set (meow--jump-stack-variable direction) stack))
+      (set (eerie--jump-stack-variable direction) stack))
     stack))
 
-(defun meow--jump-marker-equal-p (left right)
+(defun eerie--jump-marker-equal-p (left right)
   "Whether LEFT and RIGHT point to the same location."
-  (and (meow--jump-marker-live-p left)
-       (meow--jump-marker-live-p right)
+  (and (eerie--jump-marker-live-p left)
+       (eerie--jump-marker-live-p right)
        (eq (marker-buffer left) (marker-buffer right))
        (= (marker-position left) (marker-position right))))
 
-(defun meow--jump-marker-at-point-p (marker)
+(defun eerie--jump-marker-at-point-p (marker)
   "Whether MARKER points to the current location."
-  (and (meow--jump-marker-live-p marker)
+  (and (eerie--jump-marker-live-p marker)
        (eq (marker-buffer marker) (current-buffer))
        (= (marker-position marker) (point))))
 
-(defun meow--jump-marker-at-window-point-p (marker window)
+(defun eerie--jump-marker-at-window-point-p (marker window)
   "Whether MARKER points to WINDOW's current point."
-  (and (meow--jump-marker-live-p marker)
+  (and (eerie--jump-marker-live-p marker)
        (window-live-p window)
        (eq (marker-buffer marker) (window-buffer window))
        (= (marker-position marker) (window-point window))))
 
-(defun meow--push-jump-on-stack (direction marker &optional window)
+(defun eerie--push-jump-on-stack (direction marker &optional window)
   "Push MARKER onto jump stack DIRECTION in WINDOW."
   (let* ((window (or window (selected-window)))
-         (stack (meow--get-jump-stack direction window))
+         (stack (eerie--get-jump-stack direction window))
          (top (car stack)))
-    (unless (or (not (meow--jump-marker-live-p marker))
-                (meow--jump-marker-equal-p top marker))
-      (meow--set-jump-stack direction (cons marker stack) window))))
+    (unless (or (not (eerie--jump-marker-live-p marker))
+                (eerie--jump-marker-equal-p top marker))
+      (eerie--set-jump-stack direction (cons marker stack) window))))
 
-(defun meow--pop-jump (direction &optional window)
+(defun eerie--pop-jump (direction &optional window)
   "Pop and return the next live marker from jump stack DIRECTION in WINDOW."
   (let* ((window (or window (selected-window)))
-         (stack (meow--get-jump-stack direction window)))
+         (stack (eerie--get-jump-stack direction window)))
     (while (and stack
-                (not (meow--jump-marker-live-p (car stack))))
+                (not (eerie--jump-marker-live-p (car stack))))
       (setq stack (cdr stack)))
-    (meow--set-jump-stack direction stack window)
+    (eerie--set-jump-stack direction stack window)
     (when stack
       (prog1 (car stack)
-        (meow--set-jump-stack direction (cdr stack) window)))))
+        (eerie--set-jump-stack direction (cdr stack) window)))))
 
-(defun meow--push-jump (&optional marker window)
+(defun eerie--push-jump (&optional marker window)
   "Record MARKER in backward jump history for WINDOW and clear forward history."
   (let ((window (or window (selected-window))))
-    (meow--push-jump-on-stack 'back (or marker (point-marker)) window)
-    (meow--set-jump-stack 'forward nil window)))
+    (eerie--push-jump-on-stack 'back (or marker (point-marker)) window)
+    (eerie--set-jump-stack 'forward nil window)))
 
-(defun meow--auto-record-jump-command-p (command)
+(defun eerie--auto-record-jump-command-p (command)
   "Whether COMMAND should be tracked automatically for jump history."
   (and command
-       (not (memq command meow--explicit-jump-commands))
-       (memq command meow-jump-auto-record-commands)))
+       (not (memq command eerie--explicit-jump-commands))
+       (memq command eerie-jump-auto-record-commands)))
 
-(defun meow--auto-record-jump-advice (fn &rest args)
+(defun eerie--auto-record-jump-advice (fn &rest args)
   "Around advice that records successful relocations for jump-aware commands."
-  (if (not (bound-and-true-p meow-mode))
+  (if (not (bound-and-true-p eerie-mode))
       (apply fn args)
     (let ((start (point-marker))
           (origin-window (selected-window)))
@@ -290,52 +290,52 @@ This command supports `meow-selection-command-fallback'."
                                       origin-window
                                     (selected-window))))
           (when (and (window-live-p destination-window)
-                     (not (meow--jump-marker-at-window-point-p start destination-window)))
-            (meow--push-jump start destination-window)))))))
+                     (not (eerie--jump-marker-at-window-point-p start destination-window)))
+            (eerie--push-jump start destination-window)))))))
 
-(defun meow--set-jump-command-advice (command enabled)
+(defun eerie--set-jump-command-advice (command enabled)
   "Enable or disable jump-recording advice for COMMAND."
   (when (fboundp command)
     (if enabled
-        (unless (advice-member-p #'meow--auto-record-jump-advice command)
-          (advice-add command :around #'meow--auto-record-jump-advice))
-      (when (advice-member-p #'meow--auto-record-jump-advice command)
-        (advice-remove command #'meow--auto-record-jump-advice)))))
+        (unless (advice-member-p #'eerie--auto-record-jump-advice command)
+          (advice-add command :around #'eerie--auto-record-jump-advice))
+      (when (advice-member-p #'eerie--auto-record-jump-advice command)
+        (advice-remove command #'eerie--auto-record-jump-advice)))))
 
-(defun meow--refresh-jump-command-advice (&rest _)
+(defun eerie--refresh-jump-command-advice (&rest _)
   "Refresh advice for auto-recorded jump commands."
-  (when (> meow--jump-tracking-refcount 0)
-    (dolist (command meow-jump-auto-record-commands)
-      (when (meow--auto-record-jump-command-p command)
-        (meow--set-jump-command-advice command t)))))
+  (when (> eerie--jump-tracking-refcount 0)
+    (dolist (command eerie-jump-auto-record-commands)
+      (when (eerie--auto-record-jump-command-p command)
+        (eerie--set-jump-command-advice command t)))))
 
-(defun meow--enable-jump-tracking ()
-  "Enable jump-tracking advice when Meow becomes active."
-  (cl-incf meow--jump-tracking-refcount)
-  (when (= meow--jump-tracking-refcount 1)
-    (add-hook 'after-load-functions #'meow--refresh-jump-command-advice)
-    (meow--refresh-jump-command-advice)))
+(defun eerie--enable-jump-tracking ()
+  "Enable jump-tracking advice when Eerie becomes active."
+  (cl-incf eerie--jump-tracking-refcount)
+  (when (= eerie--jump-tracking-refcount 1)
+    (add-hook 'after-load-functions #'eerie--refresh-jump-command-advice)
+    (eerie--refresh-jump-command-advice)))
 
-(defun meow--disable-jump-tracking ()
-  "Disable jump-tracking advice when no Meow buffers remain."
-  (when (> meow--jump-tracking-refcount 0)
-    (cl-decf meow--jump-tracking-refcount))
-  (when (= meow--jump-tracking-refcount 0)
-    (remove-hook 'after-load-functions #'meow--refresh-jump-command-advice)
-    (dolist (command meow-jump-auto-record-commands)
-      (when (meow--auto-record-jump-command-p command)
-        (meow--set-jump-command-advice command nil)))))
+(defun eerie--disable-jump-tracking ()
+  "Disable jump-tracking advice when no Eerie buffers remain."
+  (when (> eerie--jump-tracking-refcount 0)
+    (cl-decf eerie--jump-tracking-refcount))
+  (when (= eerie--jump-tracking-refcount 0)
+    (remove-hook 'after-load-functions #'eerie--refresh-jump-command-advice)
+    (dolist (command eerie-jump-auto-record-commands)
+      (when (eerie--auto-record-jump-command-p command)
+        (eerie--set-jump-command-advice command nil)))))
 
-(defmacro meow--with-recorded-jump (&rest body)
+(defmacro eerie--with-recorded-jump (&rest body)
   "Run BODY and record the starting location if point relocates."
   (declare (debug t) (indent 0))
   `(let ((start (point-marker)))
      (prog1
          (progn ,@body)
-       (unless (meow--jump-marker-at-point-p start)
-         (meow--push-jump start)))))
+       (unless (eerie--jump-marker-at-point-p start)
+         (eerie--push-jump start)))))
 
-(defun meow--goto-jump-marker (marker)
+(defun eerie--goto-jump-marker (marker)
   "Jump to MARKER in the current window."
   (let ((buffer (marker-buffer marker)))
     (unless (buffer-live-p buffer)
@@ -344,138 +344,138 @@ This command supports `meow-selection-command-fallback'."
     (goto-char (marker-position marker))
     (recenter)))
 
-(defun meow-jump-back ()
-  "Jump backward through Meow jump history."
+(defun eerie-jump-back ()
+  "Jump backward through Eerie jump history."
   (interactive)
-  (meow--cancel-selection)
-  (if-let ((marker (meow--pop-jump 'back)))
+  (eerie--cancel-selection)
+  (if-let ((marker (eerie--pop-jump 'back)))
       (progn
-        (meow--push-jump-on-stack 'forward (point-marker))
-        (meow--goto-jump-marker marker))
+        (eerie--push-jump-on-stack 'forward (point-marker))
+        (eerie--goto-jump-marker marker))
     (user-error "Jump history is empty")))
 
-(defun meow-jump-forward ()
-  "Jump forward through Meow jump history."
+(defun eerie-jump-forward ()
+  "Jump forward through Eerie jump history."
   (interactive)
-  (meow--cancel-selection)
-  (if-let ((marker (meow--pop-jump 'forward)))
+  (eerie--cancel-selection)
+  (if-let ((marker (eerie--pop-jump 'forward)))
       (progn
-        (meow--push-jump-on-stack 'back (point-marker))
-        (meow--goto-jump-marker marker))
+        (eerie--push-jump-on-stack 'back (point-marker))
+        (eerie--goto-jump-marker marker))
     (user-error "Forward jump history is empty")))
 
-(defun meow-register-jump-command (command)
+(defun eerie-register-jump-command (command)
   "Register COMMAND for automatic jumplist recording."
   (interactive
    (list
     (intern
      (completing-read "Jump command: " obarray #'commandp t))))
-  (add-to-list 'meow-jump-auto-record-commands command)
-  (when (> meow--jump-tracking-refcount 0)
-    (meow--set-jump-command-advice command t)))
+  (add-to-list 'eerie-jump-auto-record-commands command)
+  (when (> eerie--jump-tracking-refcount 0)
+    (eerie--set-jump-command-advice command t)))
 
-(defun meow-goto-buffer-start ()
+(defun eerie-goto-buffer-start ()
   "Jump to the start of the current buffer."
   (interactive)
-  (meow--with-recorded-jump
-    (meow--cancel-selection)
+  (eerie--with-recorded-jump
+    (eerie--cancel-selection)
     (goto-char (point-min))))
 
-(defun meow-goto-buffer-end ()
+(defun eerie-goto-buffer-end ()
   "Jump to the end of the current buffer."
   (interactive)
-  (meow--with-recorded-jump
-    (meow--cancel-selection)
+  (eerie--with-recorded-jump
+    (eerie--cancel-selection)
     (goto-char (point-max))))
 
-(defun meow-goto-definition ()
+(defun eerie-goto-definition ()
   "Jump to definition using xref and record jump history."
   (interactive)
-  (meow--with-recorded-jump
-    (meow-find-ref)))
+  (eerie--with-recorded-jump
+    (eerie-find-ref)))
 
 ;;; Clipboards
 
-(defun meow-clipboard-yank ()
+(defun eerie-clipboard-yank ()
   "Yank system clipboard."
   (interactive)
   (call-interactively #'clipboard-yank))
 
-(defun meow-clipboard-kill ()
+(defun eerie-clipboard-kill ()
   "Kill to system clipboard."
   (interactive)
   (call-interactively #'clipboard-kill-region))
 
-(defun meow-clipboard-save ()
+(defun eerie-clipboard-save ()
   "Save to system clipboard."
   (interactive)
   (call-interactively #'clipboard-kill-ring-save))
 
-(defun meow-save ()
+(defun eerie-save ()
   "Copy, like command `kill-ring-save'.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (meow--with-selection-fallback
-   (let ((select-enable-clipboard meow-use-clipboard))
-     (meow--prepare-region-for-kill)
-     (meow--execute-kbd-macro meow--kbd-kill-ring-save))))
+  (eerie--with-selection-fallback
+   (let ((select-enable-clipboard eerie-use-clipboard))
+     (eerie--prepare-region-for-kill)
+     (eerie--execute-kbd-macro eerie--kbd-kill-ring-save))))
 
-(defun meow-save-append ()
+(defun eerie-save-append ()
   "Copy, like command `kill-ring-save' but append to latest kill.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (meow--prepare-region-for-kill)
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (eerie--prepare-region-for-kill)
     (let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
-      (kill-append (meow--prepare-string-for-kill-append s) nil)
+      (kill-append (eerie--prepare-string-for-kill-append s) nil)
       (deactivate-mark t))))
 
-(defun meow-save-empty ()
-  "Copy an empty string, can be used with `meow-save-append' or `meow-kill-append'."
+(defun eerie-save-empty ()
+  "Copy an empty string, can be used with `eerie-save-append' or `eerie-kill-append'."
   (interactive)
   (kill-new ""))
 
-(defun meow-save-char ()
+(defun eerie-save-char ()
   "Copy current char."
   (interactive)
   (when (< (point) (point-max))
     (save-mark-and-excursion
       (goto-char (point))
       (push-mark (1+ (point)) t t)
-      (meow--execute-kbd-macro meow--kbd-kill-ring-save))))
+      (eerie--execute-kbd-macro eerie--kbd-kill-ring-save))))
 
-(defun meow-yank ()
+(defun eerie-yank ()
   "Yank."
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (meow--execute-kbd-macro meow--kbd-yank)))
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (eerie--execute-kbd-macro eerie--kbd-yank)))
 
-(defun meow-yank-pop ()
+(defun eerie-yank-pop ()
   "Pop yank."
   (interactive)
-  (when (meow--allow-modify-p)
-    (meow--execute-kbd-macro meow--kbd-yank-pop)))
+  (when (eerie--allow-modify-p)
+    (eerie--execute-kbd-macro eerie--kbd-yank-pop)))
 
 ;;; Quit
 
-(defun meow-cancel-selection ()
+(defun eerie-cancel-selection ()
   "Cancel selection.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (meow--with-selection-fallback
-   (meow--cancel-selection)))
+  (eerie--with-selection-fallback
+   (eerie--cancel-selection)))
 
-(defun meow-keyboard-quit ()
+(defun eerie-keyboard-quit ()
   "Keyboard quit."
   (interactive)
   (if (region-active-p)
       (deactivate-mark t)
-    (meow--execute-kbd-macro meow--kbd-keyboard-quit)))
+    (eerie--execute-kbd-macro eerie--kbd-keyboard-quit)))
 
-(defun meow-quit ()
+(defun eerie-quit ()
   "Quit current window or buffer."
   (interactive)
   (if (> (seq-length (window-list (selected-frame))) 1)
@@ -484,93 +484,93 @@ This command supports `meow-selection-command-fallback'."
 
 ;;; Comment
 
-(defun meow-comment ()
+(defun eerie-comment ()
   "Comment region or comment line."
   (interactive)
-  (when (meow--allow-modify-p)
-    (meow--execute-kbd-macro meow--kbd-comment)))
+  (when (eerie--allow-modify-p)
+    (eerie--execute-kbd-macro eerie--kbd-comment)))
 
 ;;; Delete Operations
 
-(defun meow-kill ()
+(defun eerie-kill ()
   "Kill region.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (when (meow--allow-modify-p)
-      (meow--with-selection-fallback
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (when (eerie--allow-modify-p)
+      (eerie--with-selection-fallback
        (cond
-        ((equal '(expand . join) (meow--selection-type))
+        ((equal '(expand . join) (eerie--selection-type))
          (delete-indentation nil (region-beginning) (region-end)))
         (t
-         (meow--prepare-region-for-kill)
-         (meow--execute-kbd-macro meow--kbd-kill-region)))))))
+         (eerie--prepare-region-for-kill)
+         (eerie--execute-kbd-macro eerie--kbd-kill-region)))))))
 
-(defun meow-kill-append ()
+(defun eerie-kill-append ()
   "Kill region and append to latest kill.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (when (meow--allow-modify-p)
-      (meow--with-selection-fallback
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (when (eerie--allow-modify-p)
+      (eerie--with-selection-fallback
        (cond
-        ((equal '(expand . join) (meow--selection-type))
+        ((equal '(expand . join) (eerie--selection-type))
          (delete-indentation nil (region-beginning) (region-end)))
         (t
-         (meow--prepare-region-for-kill)
+         (eerie--prepare-region-for-kill)
          (let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
-           (meow--delete-region (region-beginning) (region-end))
-           (kill-append (meow--prepare-string-for-kill-append s) nil))))))))
+           (eerie--delete-region (region-beginning) (region-end))
+           (kill-append (eerie--prepare-string-for-kill-append s) nil))))))))
 
-(defun meow-C-k ()
+(defun eerie-C-k ()
   "Run command on C-k."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-kill-line))
+  (eerie--execute-kbd-macro eerie--kbd-kill-line))
 
-(defun meow-kill-whole-line ()
+(defun eerie-kill-whole-line ()
   (interactive)
-  (when (meow--allow-modify-p)
-    (meow--execute-kbd-macro meow--kbd-kill-whole-line)))
+  (when (eerie--allow-modify-p)
+    (eerie--execute-kbd-macro eerie--kbd-kill-whole-line)))
 
-(defun meow-backspace ()
+(defun eerie-backspace ()
   "Backward delete one char."
   (interactive)
-  (when (meow--allow-modify-p)
+  (when (eerie--allow-modify-p)
     (call-interactively #'backward-delete-char)))
 
-(defun meow-C-d ()
+(defun eerie-C-d ()
   "Run command on C-d."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-delete-char))
+  (eerie--execute-kbd-macro eerie--kbd-delete-char))
 
-(defun meow-backward-kill-word (arg)
-  "Kill characters backward until the beginning of a `meow-word-thing'.
+(defun eerie-backward-kill-word (arg)
+  "Kill characters backward until the beginning of a `eerie-word-thing'.
 With argument ARG, do this that many times."
   (interactive "p")
-  (meow-kill-word (- arg)))
+  (eerie-kill-word (- arg)))
 
-(defun meow-kill-word (arg)
-  "Kill characters forward until the end of a `meow-word-thing'.
+(defun eerie-kill-word (arg)
+  "Kill characters forward until the end of a `eerie-word-thing'.
 With argument ARG, do this that many times."
   (interactive "p")
-  (meow-kill-thing meow-word-thing arg))
+  (eerie-kill-thing eerie-word-thing arg))
 
-(defun meow-backward-kill-symbol (arg)
-  "Kill characters backward until the beginning of a `meow-symbol-thing'.
+(defun eerie-backward-kill-symbol (arg)
+  "Kill characters backward until the beginning of a `eerie-symbol-thing'.
 With argument ARG, do this that many times."
   (interactive "p")
-  (meow-kill-symbol (- arg)))
+  (eerie-kill-symbol (- arg)))
 
-(defun meow-kill-symbol (arg)
-  "Kill characters forward until the end of a `meow-symbol-thing'.
+(defun eerie-kill-symbol (arg)
+  "Kill characters forward until the end of a `eerie-symbol-thing'.
 With argument ARG, do this that many times."
   (interactive "p")
-  (meow-kill-thing meow-symbol-thing arg))
+  (eerie-kill-thing eerie-symbol-thing arg))
 
 
-(defun meow-kill-thing (thing arg)
+(defun eerie-kill-thing (thing arg)
   "Kill characters forward until the end of a THING.
 With argument ARG, do this that many times."
   (let ((start (point))
@@ -579,362 +579,362 @@ With argument ARG, do this that many times."
         (kill-region start end)
       ((text-read-only buffer-read-only)
        (condition-case err
-           (meow--delete-region start end)
+           (eerie--delete-region start end)
          (t (signal (car err) (cdr err))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; PAGE UP&DOWN
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-page-up ()
+(defun eerie-page-up ()
   "Page up."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-scoll-down))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-scoll-down))
 
-(defun meow-page-down ()
+(defun eerie-page-down ()
   "Page down."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-scoll-up))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-scoll-up))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; PARENTHESIS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-forward-slurp ()
+(defun eerie-forward-slurp ()
   "Forward slurp sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-forward-slurp))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-forward-slurp))
 
-(defun meow-backward-slurp ()
+(defun eerie-backward-slurp ()
   "Backward slurp sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-backward-slurp))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-backward-slurp))
 
-(defun meow-forward-barf ()
+(defun eerie-forward-barf ()
   "Forward barf sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-forward-barf))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-forward-barf))
 
-(defun meow-backward-barf ()
+(defun eerie-backward-barf ()
   "Backward barf sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-backward-barf))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-backward-barf))
 
-(defun meow-raise-sexp ()
+(defun eerie-raise-sexp ()
   "Raise sexp."
   (interactive)
-  (meow--cancel-selection)
+  (eerie--cancel-selection)
   (let ((bounds (bounds-of-thing-at-point 'sexp)))
     (when bounds
       (goto-char (car bounds))))
-  (meow--execute-kbd-macro meow--kbd-raise-sexp))
+  (eerie--execute-kbd-macro eerie--kbd-raise-sexp))
 
-(defun meow-transpose-sexp ()
+(defun eerie-transpose-sexp ()
   "Transpose sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-transpose-sexp))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-transpose-sexp))
 
-(defun meow-split-sexp ()
+(defun eerie-split-sexp ()
   "Split sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-split-sexp))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-split-sexp))
 
-(defun meow-join-sexp ()
+(defun eerie-join-sexp ()
   "Split sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-join-sexp))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-join-sexp))
 
-(defun meow-splice-sexp ()
+(defun eerie-splice-sexp ()
   "Splice sexp."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-splice-sexp))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-splice-sexp))
 
-(defun meow-wrap-round ()
+(defun eerie-wrap-round ()
   "Wrap round paren."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-wrap-round))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-wrap-round))
 
-(defun meow-wrap-square ()
+(defun eerie-wrap-square ()
   "Wrap square paren."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-wrap-square))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-wrap-square))
 
-(defun meow-wrap-curly ()
+(defun eerie-wrap-curly ()
   "Wrap curly paren."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-wrap-curly))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-wrap-curly))
 
-(defun meow-wrap-string ()
+(defun eerie-wrap-string ()
   "Wrap string."
   (interactive)
-  (meow--cancel-selection)
-  (meow--execute-kbd-macro meow--kbd-wrap-string))
+  (eerie--cancel-selection)
+  (eerie--execute-kbd-macro eerie--kbd-wrap-string))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; STATE TOGGLE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-insert-exit ()
+(defun eerie-insert-exit ()
   "Switch to NORMAL state."
   (interactive)
   (cond
-   ((meow-keypad-mode-p)
-    (meow--exit-keypad-state))
-   ((and (meow-insert-mode-p)
-         meow--multiedit-replay-command)
-    (meow--multiedit-apply-replay))
-   ((and (meow-insert-mode-p)
-         (eq meow--beacon-defining-kbd-macro 'quick))
-    (setq meow--beacon-defining-kbd-macro nil)
-    (meow-beacon-insert-exit))
-   ((meow-insert-mode-p)
-    (meow--switch-state 'normal))))
+   ((eerie-keypad-mode-p)
+    (eerie--exit-keypad-state))
+   ((and (eerie-insert-mode-p)
+         eerie--multiedit-replay-command)
+    (eerie--multiedit-apply-replay))
+   ((and (eerie-insert-mode-p)
+         (eq eerie--beacon-defining-kbd-macro 'quick))
+    (setq eerie--beacon-defining-kbd-macro nil)
+    (eerie-beacon-insert-exit))
+   ((eerie-insert-mode-p)
+    (eerie--switch-state 'normal))))
 
-(defun meow-temp-normal ()
+(defun eerie-temp-normal ()
   "Switch to navigation-only NORMAL state."
   (interactive)
-  (when (meow-motion-mode-p)
+  (when (eerie-motion-mode-p)
     (message "Enter temporary normal mode")
-    (setq meow--temp-normal t)
-    (meow--switch-state 'normal)))
+    (setq eerie--temp-normal t)
+    (eerie--switch-state 'normal)))
 
-(defun meow--enter-insert-state ()
+(defun eerie--enter-insert-state ()
   "Switch to INSERT and remember the entry position."
-  (meow--switch-state 'insert)
-  (setq-local meow--insert-pos (point)))
+  (eerie--switch-state 'insert)
+  (setq-local eerie--insert-pos (point)))
 
-(defun meow-insert ()
+(defun eerie-insert ()
   "Move to the start of selection, switch to INSERT state."
   (interactive)
-  (if meow--temp-normal
+  (if eerie--temp-normal
       (progn
         (message "Quit temporary normal mode")
-        (meow--switch-state 'motion))
-    (if (and meow--multicursor-active
-             (meow--multiedit-active-p))
-        (meow--multiedit-start-insert-or-append 'insert)
-      (meow--direction-backward)
-      (meow--cancel-selection)
-      (meow--enter-insert-state)
-      (when meow-select-on-insert
-        (setq-local meow--insert-activate-mark t)))))
+        (eerie--switch-state 'motion))
+    (if (and eerie--multicursor-active
+             (eerie--multiedit-active-p))
+        (eerie--multiedit-start-insert-or-append 'insert)
+      (eerie--direction-backward)
+      (eerie--cancel-selection)
+      (eerie--enter-insert-state)
+      (when eerie-select-on-insert
+        (setq-local eerie--insert-activate-mark t)))))
 
-(defun meow-append ()
+(defun eerie-append ()
   "Move to the end of selection, switch to INSERT state."
   (interactive)
-  (if meow--temp-normal
+  (if eerie--temp-normal
       (progn
         (message "Quit temporary normal mode")
-        (meow--switch-state 'motion))
-    (if (and meow--multicursor-active
-             (meow--multiedit-active-p))
-        (meow--multiedit-start-insert-or-append 'append)
+        (eerie--switch-state 'motion))
+    (if (and eerie--multicursor-active
+             (eerie--multiedit-active-p))
+        (eerie--multiedit-start-insert-or-append 'append)
       (if (not (region-active-p))
-          (when (and meow-use-cursor-position-hack
+          (when (and eerie-use-cursor-position-hack
                      (< (point) (point-max)))
             (forward-char 1))
-        (meow--direction-forward)
-        (meow--cancel-selection))
-      (meow--enter-insert-state)
-      (when meow-select-on-append
-        (setq-local meow--insert-activate-mark t)))))
+        (eerie--direction-forward)
+        (eerie--cancel-selection))
+      (eerie--enter-insert-state)
+      (when eerie-select-on-append
+        (setq-local eerie--insert-activate-mark t)))))
 
-(defun meow-insert-beginning-of-line ()
+(defun eerie-insert-beginning-of-line ()
   "Move to the start of the current line and enter INSERT state."
   (interactive)
-  (meow--cancel-selection)
+  (eerie--cancel-selection)
   (goto-char (line-beginning-position))
-  (meow--enter-insert-state))
+  (eerie--enter-insert-state))
 
-(defun meow-append-end-of-line ()
+(defun eerie-append-end-of-line ()
   "Move to the end of the current line and enter INSERT state."
   (interactive)
-  (meow--cancel-selection)
+  (eerie--cancel-selection)
   (goto-char (line-end-position))
-  (meow--enter-insert-state))
+  (eerie--enter-insert-state))
 
-(defun meow-change ()
+(defun eerie-change ()
   "Kill current selection and switch to INSERT state.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (when (meow--allow-modify-p)
-    (setq this-command #'meow-change)
-    (meow--with-selection-fallback
-     (meow--delete-region (region-beginning) (region-end))
-     (meow--enter-insert-state)
-     (when meow-select-on-change
-       (setq-local meow--insert-activate-mark t)))))
+  (when (eerie--allow-modify-p)
+    (setq this-command #'eerie-change)
+    (eerie--with-selection-fallback
+     (eerie--delete-region (region-beginning) (region-end))
+     (eerie--enter-insert-state)
+     (when eerie-select-on-change
+       (setq-local eerie--insert-activate-mark t)))))
 
-(defun meow-change-char ()
+(defun eerie-change-char ()
   "Delete current char and switch to INSERT state."
   (interactive)
   (when (< (point) (point-max))
-    (meow--execute-kbd-macro meow--kbd-delete-char)
-    (meow--enter-insert-state)
-    (when meow-select-on-change
-      (setq-local meow--insert-activate-mark t))))
+    (eerie--execute-kbd-macro eerie--kbd-delete-char)
+    (eerie--enter-insert-state)
+    (when eerie-select-on-change
+      (setq-local eerie--insert-activate-mark t))))
 
-(defun meow-change-save ()
+(defun eerie-change-save ()
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (when (and (meow--allow-modify-p) (region-active-p))
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (when (and (eerie--allow-modify-p) (region-active-p))
       (kill-region (region-beginning) (region-end))
-      (meow--enter-insert-state)
-      (when meow-select-on-change
-        (setq-local meow--insert-activate-mark t)))))
+      (eerie--enter-insert-state)
+      (when eerie-select-on-change
+        (setq-local eerie--insert-activate-mark t)))))
 
-(defun meow-replace ()
+(defun eerie-replace ()
   "Replace current selection with yank.
 
-This command supports `meow-selection-command-fallback'."
+This command supports `eerie-selection-command-fallback'."
   (interactive)
-  (meow--with-selection-fallback
-   (let ((select-enable-clipboard meow-use-clipboard))
-     (when (meow--allow-modify-p)
+  (eerie--with-selection-fallback
+   (let ((select-enable-clipboard eerie-use-clipboard))
+     (when (eerie--allow-modify-p)
        (when-let* ((s (string-trim-right (current-kill 0 t) "\n")))
-         (meow--delete-region (region-beginning) (region-end))
-         (set-marker meow--replace-start-marker (point))
-         (meow--insert s))))))
+         (eerie--delete-region (region-beginning) (region-end))
+         (set-marker eerie--replace-start-marker (point))
+         (eerie--insert s))))))
 
-(defun meow-replace-char ()
+(defun eerie-replace-char ()
   "Replace current char with selection."
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
+  (let ((select-enable-clipboard eerie-use-clipboard))
     (when (< (point) (point-max))
       (when-let* ((s (string-trim-right (current-kill 0 t) "\n")))
-        (meow--delete-region (point) (1+ (point)))
-        (set-marker meow--replace-start-marker (point))
-        (meow--insert s)))))
+        (eerie--delete-region (point) (1+ (point)))
+        (set-marker eerie--replace-start-marker (point))
+        (eerie--insert s)))))
 
-(defun meow-replace-save ()
+(defun eerie-replace-save ()
   (interactive)
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (when (meow--allow-modify-p)
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (when (eerie--allow-modify-p)
       (when-let* ((curr (pop kill-ring-yank-pointer)))
         (let ((s (string-trim-right curr "\n")))
           (setq kill-ring kill-ring-yank-pointer)
           (if (region-active-p)
               (let ((old (save-mark-and-excursion
-                           (meow--prepare-region-for-kill)
+                           (eerie--prepare-region-for-kill)
                            (buffer-substring-no-properties (region-beginning) (region-end)))))
                 (progn
-                  (meow--delete-region (region-beginning) (region-end))
-                  (set-marker meow--replace-start-marker (point))
-                  (meow--insert s)
+                  (eerie--delete-region (region-beginning) (region-end))
+                  (set-marker eerie--replace-start-marker (point))
+                  (eerie--insert s)
                   (kill-new old)))
-            (set-marker meow--replace-start-marker (point))
-            (meow--insert s)))))))
+            (set-marker eerie--replace-start-marker (point))
+            (eerie--insert s)))))))
 
-(defun meow-replace-pop ()
-  "Like `yank-pop', but for `meow-replace'.
+(defun eerie-replace-pop ()
+  "Like `yank-pop', but for `eerie-replace'.
 
-If this command is called after `meow-replace',
-`meow-replace-char', `meow-replace-save', or itself, replace the
+If this command is called after `eerie-replace',
+`eerie-replace-char', `eerie-replace-save', or itself, replace the
 previous replacement with the next item in the `kill-ring'.
 
 Unlike `yank-pop', this command does not rotate the `kill-ring'.
 For that, see the command `rotate-yank-pointer'.
 
 For custom commands, see also the user option
-`meow-replace-pop-command-start-indexes'."
+`eerie-replace-pop-command-start-indexes'."
   (interactive "*")
   (unless kill-ring (user-error "Can't replace; kill ring is empty"))
-  (let ((select-enable-clipboard meow-use-clipboard))
-    (when (meow--allow-modify-p)
-      (setq meow--replace-pop-index
+  (let ((select-enable-clipboard eerie-use-clipboard))
+    (when (eerie--allow-modify-p)
+      (setq eerie--replace-pop-index
             (cond
-             ((eq last-command 'meow-replace-pop) (1+ meow--replace-pop-index))
-             ((alist-get last-command meow-replace-pop-command-start-indexes))
-             (t (user-error "Can only run `meow-replace-pop' after itself or a command in `meow-replace-pop-command-start-indexes'"))))
-      (when (>= meow--replace-pop-index (length kill-ring))
-        (setq meow--replace-pop-index 0)
-        (message "`meow-replace-pop': Reached end of kill ring"))
-      (let ((txt (string-trim-right (current-kill meow--replace-pop-index t)
+             ((eq last-command 'eerie-replace-pop) (1+ eerie--replace-pop-index))
+             ((alist-get last-command eerie-replace-pop-command-start-indexes))
+             (t (user-error "Can only run `eerie-replace-pop' after itself or a command in `eerie-replace-pop-command-start-indexes'"))))
+      (when (>= eerie--replace-pop-index (length kill-ring))
+        (setq eerie--replace-pop-index 0)
+        (message "`eerie-replace-pop': Reached end of kill ring"))
+      (let ((txt (string-trim-right (current-kill eerie--replace-pop-index t)
                                     "\n")))
-        (meow--delete-region meow--replace-start-marker (point))
-        (set-marker meow--replace-start-marker (point))
-        (meow--insert txt))))
-  (setq this-command 'meow-replace-pop))
+        (eerie--delete-region eerie--replace-start-marker (point))
+        (set-marker eerie--replace-start-marker (point))
+        (eerie--insert txt))))
+  (setq this-command 'eerie-replace-pop))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; CHAR MOVEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-left ()
+(defun eerie-left ()
   "Move to left.
 
 Will cancel all other selection, except char selection. "
   (interactive)
   (when (and (region-active-p)
-             (not (equal '(expand . char) (meow--selection-type))))
-    (meow-cancel-selection))
+             (not (equal '(expand . char) (eerie--selection-type))))
+    (eerie-cancel-selection))
   (when (> (point) (line-beginning-position))
     (backward-char 1)))
 
-(defun meow-right ()
+(defun eerie-right ()
   "Move to right.
 
 Will cancel all other selection, except char selection. "
   (interactive)
   (let ((ra (region-active-p)))
     (when (and ra
-           (not (equal '(expand . char) (meow--selection-type))))
-      (meow-cancel-selection))
-    (when (or (not meow-use-cursor-position-hack)
+           (not (equal '(expand . char) (eerie--selection-type))))
+      (eerie-cancel-selection))
+    (when (or (not eerie-use-cursor-position-hack)
               (not ra)
-              (equal '(expand . char) (meow--selection-type)))
+              (equal '(expand . char) (eerie--selection-type)))
       (when (< (point) (line-end-position))
         (forward-char 1)))))
 
-(defun meow-left-expand ()
+(defun eerie-left-expand ()
   "Activate char selection, then move left."
   (interactive)
   (if (region-active-p)
       (thread-first
-        (meow--make-selection '(expand . char) (mark) (point))
-        (meow--select t))
-    (when meow-use-cursor-position-hack
+        (eerie--make-selection '(expand . char) (mark) (point))
+        (eerie--select t))
+    (when eerie-use-cursor-position-hack
       (forward-char 1))
     (thread-first
-      (meow--make-selection '(expand . char) (point) (point))
-      (meow--select t)))
+      (eerie--make-selection '(expand . char) (point) (point))
+      (eerie--select t)))
   (when (> (point) (line-beginning-position))
     (backward-char 1)))
 
-(defun meow-right-expand ()
+(defun eerie-right-expand ()
   "Activate char selection, then move right."
   (interactive)
   (if (region-active-p)
       (thread-first
-        (meow--make-selection '(expand . char) (mark) (point))
-        (meow--select t))
+        (eerie--make-selection '(expand . char) (mark) (point))
+        (eerie--select t))
     (thread-first
-      (meow--make-selection '(expand . char) (point) (point))
-      (meow--select t)))
+      (eerie--make-selection '(expand . char) (point) (point))
+      (eerie--select t)))
   (when (< (point) (line-end-position))
     (forward-char 1)))
 
-(defun meow-goto-line-end ()
+(defun eerie-goto-line-end ()
   "Move to the end of the current line."
   (interactive)
-  (meow--cancel-selection)
+  (eerie--cancel-selection)
   (goto-char (line-end-position)))
 
-(defun meow-prev (arg)
+(defun eerie-prev (arg)
   "Move to the previous line.
 
 Will cancel all other selection, except char selection.
@@ -942,16 +942,16 @@ Will cancel all other selection, except char selection.
 Use with universal argument to move to the first line of buffer.
 Use with numeric argument to move multiple lines at once."
   (interactive "P")
-  (unless (equal (meow--selection-type) '(expand . char))
-    (meow--cancel-selection))
+  (unless (equal (eerie--selection-type) '(expand . char))
+    (eerie--cancel-selection))
   (cond
-   ((meow--with-universal-argument-p arg)
+   ((eerie--with-universal-argument-p arg)
     (goto-char (point-min)))
    (t
     (setq this-command #'previous-line)
-    (meow--execute-kbd-macro meow--kbd-backward-line))))
+    (eerie--execute-kbd-macro eerie--kbd-backward-line))))
 
-(defun meow-next (arg)
+(defun eerie-next (arg)
   "Move to the next line.
 
 Will cancel all other selection, except char selection.
@@ -959,54 +959,54 @@ Will cancel all other selection, except char selection.
 Use with universal argument to move to the last line of buffer.
 Use with numeric argument to move multiple lines at once."
   (interactive "P")
-  (unless (equal (meow--selection-type) '(expand . char))
-    (meow--cancel-selection))
+  (unless (equal (eerie--selection-type) '(expand . char))
+    (eerie--cancel-selection))
   (cond
-   ((meow--with-universal-argument-p arg)
+   ((eerie--with-universal-argument-p arg)
     (goto-char (point-max)))
    (t
     (setq this-command #'next-line)
-    (meow--execute-kbd-macro meow--kbd-forward-line))))
+    (eerie--execute-kbd-macro eerie--kbd-forward-line))))
 
-(defun meow-prev-expand (arg)
+(defun eerie-prev-expand (arg)
   "Activate char selection, then move to the previous line.
 
-See `meow-prev-line' for how prefix arguments work."
+See `eerie-prev-line' for how prefix arguments work."
   (interactive "P")
   (if (region-active-p)
       (thread-first
-        (meow--make-selection '(expand . char) (mark) (point))
-        (meow--select t))
+        (eerie--make-selection '(expand . char) (mark) (point))
+        (eerie--select t))
     (thread-first
-      (meow--make-selection '(expand . char) (point) (point))
-      (meow--select t)))
+      (eerie--make-selection '(expand . char) (point) (point))
+      (eerie--select t)))
   (cond
-   ((meow--with-universal-argument-p arg)
+   ((eerie--with-universal-argument-p arg)
     (goto-char (point-min)))
    (t
     (setq this-command #'previous-line)
-    (meow--execute-kbd-macro meow--kbd-backward-line))))
+    (eerie--execute-kbd-macro eerie--kbd-backward-line))))
 
-(defun meow-next-expand (arg)
+(defun eerie-next-expand (arg)
   "Activate char selection, then move to the next line.
 
-See `meow-next-line' for how prefix arguments work."
+See `eerie-next-line' for how prefix arguments work."
   (interactive "P")
   (if (region-active-p)
       (thread-first
-        (meow--make-selection '(expand . char) (mark) (point))
-        (meow--select t))
+        (eerie--make-selection '(expand . char) (mark) (point))
+        (eerie--select t))
     (thread-first
-      (meow--make-selection '(expand . char) (point) (point))
-      (meow--select t)))
+      (eerie--make-selection '(expand . char) (point) (point))
+      (eerie--select t)))
   (cond
-   ((meow--with-universal-argument-p arg)
+   ((eerie--with-universal-argument-p arg)
     (goto-char (point-max)))
    (t
     (setq this-command #'next-line)
-    (meow--execute-kbd-macro meow--kbd-forward-line))))
+    (eerie--execute-kbd-macro eerie--kbd-forward-line))))
 
-(defun meow-mark-thing (thing type &optional backward regexp-format)
+(defun eerie-mark-thing (thing type &optional backward regexp-format)
   "Make expandable selection of THING, with TYPE and forward/BACKWARD direction.
 
 THING is a symbol usable by `forward-thing', which see.
@@ -1018,7 +1018,7 @@ non-nil.
 
 When REGEXP-FORMAT is non-nil and a string, the content of the selection will be
 quoted to regexp, then pushed into `regexp-search-ring' which will be read by
-`meow-search' and other commands. In this case, REGEXP-FORMAT is used as a
+`eerie-search' and other commands. In this case, REGEXP-FORMAT is used as a
 format-string to format the regexp-quoted selection content (which is passed as
 a string to `format'). Further matches of this formatted search will be
 highlighted in the buffer."
@@ -1027,52 +1027,52 @@ highlighted in the buffer."
          (end (cdr bounds)))
     (when beg
       (thread-first
-        (meow--make-selection (cons 'expand type) beg end)
-        (meow--select t backward))
+        (eerie--make-selection (cons 'expand type) beg end)
+        (eerie--select t backward))
       (when (stringp regexp-format)
         (let ((search (format regexp-format (regexp-quote (buffer-substring-no-properties beg end)))))
-          (meow--push-search search)
-          (meow--highlight-regexp-in-buffer search))))))
+          (eerie--push-search search)
+          (eerie--highlight-regexp-in-buffer search))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; WORD/SYMBOL MOVEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-mark-word (n)
+(defun eerie-mark-word (n)
   "Mark current word under cursor.
 
-A expandable word selection will be created. `meow-next-word' and
-`meow-back-word' can be used for expanding.
+A expandable word selection will be created. `eerie-next-word' and
+`eerie-back-word' can be used for expanding.
 
 The content of selection will be quoted to regexp, then pushed into
-`regexp-search-ring' which be read by `meow-search' and other commands.
+`regexp-search-ring' which be read by `eerie-search' and other commands.
 
 This command will also provide highlighting for same occurs.
 
 Use negative argument to create a backward selection."
   (interactive "p")
-  (meow-mark-thing meow-word-thing 'word (< n 0) "\\<%s\\>"))
+  (eerie-mark-thing eerie-word-thing 'word (< n 0) "\\<%s\\>"))
 
-(defun meow-mark-symbol (n)
+(defun eerie-mark-symbol (n)
   "Mark current symbol under cursor.
 
-This command works similar to `meow-mark-word'."
+This command works similar to `eerie-mark-word'."
   (interactive "p")
-  (meow-mark-thing meow-symbol-thing 'symbol (< n 0) "\\_<%s\\_>"))
+  (eerie-mark-thing eerie-symbol-thing 'symbol (< n 0) "\\_<%s\\_>"))
 
-(defun meow--forward-thing-1 (thing)
+(defun eerie--forward-thing-1 (thing)
   (let ((pos (point)))
     (forward-thing thing 1)
     (when (not (= pos (point)))
-      (meow--hack-cursor-pos (point)))))
+      (eerie--hack-cursor-pos (point)))))
 
-(defun meow--backward-thing-1 (thing)
+(defun eerie--backward-thing-1 (thing)
   (let ((pos (point)))
     (forward-thing thing -1)
     (when (not (= pos (point)))
       (point))))
 
-(defun meow--fix-thing-selection-mark (thing pos mark include-syntax)
+(defun eerie--fix-thing-selection-mark (thing pos mark include-syntax)
   "Return new mark for a selection of THING.
 This will shrink the word selection only contains
 those in INCLUDE-SYNTAX."
@@ -1093,24 +1093,24 @@ those in INCLUDE-SYNTAX."
             (skip-syntax-backward include-syntax mark))
           (point))))))
 
-(defun meow-next-thing (thing type n &optional include-syntax)
+(defun eerie-next-thing (thing type n &optional include-syntax)
   "Create non-expandable selection of TYPE to the end of the next Nth THING.
 
 If N is negative, select to the beginning of the previous Nth thing instead."
-  (unless (equal type (cdr (meow--selection-type)))
-    (meow--cancel-selection))
+  (unless (equal type (cdr (eerie--selection-type)))
+    (eerie--cancel-selection))
   (unless include-syntax
     (setq include-syntax
           (let ((thing-include-syntax
-                 (or (alist-get thing meow-next-thing-include-syntax)
+                 (or (alist-get thing eerie-next-thing-include-syntax)
                      '("" ""))))
             (if (> n 0)
                 (car thing-include-syntax)
               (cadr thing-include-syntax)))))
-  (let* ((expand (equal (cons 'expand type) (meow--selection-type)))
+  (let* ((expand (equal (cons 'expand type) (eerie--selection-type)))
          (_ (when expand
-              (if (< n 0) (meow--direction-backward)
-                (meow--direction-forward))))
+              (if (< n 0) (eerie--direction-backward)
+                (eerie--direction-forward))))
          (new-type (if expand (cons 'expand type) (cons 'select type)))
          (m (point))
          (p (save-mark-and-excursion
@@ -1119,83 +1119,83 @@ If N is negative, select to the beginning of the previous Nth thing instead."
                 (point)))))
     (when p
       (thread-first
-        (meow--make-selection
+        (eerie--make-selection
          new-type
-         (meow--fix-thing-selection-mark thing p m include-syntax)
+         (eerie--fix-thing-selection-mark thing p m include-syntax)
          p
          expand)
-        (meow--select t))
-      (meow--maybe-highlight-num-positions
-       (cons (apply-partially #'meow--backward-thing-1 thing)
-             (apply-partially #'meow--forward-thing-1 thing))))))
+        (eerie--select t))
+      (eerie--maybe-highlight-num-positions
+       (cons (apply-partially #'eerie--backward-thing-1 thing)
+             (apply-partially #'eerie--forward-thing-1 thing))))))
 
-(defun meow-next-word (n)
+(defun eerie-next-word (n)
   "Select to the end of the next Nth word.
 
 A non-expandable, word selection will be created.
 
 To select continuous words, use following approaches:
 
-1. start the selection with `meow-mark-word'.
+1. start the selection with `eerie-mark-word'.
 
 2. use prefix digit arguments.
 
-3. use `meow-expand' after this command.
+3. use `eerie-expand' after this command.
 "
   (interactive "p")
-  (meow-next-thing meow-word-thing 'word n))
+  (eerie-next-thing eerie-word-thing 'word n))
 
-(defun meow-next-symbol (n)
+(defun eerie-next-symbol (n)
   "Select to the end of the next Nth symbol.
 
 A non-expandable, word selection will be created.
-There's no symbol selection type in Meow.
+There's no symbol selection type in Eerie.
 
 To select continuous symbols, use following approaches:
 
-1. start the selection with `meow-mark-symbol'.
+1. start the selection with `eerie-mark-symbol'.
 
 2. use prefix digit arguments.
 
-3. use `meow-expand' after this command."
+3. use `eerie-expand' after this command."
   (interactive "p")
-  (meow-next-thing meow-symbol-thing 'symbol n))
+  (eerie-next-thing eerie-symbol-thing 'symbol n))
 
-(defun meow-back-word (n)
+(defun eerie-back-word (n)
   "Select to the beginning the previous Nth word.
 
 A non-expandable word selection will be created.
-This command works similar to `meow-next-word'."
+This command works similar to `eerie-next-word'."
   (interactive "p")
-  (meow-next-thing meow-word-thing 'word (- n)))
+  (eerie-next-thing eerie-word-thing 'word (- n)))
 
-(defun meow-back-symbol (n)
+(defun eerie-back-symbol (n)
   "Select to the beginning the previous Nth symbol.
 
 A non-expandable word selection will be created.
-This command works similar to `meow-next-symbol'."
+This command works similar to `eerie-next-symbol'."
   (interactive "p")
-  (meow-next-thing meow-symbol-thing 'symbol (- n)))
+  (eerie-next-thing eerie-symbol-thing 'symbol (- n)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; LINE SELECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--forward-line-1 ()
+(defun eerie--forward-line-1 ()
   (let ((orig (point)))
     (forward-line 1)
-    (if meow--expanding-p
+    (if eerie--expanding-p
         (progn
           (goto-char (line-end-position))
           (line-end-position))
       (when (< orig (line-beginning-position))
         (line-beginning-position)))))
 
-(defun meow--backward-line-1 ()
+(defun eerie--backward-line-1 ()
   (forward-line -1)
   (line-beginning-position))
 
-(defun meow-line (n &optional expand)
+(defun eerie-line (n &optional expand)
   "Select the current line, eol is not included.
 
 Create selection with type (expand . line).
@@ -1206,8 +1206,8 @@ Prefix:
 numeric, repeat times.
 "
   (interactive "p")
-  (let* ((cancel-sel (not (or expand (equal '(expand . line) (meow--selection-type)))))
-         (backward (unless cancel-sel (meow--direction-backward-p)))
+  (let* ((cancel-sel (not (or expand (equal '(expand . line) (eerie--selection-type)))))
+         (backward (unless cancel-sel (eerie--direction-backward-p)))
          (orig (if cancel-sel (point) (mark t)))
          (n (if backward
                 (- n)
@@ -1223,9 +1223,9 @@ numeric, repeat times.
                (setq p (line-end-position))
              (setq p (line-beginning-position)))))
         (thread-first
-          (meow--make-selection '(expand . line) orig p expand)
-          (meow--select t))
-        (meow--maybe-highlight-num-positions '(meow--backward-line-1 . meow--forward-line-1))))
+          (eerie--make-selection '(expand . line) orig p expand)
+          (eerie--select t))
+        (eerie--maybe-highlight-num-positions '(eerie--backward-line-1 . eerie--forward-line-1))))
      (t
       (let ((m (if forward
                    (line-beginning-position)
@@ -1238,65 +1238,65 @@ numeric, repeat times.
                        (line-end-position))
                    (progn
                      (forward-line (1+ n))
-                     (when (meow--empty-line-p)
+                     (when (eerie--empty-line-p)
                        (backward-char 1))
                      (line-beginning-position))))))
         (thread-first
-          (meow--make-selection '(expand . line) m p expand)
-          (meow--select t))
-        (meow--maybe-highlight-num-positions '(meow--backward-line-1 . meow--forward-line-1)))))))
+          (eerie--make-selection '(expand . line) m p expand)
+          (eerie--select t))
+        (eerie--maybe-highlight-num-positions '(eerie--backward-line-1 . eerie--forward-line-1)))))))
 
-(defun meow-line-expand (n)
-  "Like `meow-line', but always expand."
+(defun eerie-line-expand (n)
+  "Like `eerie-line', but always expand."
   (interactive "p")
-  (meow-line n t))
+  (eerie-line n t))
 
-(defun meow-goto-line ()
+(defun eerie-goto-line ()
   "Goto line, recenter and select that line.
 
 This command will expand line selection."
   (interactive)
-  (meow--with-recorded-jump
+  (eerie--with-recorded-jump
     (let* ((rbeg (when (use-region-p) (region-beginning)))
            (rend (when (use-region-p) (region-end)))
-           (expand (equal '(expand . line) (meow--selection-type)))
+           (expand (equal '(expand . line) (eerie--selection-type)))
            (orig-p (point))
            (beg-end (save-mark-and-excursion
-                      (if meow-goto-line-function
-                          (call-interactively meow-goto-line-function)
-                        (meow--execute-kbd-macro meow--kbd-goto-line))
+                      (if eerie-goto-line-function
+                          (call-interactively eerie-goto-line-function)
+                        (eerie--execute-kbd-macro eerie--kbd-goto-line))
                       (cons (line-beginning-position)
                             (line-end-position))))
            (beg (car beg-end))
            (end (cdr beg-end)))
       (thread-first
-        (meow--make-selection '(expand . line)
+        (eerie--make-selection '(expand . line)
                               (if (and expand rbeg) (min rbeg beg) beg)
                               (if (and expand rend) (max rend end) end))
-        (meow--select t (> orig-p beg)))
+        (eerie--select t (> orig-p beg)))
       (recenter))))
 
 ;; visual line versions
-(defun meow--visual-block-move-lines (n)
+(defun eerie--visual-block-move-lines (n)
   "Move rectangle point by N lines without dropping the goal column."
   (let ((column (current-column)))
     (forward-line n)
     (move-to-column column)))
 
-(defun meow--visual-line-range ()
+(defun eerie--visual-line-range ()
   "Return the current logical line range as a cons cell."
   (cons (line-beginning-position)
         (line-end-position)))
 
-(defun meow--visual-line-beginning-position ()
-  (car (meow--visual-line-range)))
+(defun eerie--visual-line-beginning-position ()
+  (car (eerie--visual-line-range)))
 
-(defun meow--visual-line-end-position ()
-  (cdr (meow--visual-line-range)))
+(defun eerie--visual-line-end-position ()
+  (cdr (eerie--visual-line-range)))
 
-(defun meow--visual-line-apply-selection (current-range)
+(defun eerie--visual-line-apply-selection (current-range)
   "Apply linewise VISUAL selection from the anchor to CURRENT-RANGE."
-  (let* ((anchor (or meow--visual-line-anchor current-range))
+  (let* ((anchor (or eerie--visual-line-anchor current-range))
          (anchor-beg (car anchor))
          (anchor-end (cdr anchor))
          (current-beg (car current-range))
@@ -1305,26 +1305,26 @@ This command will expand line selection."
          (end (max anchor-end current-end))
          (backward (< current-beg anchor-beg)))
     (thread-first
-      (meow--make-selection '(expand . line) beg end)
-      (meow--select t backward))
-    (meow--maybe-highlight-num-positions
-     '(meow--backward-visual-line-1 . meow--forward-visual-line-1))))
+      (eerie--make-selection '(expand . line) beg end)
+      (eerie--select t backward))
+    (eerie--maybe-highlight-num-positions
+     '(eerie--backward-visual-line-1 . eerie--forward-visual-line-1))))
 
-(defun meow--forward-visual-line-1 ()
+(defun eerie--forward-visual-line-1 ()
   (let ((orig (point)))
     (forward-line 1)
-    (if meow--expanding-p
+    (if eerie--expanding-p
         (progn
-          (goto-char (meow--visual-line-end-position))
-          (meow--visual-line-end-position))
-      (when (< orig (meow--visual-line-beginning-position))
-        (meow--visual-line-beginning-position)))))
+          (goto-char (eerie--visual-line-end-position))
+          (eerie--visual-line-end-position))
+      (when (< orig (eerie--visual-line-beginning-position))
+        (eerie--visual-line-beginning-position)))))
 
-(defun meow--backward-visual-line-1 ()
+(defun eerie--backward-visual-line-1 ()
   (forward-line -1)
-  (meow--visual-line-beginning-position))
+  (eerie--visual-line-beginning-position))
 
-(defun meow-visual-line (n &optional expand)
+(defun eerie-visual-line (n &optional expand)
   "Select the current visual line, eol is not included.
 
 Create selection with type (expand . line).
@@ -1336,9 +1336,9 @@ numeric, repeat times.
 "
   (interactive "p")
   (let* ((active-line-visual
-          (and (equal '(expand . line) (meow--selection-type))
-               (eq meow--visual-type 'line)
-               meow--visual-line-anchor
+          (and (equal '(expand . line) (eerie--selection-type))
+               (eq eerie--visual-type 'line)
+               eerie--visual-line-anchor
                (region-active-p)))
          (offset (if active-line-visual
                      n
@@ -1346,51 +1346,51 @@ numeric, repeat times.
                        (1- n)
                      (1+ n)))))
     (unless active-line-visual
-      (setq-local meow--visual-line-anchor (meow--visual-line-range)))
+      (setq-local eerie--visual-line-anchor (eerie--visual-line-range)))
     (let ((target-range
            (save-mark-and-excursion
              (forward-line offset)
-             (meow--visual-line-range))))
-      (meow--visual-line-apply-selection target-range))))
+             (eerie--visual-line-range))))
+      (eerie--visual-line-apply-selection target-range))))
 
-(defun meow-visual-line-expand (n)
-  "Like `meow-line', but always expand."
+(defun eerie-visual-line-expand (n)
+  "Like `eerie-line', but always expand."
   (interactive "p")
-  (meow-visual-line n t))
+  (eerie-visual-line n t))
 
-(defun meow--visual-select-char ()
+(defun eerie--visual-select-char ()
   "Create a charwise selection anchored at point."
   (thread-first
-    (meow--make-selection '(expand . char) (point) (point))
-    (meow--select t)))
+    (eerie--make-selection '(expand . char) (point) (point))
+    (eerie--select t)))
 
-(defun meow--visual-target-state ()
+(defun eerie--visual-target-state ()
   "Return the visual-like state for the current session."
-  (if meow--multicursor-active
+  (if eerie--multicursor-active
       'multicursor-visual
     'visual))
 
-(defun meow--multicursor-help-keymap ()
+(defun eerie--multicursor-help-keymap ()
   "Return the persistent help keymap for the current multicursor state."
   (let ((keymap (make-sparse-keymap))
-        (visual-like (memq (meow--current-state) '(visual multicursor-visual))))
+        (visual-like (memq (eerie--current-state) '(visual multicursor-visual))))
     (dolist (binding
              (append
-              '((?v . meow-visual-start)
-                (?V . meow-visual-line-start)
-                ([?\C-v] . meow-visual-block-start)
-                (?f . meow-jump-char)
-                (?w . meow-jump-word-occurrence)
-                ([escape] . meow-multicursor-cancel))
+              '((?v . eerie-visual-start)
+                (?V . eerie-visual-line-start)
+                ([?\C-v] . eerie-visual-block-start)
+                (?f . eerie-jump-char)
+                (?w . eerie-jump-word-occurrence)
+                ([escape] . eerie-multicursor-cancel))
               (when visual-like
-                '((?. . meow-multicursor-match-next)
-                  (?, . meow-multicursor-unmatch-last)
-                  (?- . meow-multicursor-skip-match)
-                  (?d . meow-visual-delete)
-                  (?c . meow-visual-change)
-                  (?i . meow-visual-inner-of-thing)
-                  (?a . meow-visual-bounds-of-thing)
-                  (?y . meow-visual-yank)))))
+                '((?. . eerie-multicursor-match-next)
+                  (?, . eerie-multicursor-unmatch-last)
+                  (?- . eerie-multicursor-skip-match)
+                  (?d . eerie-visual-delete)
+                  (?c . eerie-visual-change)
+                  (?i . eerie-visual-inner-of-thing)
+                  (?a . eerie-visual-bounds-of-thing)
+                  (?y . eerie-visual-yank)))))
       (define-key keymap
                   (if (vectorp (car binding))
                       (car binding)
@@ -1398,230 +1398,230 @@ numeric, repeat times.
                   (cdr binding)))
     keymap))
 
-(defun meow--multicursor-display-menu ()
+(defun eerie--multicursor-display-menu ()
   "Refresh the persistent multicursor help popup."
-  (when (and meow--multicursor-active
-             meow-keypad-describe-keymap-function
+  (when (and eerie--multicursor-active
+             eerie-keypad-describe-keymap-function
              (or (not noninteractive)
-                 (not (eq meow-keypad-describe-keymap-function
-                          'meow-describe-keymap))))
-    (funcall meow-keypad-describe-keymap-function
-             (meow--multicursor-help-keymap))))
+                 (not (eq eerie-keypad-describe-keymap-function
+                          'eerie-describe-keymap))))
+    (funcall eerie-keypad-describe-keymap-function
+             (eerie--multicursor-help-keymap))))
 
-(defun meow--multicursor-activate ()
+(defun eerie--multicursor-activate ()
   "Activate multicursor replay plumbing in the current buffer."
-  (setq-local meow--multicursor-active t
-              meow--multicursor-replaying nil)
-  (add-hook 'pre-command-hook #'meow--multicursor-pre-command nil t)
-  (add-hook 'post-command-hook #'meow--multicursor-post-command nil t)
-  (advice-add 'read-key :around #'meow--multicursor-around-read-key)
-  (advice-add 'read-char :around #'meow--multicursor-around-read-char)
+  (setq-local eerie--multicursor-active t
+              eerie--multicursor-replaying nil)
+  (add-hook 'pre-command-hook #'eerie--multicursor-pre-command nil t)
+  (add-hook 'post-command-hook #'eerie--multicursor-post-command nil t)
+  (advice-add 'read-key :around #'eerie--multicursor-around-read-key)
+  (advice-add 'read-char :around #'eerie--multicursor-around-read-char)
   (advice-add 'read-from-minibuffer :around
-              #'meow--multicursor-around-read-from-minibuffer))
+              #'eerie--multicursor-around-read-from-minibuffer))
 
-(defun meow-multicursor-start ()
+(defun eerie-multicursor-start ()
   "Enter the canonical multicursor mode from NORMAL."
   (interactive)
-  (meow--multiedit-reset-state)
-  (meow--multicursor-reset-state)
+  (eerie--multiedit-reset-state)
+  (eerie--multicursor-reset-state)
   (when (region-active-p)
-    (meow--cancel-selection))
-  (meow--multicursor-activate)
-  (meow--switch-state 'multicursor)
-  (meow--multicursor-display-menu))
+    (eerie--cancel-selection))
+  (eerie--multicursor-activate)
+  (eerie--switch-state 'multicursor)
+  (eerie--multicursor-display-menu))
 
-(defun meow-visual-enter-multicursor ()
+(defun eerie-visual-enter-multicursor ()
   "Enter the canonical multicursor session from the current VISUAL selection."
   (interactive)
-  (unless (meow--multiedit-valid-seed-p)
+  (unless (eerie--multiedit-valid-seed-p)
     (user-error "Multicursor from visual requires an active charwise visual selection"))
-  (let ((range (meow--multiedit-current-range))
-        (backward (meow--direction-backward-p)))
-    (meow--multiedit-reset-state)
-    (meow--multicursor-reset-state)
-    (meow--multicursor-activate)
-    (meow--switch-state 'multicursor-visual)
+  (let ((range (eerie--multiedit-current-range))
+        (backward (eerie--direction-backward-p)))
+    (eerie--multiedit-reset-state)
+    (eerie--multicursor-reset-state)
+    (eerie--multicursor-activate)
+    (eerie--switch-state 'multicursor-visual)
     (thread-first
-      (meow--make-selection '(expand . char) (car range) (cdr range))
-      (meow--select t backward))
-    (setq-local meow--visual-type 'char
-                meow--visual-line-anchor nil)
-    (meow--multiedit-start-session)
-    (meow--multicursor-display-menu)))
+      (eerie--make-selection '(expand . char) (car range) (cdr range))
+      (eerie--select t backward))
+    (setq-local eerie--visual-type 'char
+                eerie--visual-line-anchor nil)
+    (eerie--multiedit-start-session)
+    (eerie--multicursor-display-menu)))
 
-(defun meow-visual-start ()
+(defun eerie-visual-start ()
   "Enter charwise VISUAL state."
   (interactive)
   (unless (region-active-p)
-    (meow--visual-select-char))
-  (setq-local meow--visual-type 'char
-              meow--visual-line-anchor nil)
-  (meow--switch-state (meow--visual-target-state)))
+    (eerie--visual-select-char))
+  (setq-local eerie--visual-type 'char
+              eerie--visual-line-anchor nil)
+  (eerie--switch-state (eerie--visual-target-state)))
 
-(defun meow--visual-line-start-basic ()
+(defun eerie--visual-line-start-basic ()
   "Enter linewise VISUAL state without reading visible-line hints."
-  (setq-local meow--visual-type 'line
-              meow--visual-line-anchor (meow--visual-line-range))
-  (meow--switch-state (meow--visual-target-state))
-  (meow-visual-line 1))
+  (setq-local eerie--visual-type 'line
+              eerie--visual-line-anchor (eerie--visual-line-range))
+  (eerie--switch-state (eerie--visual-target-state))
+  (eerie-visual-line 1))
 
-(defun meow-visual-line-start ()
+(defun eerie-visual-line-start ()
   "Enter linewise VISUAL state and offer visible line hints."
   (interactive)
-  (meow--visual-line-start-basic)
-  (when (eq (meow--jump-loop
+  (eerie--visual-line-start-basic)
+  (when (eq (eerie--jump-loop
              (lambda (dir)
-               (meow--jump-line-candidates
+               (eerie--jump-line-candidates
                 dir
-                (meow--visual-line-range)))
-             #'meow--visual-line-jump-action
+                (eerie--visual-line-range)))
+             #'eerie--visual-line-jump-action
              "line")
             'escape)
-    (meow-visual-exit)))
+    (eerie-visual-exit)))
 
-(defun meow-visual-block-start ()
+(defun eerie-visual-block-start ()
   "Enter block VISUAL state using `rectangle-mark-mode'."
   (interactive)
   (unless (region-active-p)
     (push-mark (min (1+ (point)) (point-max)) t t))
   (rectangle-mark-mode 1)
-  (setq-local meow--visual-type 'block
-              meow--visual-line-anchor nil)
-  (meow--switch-state (meow--visual-target-state)))
+  (setq-local eerie--visual-type 'block
+              eerie--visual-line-anchor nil)
+  (eerie--switch-state (eerie--visual-target-state)))
 
-(defun meow--multiedit-active-p ()
+(defun eerie--multiedit-active-p ()
   "Return non-nil when a multi-edit session is active."
-  (and meow--multiedit-seed
-       meow--multiedit-primary))
+  (and eerie--multiedit-seed
+       eerie--multiedit-primary))
 
-(defun meow--multiedit-valid-seed-p ()
+(defun eerie--multiedit-valid-seed-p ()
   "Return non-nil when the current region can seed multi-edit."
-  (and (memq (meow--current-state) '(visual multicursor-visual))
-       (eq meow--visual-type 'char)
+  (and (memq (eerie--current-state) '(visual multicursor-visual))
+       (eq eerie--visual-type 'char)
        (region-active-p)
        (< (region-beginning) (region-end))))
 
-(defun meow--multiedit-current-range ()
+(defun eerie--multiedit-current-range ()
   "Return the current active region range."
   (cons (region-beginning) (region-end)))
 
-(defun meow--multiedit-range-equal-p (left right)
+(defun eerie--multiedit-range-equal-p (left right)
   "Return non-nil when LEFT and RIGHT have the same bounds."
   (and left
        right
        (= (car left) (car right))
        (= (cdr left) (cdr right))))
 
-(defun meow--multiedit-target-member-p (range)
+(defun eerie--multiedit-target-member-p (range)
   "Return non-nil when RANGE already belongs to the multi-edit session."
   (seq-some (lambda (target)
-              (meow--multiedit-range-equal-p target range))
-            meow--multiedit-targets))
+              (eerie--multiedit-range-equal-p target range))
+            eerie--multiedit-targets))
 
-(defun meow--multiedit-overlap-p (left right)
+(defun eerie--multiedit-overlap-p (left right)
   "Return non-nil when LEFT and RIGHT overlap."
   (and (< (car left) (cdr right))
        (< (car right) (cdr left))))
 
-(defun meow--multiedit-normalize-targets (targets)
+(defun eerie--multiedit-normalize-targets (targets)
   "Return TARGETS without duplicates, erroring on partial overlaps."
   (let (result)
     (dolist (target targets)
       (unless (seq-some (lambda (existing)
-                          (meow--multiedit-range-equal-p existing target))
+                          (eerie--multiedit-range-equal-p existing target))
                         result)
         (when (seq-some (lambda (existing)
-                          (meow--multiedit-overlap-p existing target))
+                          (eerie--multiedit-overlap-p existing target))
                         result)
           (user-error "Multi-edit targets cannot overlap"))
         (push target result)))
     (nreverse result)))
 
-(defun meow--multiedit-sorted-targets (&optional reverse)
+(defun eerie--multiedit-sorted-targets (&optional reverse)
   "Return the current multi-edit targets sorted by start position.
 
 When REVERSE is non-nil, return them in reverse order."
   (let ((targets
-         (sort (copy-sequence meow--multiedit-targets)
+         (sort (copy-sequence eerie--multiedit-targets)
                (lambda (left right)
                  (< (car left) (car right))))))
     (if reverse
         (nreverse targets)
       targets)))
 
-(defun meow--multiedit-remove-overlays ()
+(defun eerie--multiedit-remove-overlays ()
   "Remove all secondary multi-edit overlays."
-  (mapc #'delete-overlay meow--multiedit-overlays)
-  (setq-local meow--multiedit-overlays nil))
+  (mapc #'delete-overlay eerie--multiedit-overlays)
+  (setq-local eerie--multiedit-overlays nil))
 
-(defun meow--multiedit-reset-state ()
+(defun eerie--multiedit-reset-state ()
   "Reset all multi-edit session state in the current buffer."
-  (meow--multiedit-remove-overlays)
-  (remove-hook 'post-command-hook #'meow--multiedit-post-command t)
-  (setq-local meow--multiedit-seed nil
-              meow--multiedit-direction 'forward
-              meow--multiedit-targets nil
-              meow--multiedit-primary nil
-              meow--multiedit-search-head nil
-              meow--multiedit-backward nil
-              meow--multiedit-replay-markers nil
-              meow--multiedit-replay-command nil))
+  (eerie--multiedit-remove-overlays)
+  (remove-hook 'post-command-hook #'eerie--multiedit-post-command t)
+  (setq-local eerie--multiedit-seed nil
+              eerie--multiedit-direction 'forward
+              eerie--multiedit-targets nil
+              eerie--multiedit-primary nil
+              eerie--multiedit-search-head nil
+              eerie--multiedit-backward nil
+              eerie--multiedit-replay-markers nil
+              eerie--multiedit-replay-command nil))
 
-(defun meow--multiedit-deactivate ()
+(defun eerie--multiedit-deactivate ()
   "Deactivate multi-edit while keeping the current selection intact."
-  (when (meow--multiedit-active-p)
-    (meow--multiedit-reset-state)))
+  (when (eerie--multiedit-active-p)
+    (eerie--multiedit-reset-state)))
 
-(defun meow--multiedit-render-overlays ()
+(defun eerie--multiedit-render-overlays ()
   "Render secondary multi-edit targets."
-  (meow--multiedit-remove-overlays)
-  (dolist (range meow--multiedit-targets)
-    (unless (and (meow--multiedit-range-equal-p range meow--multiedit-primary)
+  (eerie--multiedit-remove-overlays)
+  (dolist (range eerie--multiedit-targets)
+    (unless (and (eerie--multiedit-range-equal-p range eerie--multiedit-primary)
                  (region-active-p))
       (let ((ov (make-overlay (car range) (cdr range) nil t t)))
-        (overlay-put ov 'face 'meow-beacon-fake-selection)
+        (overlay-put ov 'face 'eerie-beacon-fake-selection)
         (overlay-put ov 'priority 1)
-        (overlay-put ov 'meow-multiedit t)
-        (push ov meow--multiedit-overlays))))
-  (setq-local meow--multiedit-overlays (nreverse meow--multiedit-overlays)))
+        (overlay-put ov 'eerie-multiedit t)
+        (push ov eerie--multiedit-overlays))))
+  (setq-local eerie--multiedit-overlays (nreverse eerie--multiedit-overlays)))
 
-(defun meow--multiedit-set-targets (targets primary)
+(defun eerie--multiedit-set-targets (targets primary)
   "Replace the current multi-edit TARGETS and select PRIMARY."
-  (setq-local meow--multiedit-targets (meow--multiedit-normalize-targets targets))
+  (setq-local eerie--multiedit-targets (eerie--multiedit-normalize-targets targets))
   (unless (seq-some (lambda (target)
-                      (meow--multiedit-range-equal-p target primary))
-                    meow--multiedit-targets)
+                      (eerie--multiedit-range-equal-p target primary))
+                    eerie--multiedit-targets)
     (user-error "Primary multi-edit target disappeared"))
-  (meow--multiedit-apply-target primary))
+  (eerie--multiedit-apply-target primary))
 
-(defun meow--multiedit-primary-text ()
+(defun eerie--multiedit-primary-text ()
   "Return the current primary multi-edit text."
-  (buffer-substring-no-properties (car meow--multiedit-primary)
-                                  (cdr meow--multiedit-primary)))
+  (buffer-substring-no-properties (car eerie--multiedit-primary)
+                                  (cdr eerie--multiedit-primary)))
 
-(defun meow--multiedit-enter-insert-state-at-point (command)
+(defun eerie--multiedit-enter-insert-state-at-point (command)
   "Enter INSERT at point for multi-edit COMMAND."
   (when (region-active-p)
-    (meow--cancel-selection))
-  (meow--enter-insert-state)
+    (eerie--cancel-selection))
+  (eerie--enter-insert-state)
   (when (if (eq command 'append)
-            meow-select-on-append
-          meow-select-on-insert)
-    (setq-local meow--insert-activate-mark t)))
+            eerie-select-on-append
+          eerie-select-on-insert)
+    (setq-local eerie--insert-activate-mark t)))
 
-(defun meow--multiedit-start-replay (command markers)
+(defun eerie--multiedit-start-replay (command markers)
   "Start a multi-edit replay session for COMMAND using MARKERS."
-  (setq-local meow--multiedit-replay-markers markers
-              meow--multiedit-replay-command command)
-  (meow--multiedit-enter-insert-state-at-point command)
+  (setq-local eerie--multiedit-replay-markers markers
+              eerie--multiedit-replay-command command)
+  (eerie--multiedit-enter-insert-state-at-point command)
   (setq last-kbd-macro nil)
   (call-interactively #'kmacro-start-macro))
 
-(defun meow--multiedit-position-for-target (target command)
+(defun eerie--multiedit-position-for-target (target command)
   "Return the insert position for TARGET under multi-edit COMMAND."
   (funcall (if (eq command 'append) #'cdr #'car) target))
 
-(defun meow--replay-target-goto (target)
+(defun eerie--replay-target-goto (target)
   "Move point to replay TARGET.
 
 TARGET is either a marker or a cons cell of the form
@@ -1639,138 +1639,138 @@ TARGET is either a marker or a cons cell of the form
        t))
     (_ nil)))
 
-(defun meow--multiedit-delete-all-targets ()
+(defun eerie--multiedit-delete-all-targets ()
   "Delete every current multi-edit target."
-  (let ((primary-marker (copy-marker (car meow--multiedit-primary)))
-        (primary-text (meow--multiedit-primary-text))
-        (targets (meow--multiedit-sorted-targets t)))
-    (meow--multiedit-reset-state)
-    (meow--wrap-collapse-undo
+  (let ((primary-marker (copy-marker (car eerie--multiedit-primary)))
+        (primary-text (eerie--multiedit-primary-text))
+        (targets (eerie--multiedit-sorted-targets t)))
+    (eerie--multiedit-reset-state)
+    (eerie--wrap-collapse-undo
       (dolist (target targets)
-        (meow--delete-region (car target) (cdr target))))
+        (eerie--delete-region (car target) (cdr target))))
     (kill-new primary-text)
     (when (region-active-p)
-      (meow--cancel-selection))
-    (when meow--multicursor-active
-      (meow--multicursor-reset-state))
+      (eerie--cancel-selection))
+    (when eerie--multicursor-active
+      (eerie--multicursor-reset-state))
     (goto-char primary-marker)
-    (meow--switch-state 'normal)))
+    (eerie--switch-state 'normal)))
 
-(defun meow--multiedit-start-change ()
+(defun eerie--multiedit-start-change ()
   "Delete every current multi-edit target and start replay-backed INSERT."
-  (let* ((sorted-targets (meow--multiedit-sorted-targets))
-         (primary-range meow--multiedit-primary)
+  (let* ((sorted-targets (eerie--multiedit-sorted-targets))
+         (primary-range eerie--multiedit-primary)
          (primary-marker (copy-marker (car primary-range)))
          (secondary-markers
           (delq nil
                 (mapcar (lambda (target)
-                          (unless (meow--multiedit-range-equal-p target primary-range)
+                          (unless (eerie--multiedit-range-equal-p target primary-range)
                             (copy-marker (car target))))
                         sorted-targets)))
-         (primary-text (meow--multiedit-primary-text)))
-    (meow--multiedit-reset-state)
-    (meow--wrap-collapse-undo
+         (primary-text (eerie--multiedit-primary-text)))
+    (eerie--multiedit-reset-state)
+    (eerie--wrap-collapse-undo
       (dolist (target (reverse sorted-targets))
-        (meow--delete-region (car target) (cdr target))))
+        (eerie--delete-region (car target) (cdr target))))
     (kill-new primary-text)
     (goto-char primary-marker)
-    (meow--multiedit-start-replay 'insert secondary-markers)))
+    (eerie--multiedit-start-replay 'insert secondary-markers)))
 
-(defun meow--multiedit-start-insert-or-append (command)
+(defun eerie--multiedit-start-insert-or-append (command)
   "Start multi-edit replay for COMMAND without deleting the targets."
-  (let* ((sorted-targets (meow--multiedit-sorted-targets))
-         (primary-range meow--multiedit-primary)
+  (let* ((sorted-targets (eerie--multiedit-sorted-targets))
+         (primary-range eerie--multiedit-primary)
          (primary-position
-          (meow--multiedit-position-for-target primary-range command))
+          (eerie--multiedit-position-for-target primary-range command))
          (secondary-markers
           (delq nil
                 (mapcar (lambda (target)
-                          (unless (meow--multiedit-range-equal-p target primary-range)
+                          (unless (eerie--multiedit-range-equal-p target primary-range)
                             (copy-marker
-                             (meow--multiedit-position-for-target target command))))
+                             (eerie--multiedit-position-for-target target command))))
                         sorted-targets))))
-    (meow--multiedit-reset-state)
+    (eerie--multiedit-reset-state)
     (goto-char primary-position)
-    (meow--multiedit-start-replay command secondary-markers)))
+    (eerie--multiedit-start-replay command secondary-markers)))
 
-(defun meow--multiedit-apply-replay ()
+(defun eerie--multiedit-apply-replay ()
   "Replay the last multi-edit insert or change at all secondary markers."
-  (let* ((markers meow--multiedit-replay-markers)
-         (command meow--multiedit-replay-command)
-         (inserted-text (buffer-substring-no-properties meow--insert-pos (point))))
-    (setq-local meow--multiedit-replay-markers nil
-                meow--multiedit-replay-command nil)
+  (let* ((markers eerie--multiedit-replay-markers)
+         (command eerie--multiedit-replay-command)
+         (inserted-text (buffer-substring-no-properties eerie--insert-pos (point))))
+    (setq-local eerie--multiedit-replay-markers nil
+                eerie--multiedit-replay-command nil)
     (when defining-kbd-macro
       (end-kbd-macro))
     (let ((use-macro (and last-kbd-macro
                           (> (length last-kbd-macro) 0))))
-      (meow--switch-state 'normal)
-      (meow--wrap-collapse-undo
+      (eerie--switch-state 'normal)
+      (eerie--wrap-collapse-undo
         (save-mark-and-excursion
           (dolist (marker markers)
-            (when (meow--replay-target-goto marker)
+            (when (eerie--replay-target-goto marker)
               (if use-macro
                   (progn
-                    (meow--multiedit-enter-insert-state-at-point command)
+                    (eerie--multiedit-enter-insert-state-at-point command)
                     (call-interactively #'kmacro-call-macro)
-                    (meow-escape-or-normal-modal))
-                (meow--insert inserted-text)))))))
-    (when meow--multicursor-active
-      (meow--multicursor-reset-state))
-    (meow--switch-state 'normal)))
+                    (eerie-escape-or-normal-modal))
+                (eerie--insert inserted-text)))))))
+    (when eerie--multicursor-active
+      (eerie--multicursor-reset-state))
+    (eerie--switch-state 'normal)))
 
-(defun meow--multiedit-apply-target (range)
+(defun eerie--multiedit-apply-target (range)
   "Select RANGE as the current active multi-edit target."
-  (setq-local meow--multiedit-primary range
-              meow--multiedit-search-head range)
+  (setq-local eerie--multiedit-primary range
+              eerie--multiedit-search-head range)
   (thread-first
-    (meow--make-selection '(expand . char) (car range) (cdr range))
-    (meow--select t meow--multiedit-backward))
-  (setq-local meow--visual-type 'char)
-  (meow--multiedit-render-overlays)
-  (meow--ensure-visible))
+    (eerie--make-selection '(expand . char) (car range) (cdr range))
+    (eerie--select t eerie--multiedit-backward))
+  (setq-local eerie--visual-type 'char)
+  (eerie--multiedit-render-overlays)
+  (eerie--ensure-visible))
 
-(defun meow--multiedit-start-session ()
+(defun eerie--multiedit-start-session ()
   "Start a multi-edit session from the current charwise VISUAL selection."
-  (unless (meow--multiedit-valid-seed-p)
+  (unless (eerie--multiedit-valid-seed-p)
     (user-error "Multi-edit requires an active charwise visual selection"))
-  (let ((range (meow--multiedit-current-range)))
-    (setq-local meow--multiedit-seed
+  (let ((range (eerie--multiedit-current-range)))
+    (setq-local eerie--multiedit-seed
                 (buffer-substring-no-properties (car range) (cdr range))
-                meow--multiedit-direction 'forward
-                meow--multiedit-targets (list range)
-                meow--multiedit-primary range
-                meow--multiedit-search-head range
-                meow--multiedit-backward (meow--direction-backward-p))
-    (add-hook 'post-command-hook #'meow--multiedit-post-command nil t)
-    (meow--multiedit-render-overlays)))
+                eerie--multiedit-direction 'forward
+                eerie--multiedit-targets (list range)
+                eerie--multiedit-primary range
+                eerie--multiedit-search-head range
+                eerie--multiedit-backward (eerie--direction-backward-p))
+    (add-hook 'post-command-hook #'eerie--multiedit-post-command nil t)
+    (eerie--multiedit-render-overlays)))
 
-(defun meow--multiedit-ensure-session ()
+(defun eerie--multiedit-ensure-session ()
   "Ensure there is an active multi-edit session."
-  (unless (meow--multiedit-active-p)
-    (meow--multiedit-start-session)))
+  (unless (eerie--multiedit-active-p)
+    (eerie--multiedit-start-session)))
 
-(defun meow--multiedit-find-next-match (&optional direction)
+(defun eerie--multiedit-find-next-match (&optional direction)
   "Return the next unselected match in DIRECTION.
 
 When DIRECTION is nil, use the current multi-edit direction."
   (let ((case-fold-search nil)
-        (direction (or direction meow--multiedit-direction))
-        (regexp (regexp-quote meow--multiedit-seed)))
+        (direction (or direction eerie--multiedit-direction))
+        (regexp (regexp-quote eerie--multiedit-seed)))
     (save-excursion
       (goto-char (if (eq direction 'backward)
-                     (car meow--multiedit-search-head)
-                   (cdr meow--multiedit-search-head)))
+                     (car eerie--multiedit-search-head)
+                   (cdr eerie--multiedit-search-head)))
       (catch 'match
         (while (if (eq direction 'backward)
                    (re-search-backward regexp nil t)
                  (re-search-forward regexp nil t))
           (let ((range (cons (match-beginning 0) (match-end 0))))
-            (unless (meow--multiedit-target-member-p range)
+            (unless (eerie--multiedit-target-member-p range)
               (throw 'match range))))
         nil))))
 
-(defun meow--visual-block-column-bounds ()
+(defun eerie--visual-block-column-bounds ()
   "Return the ordered column bounds of the active block selection."
   (let ((point-column (current-column))
         (mark-column (save-excursion
@@ -1779,13 +1779,13 @@ When DIRECTION is nil, use the current multi-edit direction."
     (cons (min point-column mark-column)
           (max point-column mark-column))))
 
-(defun meow--visual-block-replay-targets (command)
+(defun eerie--visual-block-replay-targets (command)
   "Return replay targets for the active block selection under COMMAND.
 
 COMMAND is either `insert' or `append'.  The return value is a cons
 cell of the form \(PRIMARY . SECONDARY), where PRIMARY is the target
 for the current line and SECONDARY is the list of other line targets."
-  (let* ((column-bounds (meow--visual-block-column-bounds))
+  (let* ((column-bounds (eerie--visual-block-column-bounds))
          (target-column (if (eq command 'append)
                             (cdr column-bounds)
                           (car column-bounds)))
@@ -1806,336 +1806,336 @@ for the current line and SECONDARY is the list of other line targets."
       (user-error "Block insert target disappeared"))
     (cons primary (nreverse secondary))))
 
-(defun meow--clear-visual-region ()
+(defun eerie--clear-visual-region ()
   "Clear the active VISUAL region and rectangle state."
   (when (bound-and-true-p rectangle-mark-mode)
     (rectangle-mark-mode -1))
   (when (region-active-p)
-    (meow--cancel-selection)))
+    (eerie--cancel-selection)))
 
-(defun meow--finish-visual-exit (state)
+(defun eerie--finish-visual-exit (state)
   "Clear the active VISUAL state and switch to STATE."
-  (meow--clear-visual-region)
-  (meow--switch-state state))
+  (eerie--clear-visual-region)
+  (eerie--switch-state state))
 
-(defun meow--visual-block-start-replay (command)
+(defun eerie--visual-block-start-replay (command)
   "Start block VISUAL replay-backed insert for COMMAND.
 
 COMMAND is either `insert' or `append'."
   (pcase-let ((`(,primary . ,secondary)
-               (meow--visual-block-replay-targets command)))
-    (meow--clear-visual-region)
-    (unless (meow--replay-target-goto primary)
+               (eerie--visual-block-replay-targets command)))
+    (eerie--clear-visual-region)
+    (unless (eerie--replay-target-goto primary)
       (user-error "Block insert target disappeared"))
-    (meow--multiedit-start-replay command secondary)))
+    (eerie--multiedit-start-replay command secondary)))
 
-(defun meow--multiedit-post-command ()
+(defun eerie--multiedit-post-command ()
   "Deactivate multi-edit after unsupported commands."
-  (unless (or (not (meow--multiedit-active-p))
+  (unless (or (not (eerie--multiedit-active-p))
               (memq this-command
-                    '(meow-multiedit-match-next
-                      meow-multiedit-unmatch-last
-                      meow-multiedit-skip-match
-                      meow-multiedit-reverse-direction
-                      meow-visual-enter-multicursor
-                      meow-multicursor-match-next
-                      meow-multicursor-unmatch-last
-                      meow-multicursor-skip-match
-                      meow-multiedit-clear
-                      meow-visual-inner-of-thing
-                      meow-visual-bounds-of-thing
-                      meow-multicursor-spawn
-                      meow-multicursor-visual-exit
-                      meow-visual-exit)))
-    (meow--multiedit-deactivate)))
+                    '(eerie-multiedit-match-next
+                      eerie-multiedit-unmatch-last
+                      eerie-multiedit-skip-match
+                      eerie-multiedit-reverse-direction
+                      eerie-visual-enter-multicursor
+                      eerie-multicursor-match-next
+                      eerie-multicursor-unmatch-last
+                      eerie-multicursor-skip-match
+                      eerie-multiedit-clear
+                      eerie-visual-inner-of-thing
+                      eerie-visual-bounds-of-thing
+                      eerie-multicursor-spawn
+                      eerie-multicursor-visual-exit
+                      eerie-visual-exit)))
+    (eerie--multiedit-deactivate)))
 
-(defun meow--multicursor-copy-marker (pos)
+(defun eerie--multicursor-copy-marker (pos)
   "Return a new marker at POS."
   (when pos
     (copy-marker pos)))
 
-(defun meow--multicursor-marker-position (marker)
+(defun eerie--multicursor-marker-position (marker)
   "Return the current buffer position for MARKER."
   (cond
    ((markerp marker) (marker-position marker))
    ((integerp marker) marker)
    (t nil)))
 
-(defun meow--multicursor-release-marker (marker)
+(defun eerie--multicursor-release-marker (marker)
   "Release MARKER when it is live."
   (when (markerp marker)
     (set-marker marker nil)))
 
-(defun meow--multicursor-release-anchor (anchor)
+(defun eerie--multicursor-release-anchor (anchor)
   "Release the markers stored in linewise visual ANCHOR."
   (when anchor
-    (meow--multicursor-release-marker (car anchor))
-    (meow--multicursor-release-marker (cdr anchor))))
+    (eerie--multicursor-release-marker (car anchor))
+    (eerie--multicursor-release-marker (cdr anchor))))
 
-(defun meow--multicursor-release-snapshot (snapshot)
+(defun eerie--multicursor-release-snapshot (snapshot)
   "Release the markers held by multicursor SNAPSHOT."
   (when snapshot
-    (meow--multicursor-release-marker (plist-get snapshot :point))
-    (meow--multicursor-release-marker (plist-get snapshot :mark))
-    (meow--multicursor-release-anchor (plist-get snapshot :visual-line-anchor))))
+    (eerie--multicursor-release-marker (plist-get snapshot :point))
+    (eerie--multicursor-release-marker (plist-get snapshot :mark))
+    (eerie--multicursor-release-anchor (plist-get snapshot :visual-line-anchor))))
 
-(defun meow--multicursor-pre-command ()
+(defun eerie--multicursor-pre-command ()
   "Capture the primary command key sequence for multi-cursor replay."
-  (when (and meow--multicursor-active
-             (not meow--multicursor-replaying))
-    (setq-local meow--multicursor-command-keys
+  (when (and eerie--multicursor-active
+             (not eerie--multicursor-replaying))
+    (setq-local eerie--multicursor-command-keys
                 (condition-case nil
                     (this-command-keys-vector)
                   (error []))
-                meow--multicursor-command this-command
-                meow--multicursor-prefix-arg current-prefix-arg
-                meow--multicursor-read-events nil)))
+                eerie--multicursor-command this-command
+                eerie--multicursor-prefix-arg current-prefix-arg
+                eerie--multicursor-read-events nil)))
 
-(defun meow--multicursor-record-read-event (event)
+(defun eerie--multicursor-record-read-event (event)
   "Record EVENT as extra multi-cursor command input."
-  (when (and meow--multicursor-active
-             (not meow--multicursor-replaying))
-    (push event meow--multicursor-read-events))
+  (when (and eerie--multicursor-active
+             (not eerie--multicursor-replaying))
+    (push event eerie--multicursor-read-events))
   event)
 
-(defun meow--multicursor-consume-replay-input ()
+(defun eerie--multicursor-consume-replay-input ()
   "Return the next queued replay input for the current multi-cursor command."
-  (if meow--multicursor-replay-inputs
-      (prog1 (car meow--multicursor-replay-inputs)
-        (setq meow--multicursor-replay-inputs
-              (cdr meow--multicursor-replay-inputs)))
+  (if eerie--multicursor-replay-inputs
+      (prog1 (car eerie--multicursor-replay-inputs)
+        (setq eerie--multicursor-replay-inputs
+              (cdr eerie--multicursor-replay-inputs)))
     (user-error "Missing multi-cursor replay input")))
 
-(defun meow--multicursor-around-read-key (orig &rest args)
+(defun eerie--multicursor-around-read-key (orig &rest args)
   "Record read-key input via ORIG with ARGS for multi-cursor replay."
-  (if meow--multicursor-replaying
-      (meow--multicursor-consume-replay-input)
-    (meow--multicursor-record-read-event (apply orig args))))
+  (if eerie--multicursor-replaying
+      (eerie--multicursor-consume-replay-input)
+    (eerie--multicursor-record-read-event (apply orig args))))
 
-(defun meow--multicursor-around-read-char (orig &rest args)
+(defun eerie--multicursor-around-read-char (orig &rest args)
   "Record read-char input via ORIG with ARGS for multi-cursor replay."
-  (if meow--multicursor-replaying
-      (meow--multicursor-consume-replay-input)
-    (meow--multicursor-record-read-event (apply orig args))))
+  (if eerie--multicursor-replaying
+      (eerie--multicursor-consume-replay-input)
+    (eerie--multicursor-record-read-event (apply orig args))))
 
-(defun meow--multicursor-around-read-from-minibuffer (orig &rest args)
+(defun eerie--multicursor-around-read-from-minibuffer (orig &rest args)
   "Record minibuffer input via ORIG with ARGS for multi-cursor replay."
-  (if meow--multicursor-replaying
-      (meow--multicursor-consume-replay-input)
-    (meow--multicursor-record-read-event (apply orig args))))
+  (if eerie--multicursor-replaying
+      (eerie--multicursor-consume-replay-input)
+    (eerie--multicursor-record-read-event (apply orig args))))
 
-(defun meow--multicursor-normalize-state (state)
+(defun eerie--multicursor-normalize-state (state)
   "Return the multicursor-aware version of STATE."
   (pcase state
     ((or 'normal 'multicursor) 'multicursor)
     ((or 'visual 'multicursor-visual) 'multicursor-visual)
     (_ state)))
 
-(defun meow--multicursor-current-snapshot ()
+(defun eerie--multicursor-current-snapshot ()
   "Return the current multicursor primary snapshot."
-  (list :state (meow--multicursor-normalize-state (meow--current-state))
-        :point (meow--multicursor-copy-marker (point))
+  (list :state (eerie--multicursor-normalize-state (eerie--current-state))
+        :point (eerie--multicursor-copy-marker (point))
         :mark (when (region-active-p)
-                (meow--multicursor-copy-marker (mark t)))
+                (eerie--multicursor-copy-marker (mark t)))
         :selection-type (when (region-active-p)
-                          (meow--selection-type))
-        :visual-type meow--visual-type
-        :visual-line-anchor (when meow--visual-line-anchor
+                          (eerie--selection-type))
+        :visual-type eerie--visual-type
+        :visual-line-anchor (when eerie--visual-line-anchor
                               (cons
-                               (meow--multicursor-copy-marker
-                                (car meow--visual-line-anchor))
-                               (meow--multicursor-copy-marker
-                                (cdr meow--visual-line-anchor))))
+                               (eerie--multicursor-copy-marker
+                                (car eerie--visual-line-anchor))
+                               (eerie--multicursor-copy-marker
+                                (cdr eerie--visual-line-anchor))))
         :rectangle (bound-and-true-p rectangle-mark-mode)))
 
-(defun meow--multicursor-snapshot-point (snapshot)
+(defun eerie--multicursor-snapshot-point (snapshot)
   "Return the point position stored in SNAPSHOT."
-  (meow--multicursor-marker-position (plist-get snapshot :point)))
+  (eerie--multicursor-marker-position (plist-get snapshot :point)))
 
-(defun meow--multicursor-snapshot-mark (snapshot)
+(defun eerie--multicursor-snapshot-mark (snapshot)
   "Return the mark position stored in SNAPSHOT."
-  (meow--multicursor-marker-position (plist-get snapshot :mark)))
+  (eerie--multicursor-marker-position (plist-get snapshot :mark)))
 
-(defun meow--multicursor-snapshot-range (snapshot)
+(defun eerie--multicursor-snapshot-range (snapshot)
   "Return the active region range stored in SNAPSHOT, or nil."
-  (let ((point-pos (meow--multicursor-snapshot-point snapshot))
-        (mark-pos (meow--multicursor-snapshot-mark snapshot)))
+  (let ((point-pos (eerie--multicursor-snapshot-point snapshot))
+        (mark-pos (eerie--multicursor-snapshot-mark snapshot)))
     (when (and point-pos mark-pos (/= point-pos mark-pos))
       (cons (min point-pos mark-pos)
             (max point-pos mark-pos)))))
 
-(defun meow--multicursor-clear-live-selection ()
+(defun eerie--multicursor-clear-live-selection ()
   "Clear the current live selection before restoring another cursor snapshot."
   (when (bound-and-true-p rectangle-mark-mode)
     (rectangle-mark-mode -1))
-  (setq-local meow--selection nil
-              meow--selection-history nil
-              meow--visual-type nil
-              meow--visual-line-anchor nil)
+  (setq-local eerie--selection nil
+              eerie--selection-history nil
+              eerie--visual-type nil
+              eerie--visual-line-anchor nil)
   (deactivate-mark t))
 
-(defun meow--multicursor-apply-snapshot (snapshot)
+(defun eerie--multicursor-apply-snapshot (snapshot)
   "Restore multicursor SNAPSHOT into the current buffer state."
   (let ((state (plist-get snapshot :state))
-        (point-pos (meow--multicursor-snapshot-point snapshot))
-        (mark-pos (meow--multicursor-snapshot-mark snapshot))
+        (point-pos (eerie--multicursor-snapshot-point snapshot))
+        (mark-pos (eerie--multicursor-snapshot-mark snapshot))
         (selection-type (plist-get snapshot :selection-type))
         (visual-type (plist-get snapshot :visual-type))
         (anchor (plist-get snapshot :visual-line-anchor)))
-    (meow--multicursor-clear-live-selection)
+    (eerie--multicursor-clear-live-selection)
     (when point-pos
       (goto-char point-pos))
     (when state
-      (meow--switch-state state))
+      (eerie--switch-state state))
     (when (and selection-type mark-pos point-pos
                (not (plist-get snapshot :rectangle)))
-      (meow--select-without-history
+      (eerie--select-without-history
        (list selection-type mark-pos point-pos)))
     (when (plist-get snapshot :rectangle)
       (when mark-pos
         (push-mark mark-pos t t)
         (rectangle-mark-mode 1)))
-    (setq-local meow--visual-type visual-type
-                meow--visual-line-anchor
+    (setq-local eerie--visual-type visual-type
+                eerie--visual-line-anchor
                 (when anchor
-                  (cons (meow--multicursor-marker-position (car anchor))
-                        (meow--multicursor-marker-position (cdr anchor)))))))
+                  (cons (eerie--multicursor-marker-position (car anchor))
+                        (eerie--multicursor-marker-position (cdr anchor)))))))
 
-(defun meow--multicursor-overlay-start (pos)
+(defun eerie--multicursor-overlay-start (pos)
   "Return the display start position for a fake cursor at POS."
   (cond
    ((<= (point-max) (point-min))
     (point-min))
    ((>= pos (point-max))
     (1- (point-max)))
-   ((and meow-use-cursor-position-hack
+   ((and eerie-use-cursor-position-hack
          (> pos (point-min)))
     (1- pos))
    (t pos)))
 
-(defun meow--multicursor-overlay-end (start)
+(defun eerie--multicursor-overlay-end (start)
   "Return the display end position for a fake cursor starting at START."
   (if (< start (point-max))
       (1+ start)
     start))
 
-(defun meow--multicursor-overlay-snapshot (ov)
+(defun eerie--multicursor-overlay-snapshot (ov)
   "Return the multicursor snapshot stored on OV."
-  (overlay-get ov 'meow-multicursor-snapshot))
+  (overlay-get ov 'eerie-multicursor-snapshot))
 
-(defun meow--multicursor-overlay-point (ov)
+(defun eerie--multicursor-overlay-point (ov)
   "Return the current fake-cursor point stored on OV."
-  (meow--multicursor-snapshot-point
-   (meow--multicursor-overlay-snapshot ov)))
+  (eerie--multicursor-snapshot-point
+   (eerie--multicursor-overlay-snapshot ov)))
 
-(defun meow--multicursor-overlay-range (snapshot)
+(defun eerie--multicursor-overlay-range (snapshot)
   "Return the display range for SNAPSHOT."
-  (or (meow--multicursor-snapshot-range snapshot)
-      (when-let ((pos (meow--multicursor-snapshot-point snapshot)))
-        (let ((start (meow--multicursor-overlay-start pos)))
-          (cons start (meow--multicursor-overlay-end start))))))
+  (or (eerie--multicursor-snapshot-range snapshot)
+      (when-let ((pos (eerie--multicursor-snapshot-point snapshot)))
+        (let ((start (eerie--multicursor-overlay-start pos)))
+          (cons start (eerie--multicursor-overlay-end start))))))
 
-(defun meow--multicursor-render-overlay (ov snapshot)
+(defun eerie--multicursor-render-overlay (ov snapshot)
   "Render OV using multicursor SNAPSHOT."
-  (when-let ((range (meow--multicursor-overlay-range snapshot)))
+  (when-let ((range (eerie--multicursor-overlay-range snapshot)))
     (move-overlay ov (car range) (cdr range))
     (overlay-put ov 'face
-                 (if (meow--multicursor-snapshot-range snapshot)
-                     'meow-beacon-fake-selection
-                   'meow-beacon-fake-cursor))
+                 (if (eerie--multicursor-snapshot-range snapshot)
+                     'eerie-beacon-fake-selection
+                   'eerie-beacon-fake-cursor))
     (overlay-put ov 'priority 1)
-    (overlay-put ov 'meow-multicursor-snapshot snapshot)
-    (overlay-put ov 'meow-multicursor-point (plist-get snapshot :point))))
+    (overlay-put ov 'eerie-multicursor-snapshot snapshot)
+    (overlay-put ov 'eerie-multicursor-point (plist-get snapshot :point))))
 
-(defun meow--multicursor-set-overlay-snapshot (ov snapshot)
+(defun eerie--multicursor-set-overlay-snapshot (ov snapshot)
   "Replace OV with multicursor SNAPSHOT and rerender it."
-  (when-let ((old (meow--multicursor-overlay-snapshot ov)))
-    (meow--multicursor-release-snapshot old))
-  (meow--multicursor-render-overlay ov snapshot))
+  (when-let ((old (eerie--multicursor-overlay-snapshot ov)))
+    (eerie--multicursor-release-snapshot old))
+  (eerie--multicursor-render-overlay ov snapshot))
 
-(defun meow--multicursor-cursor-snapshot (pos)
+(defun eerie--multicursor-cursor-snapshot (pos)
   "Return a normal multicursor cursor snapshot at POS."
   (list :state 'multicursor
-        :point (meow--multicursor-copy-marker pos)
+        :point (eerie--multicursor-copy-marker pos)
         :mark nil
         :selection-type nil
         :visual-type nil
         :visual-line-anchor nil
         :rectangle nil))
 
-(defun meow--multicursor-add-overlay (pos)
+(defun eerie--multicursor-add-overlay (pos)
   "Add a fake cursor overlay for actual point POS."
   (let ((ov (make-overlay (point-min) (point-min) nil t t)))
-    (meow--multicursor-set-overlay-snapshot
+    (eerie--multicursor-set-overlay-snapshot
      ov
-     (meow--multicursor-cursor-snapshot pos))
-    (push ov meow--beacon-overlays)))
+     (eerie--multicursor-cursor-snapshot pos))
+    (push ov eerie--beacon-overlays)))
 
-(defun meow--multicursor-secondary-overlays ()
+(defun eerie--multicursor-secondary-overlays ()
   "Return multi-cursor overlays sorted from buffer end to start."
-  (sort (copy-sequence meow--beacon-overlays)
+  (sort (copy-sequence eerie--beacon-overlays)
         (lambda (left right)
-          (> (or (meow--multicursor-overlay-point left) (point-min))
-             (or (meow--multicursor-overlay-point right) (point-min))))))
+          (> (or (eerie--multicursor-overlay-point left) (point-min))
+             (or (eerie--multicursor-overlay-point right) (point-min))))))
 
-(defun meow--multicursor-reset-state ()
+(defun eerie--multicursor-reset-state ()
   "Reset the current multi-cursor state."
-  (let ((was-active meow--multicursor-active))
-  (advice-remove 'read-key #'meow--multicursor-around-read-key)
-  (advice-remove 'read-char #'meow--multicursor-around-read-char)
+  (let ((was-active eerie--multicursor-active))
+  (advice-remove 'read-key #'eerie--multicursor-around-read-key)
+  (advice-remove 'read-char #'eerie--multicursor-around-read-char)
   (advice-remove 'read-from-minibuffer
-                 #'meow--multicursor-around-read-from-minibuffer)
-  (remove-hook 'pre-command-hook #'meow--multicursor-pre-command t)
-  (remove-hook 'post-command-hook #'meow--multicursor-post-command t)
-  (setq-local meow--multicursor-active nil
-              meow--multicursor-replaying nil
-              meow--multicursor-last-command nil
-              meow--multicursor-command-keys nil
-              meow--multicursor-read-events nil
-              meow--multicursor-command nil
-              meow--multicursor-prefix-arg nil
-              meow--multicursor-replay-inputs nil)
+                 #'eerie--multicursor-around-read-from-minibuffer)
+  (remove-hook 'pre-command-hook #'eerie--multicursor-pre-command t)
+  (remove-hook 'post-command-hook #'eerie--multicursor-post-command t)
+  (setq-local eerie--multicursor-active nil
+              eerie--multicursor-replaying nil
+              eerie--multicursor-last-command nil
+              eerie--multicursor-command-keys nil
+              eerie--multicursor-read-events nil
+              eerie--multicursor-command nil
+              eerie--multicursor-prefix-arg nil
+              eerie--multicursor-replay-inputs nil)
   (when was-active
-    (meow--keypad-clear-message))
+    (eerie--keypad-clear-message))
   (mapc (lambda (ov)
           (when (overlayp ov)
-            (meow--multicursor-release-snapshot
-             (meow--multicursor-overlay-snapshot ov))))
-        meow--beacon-overlays)
-  (meow--beacon-remove-overlays)))
+            (eerie--multicursor-release-snapshot
+             (eerie--multicursor-overlay-snapshot ov))))
+        eerie--beacon-overlays)
+  (eerie--beacon-remove-overlays)))
 
-(defun meow-multicursor-cancel ()
+(defun eerie-multicursor-cancel ()
   "Cancel the current multi-cursor session and return to NORMAL."
   (interactive)
-  (meow--multiedit-reset-state)
-  (meow--multicursor-reset-state)
-  (meow--finish-visual-exit 'normal))
+  (eerie--multiedit-reset-state)
+  (eerie--multicursor-reset-state)
+  (eerie--finish-visual-exit 'normal))
 
-(defun meow--multicursor-primary-offset ()
+(defun eerie--multicursor-primary-offset ()
   "Return the current point offset inside the primary multi-edit target."
-  (let* ((range meow--multiedit-primary)
+  (let* ((range eerie--multiedit-primary)
          (offset (- (point) (car range))))
     (max 0 (min offset (- (cdr range) (car range))))))
 
-(defun meow--multicursor-position-for-target (target offset)
+(defun eerie--multicursor-position-for-target (target offset)
   "Return the multi-cursor point for TARGET using OFFSET."
   (max (car target)
        (min (cdr target)
             (+ (car target) offset))))
 
-(defun meow--multicursor-insert-kind (command)
+(defun eerie--multicursor-insert-kind (command)
   "Return the current multi-cursor insert COMMAND kind, or nil."
   (pcase command
-    ('meow-insert 'insert)
-    ('meow-append 'append)
-    ('meow-insert-beginning-of-line 'insert-bol)
-    ('meow-append-end-of-line 'append-eol)
+    ('eerie-insert 'insert)
+    ('eerie-append 'append)
+    ('eerie-insert-beginning-of-line 'insert-bol)
+    ('eerie-append-end-of-line 'append-eol)
     (_ nil)))
 
-(defun meow--multicursor-marker-for-overlay (ov kind)
+(defun eerie--multicursor-marker-for-overlay (ov kind)
   "Return a replay marker for cursor overlay OV under KIND."
   (save-excursion
-    (goto-char (meow--multicursor-overlay-point ov))
+    (goto-char (eerie--multicursor-overlay-point ov))
     (copy-marker
      (pcase kind
        ('insert (point))
@@ -2145,38 +2145,38 @@ COMMAND is either `insert' or `append'."
        ('insert-bol (line-beginning-position))
        ('append-eol (line-end-position))))))
 
-(defun meow--multicursor-prepare-insert-replay (kind)
+(defun eerie--multicursor-prepare-insert-replay (kind)
   "Prepare replay markers for multi-cursor insert KIND."
-  (advice-remove 'read-key #'meow--multicursor-around-read-key)
-  (advice-remove 'read-char #'meow--multicursor-around-read-char)
+  (advice-remove 'read-key #'eerie--multicursor-around-read-key)
+  (advice-remove 'read-char #'eerie--multicursor-around-read-char)
   (advice-remove 'read-from-minibuffer
-                 #'meow--multicursor-around-read-from-minibuffer)
-  (remove-hook 'pre-command-hook #'meow--multicursor-pre-command t)
-  (remove-hook 'post-command-hook #'meow--multicursor-post-command t)
-  (setq-local meow--multiedit-replay-markers
+                 #'eerie--multicursor-around-read-from-minibuffer)
+  (remove-hook 'pre-command-hook #'eerie--multicursor-pre-command t)
+  (remove-hook 'post-command-hook #'eerie--multicursor-post-command t)
+  (setq-local eerie--multiedit-replay-markers
               (mapcar (lambda (ov)
-                        (meow--multicursor-marker-for-overlay ov kind))
-                      (meow--multicursor-secondary-overlays))
-              meow--multiedit-replay-command
+                        (eerie--multicursor-marker-for-overlay ov kind))
+                      (eerie--multicursor-secondary-overlays))
+              eerie--multiedit-replay-command
               (if (memq kind '(append append-eol))
                   'append
                 'insert)
-              meow--multicursor-command nil
-              meow--multicursor-prefix-arg nil
-              meow--multicursor-command-keys nil
-              meow--multicursor-read-events nil
-              meow--multicursor-replay-inputs nil)
+              eerie--multicursor-command nil
+              eerie--multicursor-prefix-arg nil
+              eerie--multicursor-command-keys nil
+              eerie--multicursor-read-events nil
+              eerie--multicursor-replay-inputs nil)
   (setq last-kbd-macro nil)
   (call-interactively #'kmacro-start-macro))
 
-(defun meow--multicursor-replay-jump-char (inputs)
-  "Replay `meow-jump-char' using INPUTS for the current cursor."
+(defun eerie--multicursor-replay-jump-char (inputs)
+  "Replay `eerie-jump-char' using INPUTS for the current cursor."
   (let ((char (car inputs))
         (events (cdr inputs))
         (direction 'forward))
     (unless char
       (user-error "Missing jump char input"))
-    (meow--cancel-selection)
+    (eerie--cancel-selection)
     (catch 'done
       (dolist (event events)
         (let ((key (if (integerp event)
@@ -2191,75 +2191,75 @@ COMMAND is either `insert' or `append'."
             (let* ((regex (regexp-quote (string (if (eq char 13) ?\n char))))
                    (candidate (nth (1- (- key ?0))
                                    (seq-take
-                                    (meow--jump-regexp-candidates regex direction)
+                                    (eerie--jump-regexp-candidates regex direction)
                                     9))))
               (when candidate
-                (meow--jump-char-action candidate))
+                (eerie--jump-char-action candidate))
               (throw 'done t)))
            (t
             (throw 'done t))))))))
 
-(defun meow--multicursor-replay-visual-text-object (kind inputs)
+(defun eerie--multicursor-replay-visual-text-object (kind inputs)
   "Replay a visual text object of KIND using INPUTS for the current cursor."
   (let* ((ch (car inputs))
-         (thing (and ch (meow--vim-text-object-for-char ch))))
+         (thing (and ch (eerie--vim-text-object-for-char ch))))
     (unless thing
       (user-error "Missing visual text object input"))
-    (meow--select-vim-text-object kind thing)
-    (setq-local meow--visual-type 'char)))
+    (eerie--select-vim-text-object kind thing)
+    (setq-local eerie--visual-type 'char)))
 
-(defun meow--multicursor-replay-special-command (command inputs)
+(defun eerie--multicursor-replay-special-command (command inputs)
   "Replay COMMAND with INPUTS when it needs custom multi-cursor handling."
   (pcase command
-    ('meow-jump-char
-     (meow--multicursor-replay-jump-char inputs)
+    ('eerie-jump-char
+     (eerie--multicursor-replay-jump-char inputs)
      t)
-    ('meow-visual-inner-of-thing
-     (meow--multicursor-replay-visual-text-object 'inner inputs)
+    ('eerie-visual-inner-of-thing
+     (eerie--multicursor-replay-visual-text-object 'inner inputs)
      t)
-    ('meow-visual-bounds-of-thing
-     (meow--multicursor-replay-visual-text-object 'bounds inputs)
+    ('eerie-visual-bounds-of-thing
+     (eerie--multicursor-replay-visual-text-object 'bounds inputs)
      t)
     (_ nil)))
 
-(defun meow--multicursor-replay-command (command mc-prefix-arg inputs)
+(defun eerie--multicursor-replay-command (command mc-prefix-arg inputs)
   "Replay COMMAND with MC-PREFIX-ARG and INPUTS across secondary cursors."
-  (setq-local meow--multicursor-replaying t)
-  (let ((primary-snapshot (meow--multicursor-current-snapshot)))
+  (setq-local eerie--multicursor-replaying t)
+  (let ((primary-snapshot (eerie--multicursor-current-snapshot)))
     (unwind-protect
-        (meow--wrap-collapse-undo
-          (dolist (ov (meow--multicursor-secondary-overlays))
+        (eerie--wrap-collapse-undo
+          (dolist (ov (eerie--multicursor-secondary-overlays))
             (when (and (overlayp ov)
                        (overlay-buffer ov))
-              (meow--multicursor-apply-snapshot
-               (meow--multicursor-overlay-snapshot ov))
-              (or (meow--multicursor-replay-special-command command inputs)
+              (eerie--multicursor-apply-snapshot
+               (eerie--multicursor-overlay-snapshot ov))
+              (or (eerie--multicursor-replay-special-command command inputs)
                   (let ((current-prefix-arg mc-prefix-arg)
-                        (meow--multicursor-replay-inputs (copy-sequence inputs)))
+                        (eerie--multicursor-replay-inputs (copy-sequence inputs)))
                     (call-interactively command)))
-              (meow--multicursor-set-overlay-snapshot
+              (eerie--multicursor-set-overlay-snapshot
                ov
-               (meow--multicursor-current-snapshot)))))
-      (setq-local meow--multicursor-replaying nil)
+               (eerie--multicursor-current-snapshot)))))
+      (setq-local eerie--multicursor-replaying nil)
       (when primary-snapshot
-        (meow--multicursor-apply-snapshot primary-snapshot)
-        (meow--multicursor-release-snapshot primary-snapshot))))
-  (when meow--multicursor-active
-    (meow--ensure-visible)))
+        (eerie--multicursor-apply-snapshot primary-snapshot)
+        (eerie--multicursor-release-snapshot primary-snapshot))))
+  (when eerie--multicursor-active
+    (eerie--ensure-visible)))
 
-(defun meow--multicursor-move-secondary-cursors (mover)
+(defun eerie--multicursor-move-secondary-cursors (mover)
   "Apply cursor MOVER to every secondary multi-cursor overlay."
   (save-mark-and-excursion
-    (dolist (ov (meow--multicursor-secondary-overlays))
+    (dolist (ov (eerie--multicursor-secondary-overlays))
       (when (and (overlayp ov)
                  (overlay-buffer ov))
-        (goto-char (meow--multicursor-overlay-point ov))
+        (goto-char (eerie--multicursor-overlay-point ov))
         (funcall mover)
-        (meow--multicursor-set-overlay-snapshot
+        (eerie--multicursor-set-overlay-snapshot
          ov
-         (meow--multicursor-current-snapshot))))))
+         (eerie--multicursor-current-snapshot))))))
 
-(defun meow--multicursor-find-char-on-line (char)
+(defun eerie--multicursor-find-char-on-line (char)
   "Move point to the next CHAR on the current line.
 
 If no later CHAR exists on the current line, leave point unchanged."
@@ -2273,7 +2273,7 @@ If no later CHAR exists on the current line, leave point unchanged."
     (when (> (point) origin)
       (backward-char 1))))
 
-(defun meow--goto-next-space-on-line (&optional repeat-p)
+(defun eerie--goto-next-space-on-line (&optional repeat-p)
   "Move point to the next space on the current line.
 
 When REPEAT-P is non-nil, skip the current point before searching so a
@@ -2299,320 +2299,320 @@ exists on the current line, move to the end of the line."
                (> (point) start))
       (backward-char 1))))
 
-(defun meow--multicursor-find-next-space-on-line ()
+(defun eerie--multicursor-find-next-space-on-line ()
   "Move point to the next space on the current line for multi-cursor `W'."
-  (meow--goto-next-space-on-line
-   (eq meow--multicursor-last-command 'meow-multicursor-next-space)))
+  (eerie--goto-next-space-on-line
+   (eq eerie--multicursor-last-command 'eerie-multicursor-next-space)))
 
-(defun meow-next-space ()
+(defun eerie-next-space ()
   "Move point to the next space on the current line."
   (interactive)
-  (meow--goto-next-space-on-line (eq last-command 'meow-next-space))
-  (meow--ensure-visible))
+  (eerie--goto-next-space-on-line (eq last-command 'eerie-next-space))
+  (eerie--ensure-visible))
 
-(defun meow-multicursor-jump-char (char)
+(defun eerie-multicursor-jump-char (char)
   "Move every multi-cursor to the next CHAR on its current line."
   (interactive (list (read-char "Multi-cursor find char: " t)))
-  (meow--multicursor-move-secondary-cursors
+  (eerie--multicursor-move-secondary-cursors
    (lambda ()
-     (meow--multicursor-find-char-on-line char)))
-  (meow--multicursor-find-char-on-line char)
-  (setq-local meow--multicursor-last-command 'meow-multicursor-jump-char)
-  (meow--ensure-visible)
-  (meow--switch-state 'multicursor))
+     (eerie--multicursor-find-char-on-line char)))
+  (eerie--multicursor-find-char-on-line char)
+  (setq-local eerie--multicursor-last-command 'eerie-multicursor-jump-char)
+  (eerie--ensure-visible)
+  (eerie--switch-state 'multicursor))
 
-(defun meow-multicursor-next-space ()
+(defun eerie-multicursor-next-space ()
   "Move every multi-cursor to the next space on its current line."
   (interactive)
-  (meow--multicursor-move-secondary-cursors
-   #'meow--multicursor-find-next-space-on-line)
-  (meow--multicursor-find-next-space-on-line)
-  (setq-local meow--multicursor-last-command 'meow-multicursor-next-space)
-  (meow--ensure-visible)
-  (meow--switch-state 'multicursor))
+  (eerie--multicursor-move-secondary-cursors
+   #'eerie--multicursor-find-next-space-on-line)
+  (eerie--multicursor-find-next-space-on-line)
+  (setq-local eerie--multicursor-last-command 'eerie-multicursor-next-space)
+  (eerie--ensure-visible)
+  (eerie--switch-state 'multicursor))
 
-(defun meow--multicursor-post-command ()
+(defun eerie--multicursor-post-command ()
   "Replay supported normal-mode commands across all secondary cursors."
-  (when (and meow--multicursor-active
-             (not meow--multicursor-replaying))
-    (let* ((command (or meow--multicursor-command this-command))
-           (insert-kind (meow--multicursor-insert-kind command))
-           (inputs (nreverse meow--multicursor-read-events)))
-      (setq-local meow--multicursor-last-command command)
+  (when (and eerie--multicursor-active
+             (not eerie--multicursor-replaying))
+    (let* ((command (or eerie--multicursor-command this-command))
+           (insert-kind (eerie--multicursor-insert-kind command))
+           (inputs (nreverse eerie--multicursor-read-events)))
+      (setq-local eerie--multicursor-last-command command)
       (cond
        ((memq command
-              '(meow-multicursor-start
-                meow-multicursor-spawn
-                meow-multicursor-visual-exit
-                meow-multicursor-cancel
-                meow-multicursor-jump-char
-                meow-multicursor-next-space
+              '(eerie-multicursor-start
+                eerie-multicursor-spawn
+                eerie-multicursor-visual-exit
+                eerie-multicursor-cancel
+                eerie-multicursor-jump-char
+                eerie-multicursor-next-space
                 ignore))
         nil)
-       ((and insert-kind (meow-insert-mode-p))
-        (meow--multicursor-prepare-insert-replay insert-kind))
-       ((meow-insert-mode-p)
-        (meow--multicursor-reset-state))
-       ((not (memq (meow--current-state)
+       ((and insert-kind (eerie-insert-mode-p))
+        (eerie--multicursor-prepare-insert-replay insert-kind))
+       ((eerie-insert-mode-p)
+        (eerie--multicursor-reset-state))
+       ((not (memq (eerie--current-state)
                    '(multicursor multicursor-visual normal visual)))
-        (meow--multicursor-reset-state))
+        (eerie--multicursor-reset-state))
        (t
         (when command
-          (meow--multicursor-replay-command
+          (eerie--multicursor-replay-command
            command
-           meow--multicursor-prefix-arg
+           eerie--multicursor-prefix-arg
            inputs))))
-      (when (and meow--multicursor-active
-                 (meow--multiedit-active-p)
+      (when (and eerie--multicursor-active
+                 (eerie--multiedit-active-p)
                  (not (memq command
-                            '(meow-multicursor-start
-                              meow-multicursor-spawn
-                              meow-visual-enter-multicursor
-                              meow-multicursor-match-next
-                              meow-multicursor-unmatch-last
-                              meow-multicursor-skip-match
-                              meow-multiedit-match-next
-                              meow-multiedit-unmatch-last
-                              meow-multiedit-skip-match
-                              meow-multiedit-reverse-direction
-                              meow-multicursor-visual-exit
-                              meow-multicursor-cancel
-                              meow-operator-delete
-                              meow-operator-change
-                              meow-operator-yank
-                              meow-insert
-                              meow-append
+                            '(eerie-multicursor-start
+                              eerie-multicursor-spawn
+                              eerie-visual-enter-multicursor
+                              eerie-multicursor-match-next
+                              eerie-multicursor-unmatch-last
+                              eerie-multicursor-skip-match
+                              eerie-multiedit-match-next
+                              eerie-multiedit-unmatch-last
+                              eerie-multiedit-skip-match
+                              eerie-multiedit-reverse-direction
+                              eerie-multicursor-visual-exit
+                              eerie-multicursor-cancel
+                              eerie-operator-delete
+                              eerie-operator-change
+                              eerie-operator-yank
+                              eerie-insert
+                              eerie-append
                               ignore))))
-        (meow--multiedit-reset-state))
-      (when meow--multicursor-active
-        (meow--multicursor-display-menu)))))
+        (eerie--multiedit-reset-state))
+      (when eerie--multicursor-active
+        (eerie--multicursor-display-menu)))))
 
-(defun meow-multicursor-spawn ()
+(defun eerie-multicursor-spawn ()
   "Promote the current multi-edit targets into a multi-cursor NORMAL state."
   (interactive)
-  (meow--multiedit-ensure-session)
-  (let* ((targets meow--multiedit-targets)
-         (primary meow--multiedit-primary)
-         (offset (meow--multicursor-primary-offset))
-         (primary-pos (meow--multicursor-position-for-target primary offset)))
-    (remove-hook 'post-command-hook #'meow--multiedit-post-command t)
+  (eerie--multiedit-ensure-session)
+  (let* ((targets eerie--multiedit-targets)
+         (primary eerie--multiedit-primary)
+         (offset (eerie--multicursor-primary-offset))
+         (primary-pos (eerie--multicursor-position-for-target primary offset)))
+    (remove-hook 'post-command-hook #'eerie--multiedit-post-command t)
     (when (region-active-p)
-      (meow--cancel-selection))
-    (meow--multiedit-render-overlays)
-    (meow--multicursor-reset-state)
+      (eerie--cancel-selection))
+    (eerie--multiedit-render-overlays)
+    (eerie--multicursor-reset-state)
     (goto-char primary-pos)
     (dolist (target targets)
-      (unless (meow--multiedit-range-equal-p target primary)
-        (meow--multicursor-add-overlay
-         (meow--multicursor-position-for-target target offset))))
-    (meow--multicursor-activate)
-    (meow--switch-state 'multicursor)
-    (meow--multicursor-display-menu)))
+      (unless (eerie--multiedit-range-equal-p target primary)
+        (eerie--multicursor-add-overlay
+         (eerie--multicursor-position-for-target target offset))))
+    (eerie--multicursor-activate)
+    (eerie--switch-state 'multicursor)
+    (eerie--multicursor-display-menu)))
 
-(defun meow-multicursor-match-next ()
+(defun eerie-multicursor-match-next ()
   "Add the next exact match of the current multicursor seed."
   (interactive)
-  (meow-multiedit-match-next))
+  (eerie-multiedit-match-next))
 
-(defun meow-multicursor-unmatch-last ()
+(defun eerie-multicursor-unmatch-last ()
   "Remove the newest exact match from the current multicursor seed set."
   (interactive)
-  (meow-multiedit-unmatch-last))
+  (eerie-multiedit-unmatch-last))
 
-(defun meow-multicursor-skip-match ()
+(defun eerie-multicursor-skip-match ()
   "Skip the next exact match in the current multicursor session."
   (interactive)
-  (meow-multiedit-skip-match))
+  (eerie-multiedit-skip-match))
 
-(defun meow-multicursor-visual-exit ()
+(defun eerie-multicursor-visual-exit ()
   "Leave multicursor VISUAL while keeping the multicursor session alive."
   (interactive)
-  (if (meow--multiedit-active-p)
-      (meow-multicursor-spawn)
-    (meow--finish-visual-exit 'multicursor)))
+  (if (eerie--multiedit-active-p)
+      (eerie-multicursor-spawn)
+    (eerie--finish-visual-exit 'multicursor)))
 
-(defun meow-multiedit-clear ()
+(defun eerie-multiedit-clear ()
   "Clear the current multi-edit session and return to NORMAL."
   (interactive)
-  (meow--multiedit-reset-state)
-  (meow--finish-visual-exit 'normal))
+  (eerie--multiedit-reset-state)
+  (eerie--finish-visual-exit 'normal))
 
-(defun meow-multiedit-reverse-direction ()
+(defun eerie-multiedit-reverse-direction ()
   "Reverse multi-edit builder direction.
 
 When no multi-edit session is active yet, seed one from the current
 charwise VISUAL selection first."
   (interactive)
-  (meow--multiedit-ensure-session)
-  (setq-local meow--multiedit-direction
-              (if (eq meow--multiedit-direction 'forward)
+  (eerie--multiedit-ensure-session)
+  (setq-local eerie--multiedit-direction
+              (if (eq eerie--multiedit-direction 'forward)
                   'backward
                 'forward)
-              meow--multiedit-search-head meow--multiedit-primary)
-  (message "Multi-edit direction: %s" meow--multiedit-direction))
+              eerie--multiedit-search-head eerie--multiedit-primary)
+  (message "Multi-edit direction: %s" eerie--multiedit-direction))
 
-(defun meow-multiedit-skip-match ()
+(defun eerie-multiedit-skip-match ()
   "Skip the next match in the current multi-edit direction."
   (interactive)
-  (meow--multiedit-ensure-session)
-  (if-let ((candidate (meow--multiedit-find-next-match)))
+  (eerie--multiedit-ensure-session)
+  (if-let ((candidate (eerie--multiedit-find-next-match)))
       (progn
-        (setq-local meow--multiedit-search-head candidate)
+        (setq-local eerie--multiedit-search-head candidate)
         (message "Skipped one %s multi-edit match"
-                 meow--multiedit-direction))
-    (message "No more %s multi-edit matches" meow--multiedit-direction)))
+                 eerie--multiedit-direction))
+    (message "No more %s multi-edit matches" eerie--multiedit-direction)))
 
-(defun meow-multiedit-unmatch-last ()
+(defun eerie-multiedit-unmatch-last ()
   "Remove the most recently added multi-edit target."
   (interactive)
-  (meow--multiedit-ensure-session)
-  (if (= (length meow--multiedit-targets) 1)
+  (eerie--multiedit-ensure-session)
+  (if (= (length eerie--multiedit-targets) 1)
       (message "No newer multi-edit match to remove")
-    (let ((remaining (butlast meow--multiedit-targets)))
-      (meow--multiedit-set-targets remaining (car (last remaining))))))
+    (let ((remaining (butlast eerie--multiedit-targets)))
+      (eerie--multiedit-set-targets remaining (car (last remaining))))))
 
-(defun meow-multiedit-match-next ()
+(defun eerie-multiedit-match-next ()
   "Add the next exact match of the current multi-edit seed."
   (interactive)
-  (meow--multiedit-ensure-session)
-  (if-let ((candidate (meow--multiedit-find-next-match)))
+  (eerie--multiedit-ensure-session)
+  (if-let ((candidate (eerie--multiedit-find-next-match)))
       (progn
-        (setq-local meow--multiedit-targets
-                    (append meow--multiedit-targets (list candidate)))
-        (meow--multiedit-apply-target candidate))
-    (message "No more %s multi-edit matches" meow--multiedit-direction)))
+        (setq-local eerie--multiedit-targets
+                    (append eerie--multiedit-targets (list candidate)))
+        (eerie--multiedit-apply-target candidate))
+    (message "No more %s multi-edit matches" eerie--multiedit-direction)))
 
-(defun meow-visual-exit ()
+(defun eerie-visual-exit ()
   "Leave VISUAL state and return to NORMAL."
   (interactive)
-  (if (meow--multiedit-active-p)
-      (if meow--multicursor-active
-          (meow-multicursor-spawn)
-        (meow-multiedit-clear))
-    (meow--finish-visual-exit
-     (if meow--multicursor-active
+  (if (eerie--multiedit-active-p)
+      (if eerie--multicursor-active
+          (eerie-multicursor-spawn)
+        (eerie-multiedit-clear))
+    (eerie--finish-visual-exit
+     (if eerie--multicursor-active
          'multicursor
        'normal))))
 
-(defun meow--visual-move-char (command)
+(defun eerie--visual-move-char (command)
   "Run charwise visual COMMAND, starting VISUAL if necessary."
   (unless (region-active-p)
-    (meow-visual-start))
+    (eerie-visual-start))
   (call-interactively command))
 
-(defun meow--buffer-last-content-position ()
+(defun eerie--buffer-last-content-position ()
   "Return the last meaningful position in the current buffer."
   (if (and (> (point-max) (point-min))
            (eq (char-before (point-max)) ?\n))
       (1- (point-max))
     (point-max)))
 
-(defun meow--visual-target-point-for-buffer-edge (edge)
+(defun eerie--visual-target-point-for-buffer-edge (edge)
   "Return a VISUAL-mode target point at buffer EDGE."
   (save-excursion
-    (pcase meow--visual-type
+    (pcase eerie--visual-type
       ('block
        (let ((column (current-column)))
          (goto-char (if (eq edge 'start)
                         (point-min)
-                      (meow--buffer-last-content-position)))
+                      (eerie--buffer-last-content-position)))
          (move-to-column column)
          (point)))
       ('line
        (if (eq edge 'start)
            (point-min)
-         (meow--buffer-last-content-position)))
+         (eerie--buffer-last-content-position)))
       (_
        (if (eq edge 'start)
            (point-min)
          (point-max))))))
 
-(defun meow--visual-extend-to-point (pos)
+(defun eerie--visual-extend-to-point (pos)
   "Extend the current VISUAL selection to POS."
   (goto-char pos)
-  (pcase meow--visual-type
+  (pcase eerie--visual-type
     ('line
-     (meow--visual-line-apply-selection (meow--visual-line-range)))
+     (eerie--visual-line-apply-selection (eerie--visual-line-range)))
     ('block nil)
     (_
-     (setq-local meow--selection
-                 (meow--make-selection '(expand . char)
+     (setq-local eerie--selection
+                 (eerie--make-selection '(expand . char)
                                        (mark t)
                                        (point))))))
 
-(defun meow--visual-search-command (direction &optional prompt)
+(defun eerie--visual-search-command (direction &optional prompt)
   "Extend VISUAL selection using a search in DIRECTION.
 
 When PROMPT is non-nil, read a new pattern with PROMPT. Otherwise reuse the
 latest search pattern."
   (let ((pattern (if prompt
-                     (let ((input (meow--read-search-pattern prompt)))
-                       (meow--push-search input)
+                     (let ((input (eerie--read-search-pattern prompt)))
+                       (eerie--push-search input)
                        input)
                    (or (car regexp-search-ring)
                        (user-error "No previous search")))))
-    (when (meow--search-pattern pattern direction)
-      (meow--visual-extend-to-point (point)))))
+    (when (eerie--search-pattern pattern direction)
+      (eerie--visual-extend-to-point (point)))))
 
-(defun meow-visual-left ()
+(defun eerie-visual-left ()
   "Move left while extending the current VISUAL selection."
   (interactive)
-  (pcase meow--visual-type
+  (pcase eerie--visual-type
     ('line (ignore))
     ('block
      (when (> (point) (line-beginning-position))
        (backward-char 1)))
-    (_ (meow--visual-move-char #'meow-left-expand))))
+    (_ (eerie--visual-move-char #'eerie-left-expand))))
 
-(defun meow-visual-right ()
+(defun eerie-visual-right ()
   "Move right while extending the current VISUAL selection."
   (interactive)
-  (pcase meow--visual-type
+  (pcase eerie--visual-type
     ('line (ignore))
     ('block
      (when (< (point) (line-end-position))
        (forward-char 1)))
-    (_ (meow--visual-move-char #'meow-right-expand))))
+    (_ (eerie--visual-move-char #'eerie-right-expand))))
 
-(defun meow-visual-prev ()
+(defun eerie-visual-prev ()
   "Move up while extending the current VISUAL selection."
   (interactive)
-  (pcase meow--visual-type
-    ('line (meow-visual-line -1))
-    ('block (meow--visual-block-move-lines -1))
-    (_ (meow--visual-move-char #'meow-prev-expand))))
+  (pcase eerie--visual-type
+    ('line (eerie-visual-line -1))
+    ('block (eerie--visual-block-move-lines -1))
+    (_ (eerie--visual-move-char #'eerie-prev-expand))))
 
-(defun meow-visual-next ()
+(defun eerie-visual-next ()
   "Move down while extending the current VISUAL selection."
   (interactive)
-  (pcase meow--visual-type
-    ('line (meow-visual-line 1))
-    ('block (meow--visual-block-move-lines 1))
-    (_ (meow--visual-move-char #'meow-next-expand))))
+  (pcase eerie--visual-type
+    ('line (eerie-visual-line 1))
+    ('block (eerie--visual-block-move-lines 1))
+    (_ (eerie--visual-move-char #'eerie-next-expand))))
 
-(defun meow-visual-goto-buffer-start ()
+(defun eerie-visual-goto-buffer-start ()
   "Extend the current VISUAL selection to the start of the buffer."
   (interactive)
-  (meow--visual-extend-to-point
-   (meow--visual-target-point-for-buffer-edge 'start)))
+  (eerie--visual-extend-to-point
+   (eerie--visual-target-point-for-buffer-edge 'start)))
 
-(defun meow-visual-goto-buffer-end ()
+(defun eerie-visual-goto-buffer-end ()
   "Extend the current VISUAL selection to the end of the buffer."
   (interactive)
-  (meow--visual-extend-to-point
-   (meow--visual-target-point-for-buffer-edge 'end)))
+  (eerie--visual-extend-to-point
+   (eerie--visual-target-point-for-buffer-edge 'end)))
 
-(defun meow-visual-goto-line-end ()
+(defun eerie-visual-goto-line-end ()
   "Extend the current VISUAL selection to the end of the current line."
   (interactive)
-  (meow--visual-extend-to-point (line-end-position)))
+  (eerie--visual-extend-to-point (line-end-position)))
 
-(defun meow--visual-cursor-range ()
+(defun eerie--visual-cursor-range ()
   "Return the buffer range for the visible cursor char in VISUAL state."
   (when (region-active-p)
     (let ((pos (cond
-                ((and meow-use-cursor-position-hack
-                      (meow--direction-forward-p)
+                ((and eerie-use-cursor-position-hack
+                      (eerie--direction-forward-p)
                       (> (point) (point-min)))
                  (1- (point)))
                 ((< (point) (point-max))
@@ -2624,18 +2624,18 @@ latest search pattern."
                  (< pos (point-max)))
         (cons pos (1+ pos))))))
 
-(defun meow--visual-jump-char-action (candidate)
+(defun eerie--visual-jump-char-action (candidate)
   "Extend the current VISUAL selection to CANDIDATE."
-  (meow--visual-extend-to-point (cdr candidate))
-  (meow--ensure-visible))
+  (eerie--visual-extend-to-point (cdr candidate))
+  (eerie--ensure-visible))
 
-(defun meow--visual-line-jump-action (candidate)
+(defun eerie--visual-line-jump-action (candidate)
   "Extend the current linewise VISUAL selection to CANDIDATE."
-  (setq-local meow--visual-type 'line)
-  (meow--visual-line-apply-selection candidate)
-  (meow--ensure-visible))
+  (setq-local eerie--visual-type 'line)
+  (eerie--visual-line-apply-selection candidate)
+  (eerie--ensure-visible))
 
-(defun meow-visual-jump-char (arg char)
+(defun eerie-visual-jump-char (arg char)
   "Extend VISUAL selection to a visible CHAR using numbered hints.
 
 Use digits `1' through `9' to choose the visible candidates nearest point.
@@ -2643,115 +2643,115 @@ Press `;' during the jump session to reverse direction. A negative prefix
 argument starts in backward direction."
   (interactive (list current-prefix-arg (read-char "Visual jump char: " t)))
   (let ((regex (regexp-quote (string (if (eq char 13) ?\n char))))
-        (direction (if (meow--with-negative-argument-p arg)
+        (direction (if (eerie--with-negative-argument-p arg)
                        'backward
                      'forward)))
-    (meow--jump-loop
+    (eerie--jump-loop
      (lambda (dir)
-       (meow--jump-regexp-candidates
+       (eerie--jump-regexp-candidates
         regex
         dir
-        (meow--visual-cursor-range)))
-     #'meow--visual-jump-char-action
+        (eerie--visual-cursor-range)))
+     #'eerie--visual-jump-char-action
      "char"
      direction)))
 
-(defun meow-visual-search-forward ()
+(defun eerie-visual-search-forward ()
   "Prompt for a regexp and extend VISUAL selection to the next match."
   (interactive)
-  (meow--visual-search-command 'forward "/"))
+  (eerie--visual-search-command 'forward "/"))
 
-(defun meow-visual-search-backward ()
+(defun eerie-visual-search-backward ()
   "Prompt for a regexp and extend VISUAL selection to the previous match."
   (interactive)
-  (meow--visual-search-command 'backward "?"))
+  (eerie--visual-search-command 'backward "?"))
 
-(defun meow-visual-search-next ()
+(defun eerie-visual-search-next ()
   "Extend VISUAL selection to the next match in the last search direction."
   (interactive)
-  (meow--visual-search-command meow--last-search-direction))
+  (eerie--visual-search-command eerie--last-search-direction))
 
-(defun meow-visual-search-prev ()
+(defun eerie-visual-search-prev ()
   "Extend VISUAL selection to the next match opposite the last search direction."
   (interactive)
-  (meow--visual-search-command
-   (if (eq meow--last-search-direction 'backward)
+  (eerie--visual-search-command
+   (if (eq eerie--last-search-direction 'backward)
        'forward
      'backward)))
 
-(defun meow--visual-finish-action ()
+(defun eerie--visual-finish-action ()
   "Leave VISUAL after a non-insert action."
-  (when (or (meow-visual-mode-p)
-            (bound-and-true-p meow-multicursor-visual-mode))
-    (meow--switch-state
-     (if meow--multicursor-active
+  (when (or (eerie-visual-mode-p)
+            (bound-and-true-p eerie-multicursor-visual-mode))
+    (eerie--switch-state
+     (if eerie--multicursor-active
          'multicursor
        'normal))))
 
-(defun meow-visual-yank ()
+(defun eerie-visual-yank ()
   "Yank the active VISUAL selection."
   (interactive)
-  (if (meow--multiedit-active-p)
+  (if (eerie--multiedit-active-p)
       (progn
-        (meow-save)
-        (meow--multiedit-deactivate)
-        (meow--visual-finish-action))
-    (if (eq meow--visual-type 'block)
+        (eerie-save)
+        (eerie--multiedit-deactivate)
+        (eerie--visual-finish-action))
+    (if (eq eerie--visual-type 'block)
       (progn
         (copy-rectangle-as-kill (region-beginning) (region-end))
-        (meow--visual-finish-action))
-      (meow-save)
-      (meow--visual-finish-action))))
+        (eerie--visual-finish-action))
+      (eerie-save)
+      (eerie--visual-finish-action))))
 
-(defun meow-visual-insert ()
+(defun eerie-visual-insert ()
   "Enter INSERT from VISUAL.
 
 In block VISUAL, insert at the left edge of the selected rectangle on
 every selected line."
   (interactive)
-  (if (eq meow--visual-type 'block)
-      (meow--visual-block-start-replay 'insert)
+  (if (eq eerie--visual-type 'block)
+      (eerie--visual-block-start-replay 'insert)
     (user-error "Visual I is only supported in block VISUAL mode")))
 
-(defun meow-visual-append ()
+(defun eerie-visual-append ()
   "Enter APPEND from VISUAL.
 
 In block VISUAL, append at the right edge of the selected rectangle on
 every selected line."
   (interactive)
-  (if (eq meow--visual-type 'block)
-      (meow--visual-block-start-replay 'append)
+  (if (eq eerie--visual-type 'block)
+      (eerie--visual-block-start-replay 'append)
     (user-error "Visual A is only supported in block VISUAL mode")))
 
-(defun meow-visual-delete ()
+(defun eerie-visual-delete ()
   "Delete the active VISUAL selection."
   (interactive)
-  (if (meow--multiedit-active-p)
-      (meow--multiedit-delete-all-targets)
-    (if (eq meow--visual-type 'block)
+  (if (eerie--multiedit-active-p)
+      (eerie--multiedit-delete-all-targets)
+    (if (eq eerie--visual-type 'block)
       (progn
         (kill-rectangle (region-beginning) (region-end))
-        (meow--visual-finish-action))
-      (meow-kill)
-      (meow--visual-finish-action))))
+        (eerie--visual-finish-action))
+      (eerie-kill)
+      (eerie--visual-finish-action))))
 
-(defun meow-visual-change ()
+(defun eerie-visual-change ()
   "Change the active VISUAL selection."
   (interactive)
-  (if (meow--multiedit-active-p)
-      (meow--multiedit-start-change)
-    (if (eq meow--visual-type 'block)
+  (if (eerie--multiedit-active-p)
+      (eerie--multiedit-start-change)
+    (if (eq eerie--visual-type 'block)
       (progn
         (kill-rectangle (region-beginning) (region-end))
-        (meow--enter-insert-state))
-      (meow-change))))
+        (eerie--enter-insert-state))
+      (eerie-change))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; BLOCK
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--backward-block ()
+(defun eerie--backward-block ()
   (let ((orig-pos (point))
         (pos (save-mark-and-excursion
                (let ((depth (car (syntax-ppss))))
@@ -2762,7 +2762,7 @@ every selected line."
     (when (and pos (not (= orig-pos pos)))
       (goto-char pos))))
 
-(defun meow--forward-block ()
+(defun eerie--forward-block ()
   (let ((orig-pos (point))
         (pos (save-mark-and-excursion
                (let ((depth (car (syntax-ppss))))
@@ -2772,19 +2772,19 @@ every selected line."
                    (point))))))
     (when (and pos (not (= orig-pos pos)))
       (goto-char pos)
-      (meow--hack-cursor-pos (point)))))
+      (eerie--hack-cursor-pos (point)))))
 
-(defun meow-block (arg)
+(defun eerie-block (arg)
   "Mark the block or expand to parent block."
   (interactive "P")
   (let ((ra (region-active-p))
-        (back (xor (meow--direction-backward-p) (< (prefix-numeric-value arg) 0)))
+        (back (xor (eerie--direction-backward-p) (< (prefix-numeric-value arg) 0)))
         (depth (car (syntax-ppss)))
         (orig-pos (point))
         p m)
     (save-mark-and-excursion
       (while (and (if back (re-search-backward "\\s(" nil t) (re-search-forward "\\s)" nil t))
-                  (or (meow--in-string-p)
+                  (or (eerie--in-string-p)
                       (if ra (>= (car (syntax-ppss)) depth) (> (car (syntax-ppss)) depth)))))
       (when (and (if ra (< (car (syntax-ppss)) depth) (<= (car (syntax-ppss)) depth))
                  (not (= (point) orig-pos)))
@@ -2793,25 +2793,25 @@ every selected line."
           (setq m (point)))))
     (when (and p m)
       (thread-first
-        (meow--make-selection '(expand . block) m p)
-        (meow--select t))
-      (meow--maybe-highlight-num-positions '(meow--backward-block . meow--forward-block)))))
+        (eerie--make-selection '(expand . block) m p)
+        (eerie--select t))
+      (eerie--maybe-highlight-num-positions '(eerie--backward-block . eerie--forward-block)))))
 
-(defun meow-to-block (arg)
+(defun eerie-to-block (arg)
   "Expand to next block.
 
 Will create selection with type (expand . block)."
   (interactive "P")
   ;; We respect the direction of block selection.
-  (let ((back (or (when (equal 'block (cdr (meow--selection-type)))
-                     (meow--direction-backward-p))
+  (let ((back (or (when (equal 'block (cdr (eerie--selection-type)))
+                     (eerie--direction-backward-p))
                   (< (prefix-numeric-value arg) 0)))
         (depth (car (syntax-ppss)))
         (orig-pos (point))
         p m)
     (save-mark-and-excursion
       (while (and (if back (re-search-backward "\\s(" nil t) (re-search-forward "\\s)" nil t))
-                  (or (meow--in-string-p)
+                  (or (eerie--in-string-p)
                       (> (car (syntax-ppss)) depth))))
       (when (and (= (car (syntax-ppss)) depth)
                  (not (= (point) orig-pos)))
@@ -2820,15 +2820,15 @@ Will create selection with type (expand . block)."
           (setq m (point)))))
     (when (and p m)
       (thread-first
-        (meow--make-selection '(expand . block) orig-pos p t)
-        (meow--select t))
-      (meow--maybe-highlight-num-positions '(meow--backward-block . meow--forward-block)))))
+        (eerie--make-selection '(expand . block) orig-pos p t)
+        (eerie--select t))
+      (eerie--maybe-highlight-num-positions '(eerie--backward-block . eerie--forward-block)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; JOIN
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--join-forward ()
+(defun eerie--join-forward ()
   (let (mark pos)
     (save-mark-and-excursion
       (goto-char (line-end-position))
@@ -2837,10 +2837,10 @@ Will create selection with type (expand . block)."
         (setq mark (point))))
     (when pos
       (thread-first
-        (meow--make-selection '(expand . join) pos mark)
-        (meow--select t)))))
+        (eerie--make-selection '(expand . join) pos mark)
+        (eerie--select t)))))
 
-(defun meow--join-backward ()
+(defun eerie--join-backward ()
   (let* (mark
          pos)
     (save-mark-and-excursion
@@ -2851,10 +2851,10 @@ Will create selection with type (expand . block)."
         (forward-char -1))
       (setq mark (point)))
     (thread-first
-      (meow--make-selection '(expand . join) mark pos)
-      (meow--select t))))
+      (eerie--make-selection '(expand . join) mark pos)
+      (eerie--select t))))
 
-(defun meow--join-both ()
+(defun eerie--join-both ()
   (let* (mark
          pos)
     (save-mark-and-excursion
@@ -2866,10 +2866,10 @@ Will create selection with type (expand . block)."
         (forward-char 1))
       (setq pos (point)))
     (thread-first
-      (meow--make-selection '(expand . join) mark pos)
-      (meow--select t))))
+      (eerie--make-selection '(expand . join) mark pos)
+      (eerie--select t))))
 
-(defun meow-join (arg)
+(defun eerie-join (arg)
   "Select the indentation between this line to the non empty previous line.
 
 Will create selection with type (select . join)
@@ -2879,52 +2879,52 @@ with NEGATIVE ARGUMENT, forward search indentation to select.
 with UNIVERSAL ARGUMENT, search both side."
   (interactive "P")
   (cond
-   ((or (equal '(expand . join) (meow--selection-type))
-        (meow--with-universal-argument-p arg))
-    (meow--join-both))
-   ((meow--with-negative-argument-p arg)
-    (meow--join-forward))
+   ((or (equal '(expand . join) (eerie--selection-type))
+        (eerie--with-universal-argument-p arg))
+    (eerie--join-both))
+   ((eerie--with-negative-argument-p arg)
+    (eerie--join-forward))
    (t
-    (meow--join-backward))))
+    (eerie--join-backward))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; FIND & TILL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--find-continue-forward ()
-  (when meow--last-find
+(defun eerie--find-continue-forward ()
+  (when eerie--last-find
     (let ((case-fold-search nil)
-          (ch-str (char-to-string meow--last-find)))
+          (ch-str (char-to-string eerie--last-find)))
       (when (search-forward ch-str nil t 1)
-        (meow--hack-cursor-pos (point))))))
+        (eerie--hack-cursor-pos (point))))))
 
-(defun meow--find-continue-backward ()
-  (when meow--last-find
+(defun eerie--find-continue-backward ()
+  (when eerie--last-find
     (let ((case-fold-search nil)
-          (ch-str (char-to-string meow--last-find)))
+          (ch-str (char-to-string eerie--last-find)))
       (search-backward ch-str nil t 1))))
 
-(defun meow--till-continue-forward ()
-  (when meow--last-till
+(defun eerie--till-continue-forward ()
+  (when eerie--last-till
     (let ((case-fold-search nil)
-          (ch-str (char-to-string meow--last-till)))
+          (ch-str (char-to-string eerie--last-till)))
       (when (< (point) (point-max))
         (forward-char 1)
         (when (search-forward ch-str nil t 1)
           (backward-char 1)
-          (meow--hack-cursor-pos (point)))))))
+          (eerie--hack-cursor-pos (point)))))))
 
-(defun meow--till-continue-backward ()
-  (when meow--last-till
+(defun eerie--till-continue-backward ()
+  (when eerie--last-till
     (let ((case-fold-search nil)
-          (ch-str (char-to-string meow--last-till)))
+          (ch-str (char-to-string eerie--last-till)))
       (when (> (point) (point-min))
         (backward-char 1)
         (when (search-backward ch-str nil t 1)
           (forward-char 1)
           (point))))))
 
-(defun meow-find (n ch &optional expand)
+(defun eerie-find (n ch &optional expand)
   "Find the next N char read from minibuffer."
   (interactive "p\ncFind:")
   (let* ((case-fold-search nil)
@@ -2936,18 +2936,18 @@ with UNIVERSAL ARGUMENT, search both side."
     (if (not end)
         (message "char %s not found" ch-str)
       (thread-first
-        (meow--make-selection '(select . find)
+        (eerie--make-selection '(select . find)
                               beg end expand)
-        (meow--select t))
-      (setq meow--last-find ch)
-      (meow--maybe-highlight-num-positions
-       '(meow--find-continue-backward . meow--find-continue-forward)))))
+        (eerie--select t))
+      (setq eerie--last-find ch)
+      (eerie--maybe-highlight-num-positions
+       '(eerie--find-continue-backward . eerie--find-continue-forward)))))
 
-(defun meow-find-expand (n ch)
+(defun eerie-find-expand (n ch)
   (interactive "p\ncExpand find:")
-  (meow-find n ch t))
+  (eerie-find n ch t))
 
-(defun meow-till (n ch &optional expand)
+(defun eerie-till (n ch &optional expand)
   "Forward till the next N char read from minibuffer."
   (interactive "p\ncTill:")
   (let* ((case-fold-search nil)
@@ -2961,43 +2961,43 @@ with UNIVERSAL ARGUMENT, search both side."
     (if (not end)
         (message "char %s not found" ch-str)
       (thread-first
-        (meow--make-selection '(select . till)
+        (eerie--make-selection '(select . till)
                               beg (+ end fix-pos) expand)
-        (meow--select t))
-      (setq meow--last-till ch)
-      (meow--maybe-highlight-num-positions
-       '(meow--till-continue-backward . meow--till-continue-forward)))))
+        (eerie--select t))
+      (setq eerie--last-till ch)
+      (eerie--maybe-highlight-num-positions
+       '(eerie--till-continue-backward . eerie--till-continue-forward)))))
 
-(defun meow-till-expand (n ch)
+(defun eerie-till-expand (n ch)
   (interactive "p\ncExpand till:")
-  (meow-till n ch t))
+  (eerie-till n ch t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; VISIBLE JUMP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--jump-visible-p (pos)
+(defun eerie--jump-visible-p (pos)
   "Return non-nil when POS is visibly rendered."
   (let ((invisible (get-char-property pos 'invisible)))
     (or (null invisible)
         (eq t buffer-invisibility-spec)
         (null (assoc invisible buffer-invisibility-spec)))))
 
-(defun meow--jump-next-visible-point ()
+(defun eerie--jump-next-visible-point ()
   "Return the next visible point from point."
   (let ((pos (point)))
     (while (and (not (= (point-max) (setq pos (next-char-property-change pos))))
-                (not (meow--jump-visible-p pos))))
+                (not (eerie--jump-visible-p pos))))
     pos))
 
-(defun meow--jump-next-invisible-point ()
+(defun eerie--jump-next-invisible-point ()
   "Return the next invisible point from point."
   (let ((pos (point)))
     (while (and (not (= (point-max) (setq pos (next-char-property-change pos))))
-                (meow--jump-visible-p pos)))
+                (eerie--jump-visible-p pos)))
     pos))
 
-(defun meow--jump-visible-regions (beg end)
+(defun eerie--jump-visible-regions (beg end)
   "Return visible regions between BEG and END."
   (setq beg (max beg (point-min)))
   (setq end (min end (point-max)))
@@ -3008,12 +3008,12 @@ with UNIVERSAL ARGUMENT, search both side."
           (narrow-to-region beg end)
           (setq start (goto-char (point-min)))
           (while (not (= (point) (point-max)))
-            (goto-char (meow--jump-next-invisible-point))
+            (goto-char (eerie--jump-next-invisible-point))
             (push (cons start (point)) visibles)
-            (setq start (goto-char (meow--jump-next-visible-point))))
+            (setq start (goto-char (eerie--jump-next-visible-point))))
           (nreverse visibles))))))
 
-(defun meow--jump-visible-line-ranges ()
+(defun eerie--jump-visible-line-ranges ()
   "Return visible logical line ranges in the selected window."
   (let ((window-start-pos (window-start))
         (window-end-pos (window-end (selected-window) t))
@@ -3023,7 +3023,7 @@ with UNIVERSAL ARGUMENT, search both side."
       (goto-char window-start-pos)
       (beginning-of-line)
       (while (< (point) window-end-pos)
-        (let* ((range (meow--visual-line-range))
+        (let* ((range (eerie--visual-line-range))
                (beg (car range)))
           (if (equal beg previous-beg)
               (goto-char window-end-pos)
@@ -3034,29 +3034,29 @@ with UNIVERSAL ARGUMENT, search both side."
             (forward-line 1)))))
     (nreverse ranges)))
 
-(defun meow--jump-line-can-move-p (direction origin)
+(defun eerie--jump-line-can-move-p (direction origin)
   "Return non-nil when DIRECTION can move beyond ORIGIN."
   (save-excursion
     (goto-char (car origin))
     (forward-line (if (eq direction 'backward) -1 1))
-    (not (= (car (meow--visual-line-range)) (car origin)))))
+    (not (= (car (eerie--visual-line-range)) (car origin)))))
 
-(defun meow--jump-line-recenter (direction)
+(defun eerie--jump-line-recenter (direction)
   "Recenter the window for line jumping in DIRECTION."
   (let ((inhibit-message t))
     (condition-case nil
         (recenter (if (eq direction 'backward) -1 0))
       (error nil))))
 
-(defun meow--jump-line-candidates-in-window (direction exclude-range)
+(defun eerie--jump-line-candidates-in-window (direction exclude-range)
   "Return visible line candidates in DIRECTION for the current window.
 
 When EXCLUDE-RANGE is non-nil, skip the exact line range with the same
 bounds."
-  (let* ((origin (or exclude-range (meow--visual-line-range)))
+  (let* ((origin (or exclude-range (eerie--visual-line-range)))
          (origin-beg (car origin))
          candidates)
-    (dolist (range (meow--jump-visible-line-ranges))
+    (dolist (range (eerie--jump-visible-line-ranges))
       (let ((beg (car range)))
         (when (and (not (and exclude-range
                              (= beg (car exclude-range))
@@ -3069,7 +3069,7 @@ bounds."
         (sort candidates (lambda (a b) (> (car a) (car b))))
       (nreverse candidates))))
 
-(defun meow--jump-regexp-candidates (regex &optional direction exclude-range)
+(defun eerie--jump-regexp-candidates (regex &optional direction exclude-range)
   "Return visible REGEX candidates ordered by DIRECTION.
 
 When EXCLUDE-RANGE is non-nil, skip the exact candidate with the same
@@ -3078,7 +3078,7 @@ bounds."
         (current-point (point))
         (direction (or direction 'forward))
         candidates)
-    (dolist (pair (meow--jump-visible-regions
+    (dolist (pair (eerie--jump-visible-regions
                    (window-start)
                    (window-end (selected-window) t)))
       (save-excursion
@@ -3097,27 +3097,27 @@ bounds."
         (sort candidates (lambda (a b) (> (car a) (car b))))
       (nreverse candidates))))
 
-(defun meow--jump-line-candidates (&optional direction exclude-range)
+(defun eerie--jump-line-candidates (&optional direction exclude-range)
   "Return visible line candidates ordered by DIRECTION.
 
 When EXCLUDE-RANGE is non-nil, skip the exact line range with the same
 bounds."
   (let* ((direction (or direction 'forward))
-         (origin (or exclude-range (meow--visual-line-range)))
-         (candidates (meow--jump-line-candidates-in-window
+         (origin (or exclude-range (eerie--visual-line-range)))
+         (candidates (eerie--jump-line-candidates-in-window
                       direction
                       exclude-range)))
     (when (and (< (length candidates) 9)
-               (meow--jump-line-can-move-p direction origin))
-      (meow--jump-line-recenter direction)
-      (setq candidates (meow--jump-line-candidates-in-window
+               (eerie--jump-line-can-move-p direction origin))
+      (eerie--jump-line-recenter direction)
+      (setq candidates (eerie--jump-line-candidates-in-window
                         direction
                         exclude-range)))
     candidates))
 
-(defun meow--jump-show-candidates (candidates direction)
+(defun eerie--jump-show-candidates (candidates direction)
   "Display numbered hint overlays for CANDIDATES in DIRECTION."
-  (meow--remove-expand-highlights)
+  (eerie--remove-expand-highlights)
   (cl-loop for candidate in (seq-take candidates 9)
            for idx from 1
            do
@@ -3129,8 +3129,8 @@ bounds."
                    (before-newline (equal 10 (char-after)))
                    (before-tab (equal 9 (char-after)))
                    (face (if (eq direction 'backward)
-                             'meow-position-highlight-reverse-number-1
-                           'meow-position-highlight-number-1)))
+                             'eerie-position-highlight-reverse-number-1
+                           'eerie-position-highlight-number-1)))
                (overlay-put ov 'window (selected-window))
                (cond
                 (before-newline
@@ -3142,14 +3142,14 @@ bounds."
                 (before-full-width-char
                  (overlay-put ov 'display
                               (propertize
-                               (format "%s" (meow--format-full-width-number idx))
+                               (format "%s" (eerie--format-full-width-number idx))
                                'face face)))
                 (t
                  (overlay-put ov 'display
                               (propertize (format "%s" idx) 'face face))))
-               (push ov meow--expand-overlays)))))
+               (push ov eerie--expand-overlays)))))
 
-(defun meow--jump-read-event (direction noun candidates)
+(defun eerie--jump-read-event (direction noun candidates)
   "Read an event for jump hints in DIRECTION over NOUN and CANDIDATES."
   (read-key
    (if candidates
@@ -3158,7 +3158,7 @@ bounds."
      (format "No more %s %s (; reverses, other key exits): "
              noun direction))))
 
-(defun meow--jump-loop (candidate-fn action noun &optional direction)
+(defun eerie--jump-loop (candidate-fn action noun &optional direction)
   "Run a visible jump loop using CANDIDATE-FN and ACTION.
 
 NOUN is used for prompt text. DIRECTION defaults to `forward'.
@@ -3171,8 +3171,8 @@ Return an exit reason symbol when the loop stops."
         (while (not done)
           (let* ((candidates (funcall candidate-fn direction))
                  (active-candidates (seq-take candidates 9)))
-            (meow--jump-show-candidates active-candidates direction)
-            (let* ((event (meow--jump-read-event direction noun active-candidates))
+            (eerie--jump-show-candidates active-candidates direction)
+            (let* ((event (eerie--jump-read-event direction noun active-candidates))
                    (key (if (integerp event)
                             event
                           (event-basic-type event))))
@@ -3193,25 +3193,25 @@ Return an exit reason symbol when the loop stops."
                 (setq unread-command-events (list event)
                       done t
                       result 'replay))))))
-      (meow--remove-expand-highlights))
+      (eerie--remove-expand-highlights))
     result))
 
-(defun meow--jump-char-action (candidate)
+(defun eerie--jump-char-action (candidate)
   "Jump to CANDIDATE for char jumping."
   (goto-char (car candidate))
-  (meow--ensure-visible))
+  (eerie--ensure-visible))
 
-(defun meow--jump-word-action (candidate)
+(defun eerie--jump-word-action (candidate)
   "Select the word occurrence at CANDIDATE in VISUAL state."
   (thread-first
-    (meow--make-selection '(expand . char) (car candidate) (cdr candidate))
-    (meow--select t))
-  (setq-local meow--visual-type 'char
-              meow--visual-line-anchor nil)
-  (meow--switch-state (meow--visual-target-state))
-  (meow--ensure-visible))
+    (eerie--make-selection '(expand . char) (car candidate) (cdr candidate))
+    (eerie--select t))
+  (setq-local eerie--visual-type 'char
+              eerie--visual-line-anchor nil)
+  (eerie--switch-state (eerie--visual-target-state))
+  (eerie--ensure-visible))
 
-(defun meow-jump-char (arg char)
+(defun eerie-jump-char (arg char)
   "Jump to visible CHAR using numbered hints.
 
 Use digits `1' through `9' to choose the visible candidates nearest point.
@@ -3219,18 +3219,18 @@ Press `;' during the jump session to reverse direction. A negative prefix
 argument starts in backward direction."
   (interactive (list current-prefix-arg (read-char "Jump char: " t)))
   (let ((regex (regexp-quote (string (if (eq char 13) ?\n char))))
-        (direction (if (meow--with-negative-argument-p arg)
+        (direction (if (eerie--with-negative-argument-p arg)
                        'backward
                      'forward)))
-    (meow--with-recorded-jump
-      (meow--cancel-selection)
-      (meow--jump-loop
-       (lambda (dir) (meow--jump-regexp-candidates regex dir))
-       #'meow--jump-char-action
+    (eerie--with-recorded-jump
+      (eerie--cancel-selection)
+      (eerie--jump-loop
+       (lambda (dir) (eerie--jump-regexp-candidates regex dir))
+       #'eerie--jump-char-action
        "char"
        direction))))
 
-(defun meow-jump-word-occurrence (arg)
+(defun eerie-jump-word-occurrence (arg)
   "Jump to visible occurrences of the current word using numbered hints.
 
 The current word is selected before jumping. Use digits `1' through `9'
@@ -3239,34 +3239,34 @@ reverse direction. A negative prefix argument starts in backward
 direction. The final target is left in charwise VISUAL state so normal
 visual movement and action keys continue to work."
   (interactive "P")
-  (if-let* ((bounds (bounds-of-thing-at-point meow-word-thing))
+  (if-let* ((bounds (bounds-of-thing-at-point eerie-word-thing))
             (word (buffer-substring-no-properties (car bounds) (cdr bounds))))
       (let ((regex (format "\\<%s\\>" (regexp-quote word)))
-            (direction (if (meow--with-negative-argument-p arg)
+            (direction (if (eerie--with-negative-argument-p arg)
                            'backward
                          'forward)))
-        (meow--with-recorded-jump
-          (meow--cancel-selection)
-          (meow--jump-word-action bounds)
-          (when (eq (meow--jump-loop
+        (eerie--with-recorded-jump
+          (eerie--cancel-selection)
+          (eerie--jump-word-action bounds)
+          (when (eq (eerie--jump-loop
                      (lambda (dir)
-                       (meow--jump-regexp-candidates
+                       (eerie--jump-regexp-candidates
                         regex
                         dir
                         (when (region-active-p)
                           (cons (region-beginning) (region-end)))))
-                     #'meow--jump-word-action
+                     #'eerie--jump-word-action
                      "word"
                      direction)
                     'escape)
-            (meow-visual-exit))))
+            (eerie-visual-exit))))
     (user-error "No word at point")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; VISIT and SEARCH
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--read-search-pattern (prompt)
+(defun eerie--read-search-pattern (prompt)
   "Read a regexp search pattern with PROMPT."
   (let* ((default (car regexp-search-ring))
          (input (read-from-minibuffer prompt nil nil nil 'regexp-search-ring default)))
@@ -3275,7 +3275,7 @@ visual movement and action keys continue to work."
      ((string-empty-p input) (user-error "No previous search"))
      (t input))))
 
-(defun meow--search-pattern (pattern direction)
+(defun eerie--search-pattern (pattern direction)
   "Search for PATTERN in DIRECTION and move point to the match start."
   (let* ((reverse (eq direction 'backward))
          (origin (point))
@@ -3292,55 +3292,55 @@ visual movement and action keys continue to work."
               (funcall search-fn pattern nil t 1)))
         (progn
           (goto-char (match-beginning 0))
-          (setq meow--last-search-direction direction)
-          (meow--ensure-visible)
-          (meow--highlight-regexp-in-buffer pattern)
+          (setq eerie--last-search-direction direction)
+          (eerie--ensure-visible)
+          (eerie--highlight-regexp-in-buffer pattern)
           (message "%s search: %s" (if reverse "Reverse" "Search") pattern)
           t)
       (goto-char origin)
       (message "%s search failed: %s" (if reverse "Reverse" "Search") pattern)
       nil)))
 
-(defun meow-search-forward ()
+(defun eerie-search-forward ()
   "Prompt for a regexp and jump to the next match."
   (interactive)
-  (let ((pattern (meow--read-search-pattern "/")))
-    (meow--push-search pattern)
-    (meow--with-recorded-jump
-      (meow--cancel-selection)
-      (meow--search-pattern pattern 'forward))))
+  (let ((pattern (eerie--read-search-pattern "/")))
+    (eerie--push-search pattern)
+    (eerie--with-recorded-jump
+      (eerie--cancel-selection)
+      (eerie--search-pattern pattern 'forward))))
 
-(defun meow-search-backward ()
+(defun eerie-search-backward ()
   "Prompt for a regexp and jump to the previous match."
   (interactive)
-  (let ((pattern (meow--read-search-pattern "?")))
-    (meow--push-search pattern)
-    (meow--with-recorded-jump
-      (meow--cancel-selection)
-      (meow--search-pattern pattern 'backward))))
+  (let ((pattern (eerie--read-search-pattern "?")))
+    (eerie--push-search pattern)
+    (eerie--with-recorded-jump
+      (eerie--cancel-selection)
+      (eerie--search-pattern pattern 'backward))))
 
-(defun meow-search-next ()
-  "Repeat the most recent Meow search in the same direction."
+(defun eerie-search-next ()
+  "Repeat the most recent Eerie search in the same direction."
   (interactive)
   (if-let ((pattern (car regexp-search-ring)))
-      (meow--with-recorded-jump
-        (meow--cancel-selection)
-        (meow--search-pattern pattern meow--last-search-direction))
+      (eerie--with-recorded-jump
+        (eerie--cancel-selection)
+        (eerie--search-pattern pattern eerie--last-search-direction))
     (user-error "No previous search")))
 
-(defun meow-search-prev ()
-  "Repeat the most recent Meow search in the opposite direction."
+(defun eerie-search-prev ()
+  "Repeat the most recent Eerie search in the opposite direction."
   (interactive)
   (if-let ((pattern (car regexp-search-ring)))
-      (meow--with-recorded-jump
-        (meow--cancel-selection)
-        (meow--search-pattern pattern
-                              (if (eq meow--last-search-direction 'backward)
+      (eerie--with-recorded-jump
+        (eerie--cancel-selection)
+        (eerie--search-pattern pattern
+                              (if (eq eerie--last-search-direction 'backward)
                                   'forward
                                 'backward)))
     (user-error "No previous search")))
 
-(defun meow-search (arg)
+(defun eerie-search (arg)
   "Search and select with the car of current `regexp-search-ring'.
 
 If the contents of selection doesn't match the regexp, will push
@@ -3355,9 +3355,9 @@ To search backward, use \\[negative-argument]."
                    (not (string-match-p
                          (format "^%s$" search)
                          (buffer-substring-no-properties (region-beginning) (region-end)))))))
-    (meow--push-search (regexp-quote (buffer-substring-no-properties (region-beginning) (region-end)))))
+    (eerie--push-search (regexp-quote (buffer-substring-no-properties (region-beginning) (region-end)))))
   (when-let* ((search (car regexp-search-ring)))
-    (let ((reverse (xor (meow--with-negative-argument-p arg) (meow--direction-backward-p)))
+    (let ((reverse (xor (eerie--with-negative-argument-p arg) (eerie--direction-backward-p)))
           (case-fold-search nil))
       (if (or (if reverse
                   (re-search-backward search nil t 1)
@@ -3366,7 +3366,7 @@ To search backward, use \\[negative-argument]."
               ;; if we are already at the last/first matched
               (save-mark-and-excursion
                 ;; Recalculate search indicator
-                (meow--clean-search-indicator-state)
+                (eerie--clean-search-indicator-state)
                 (goto-char (if reverse (point-max) (point-min)))
                 (if reverse
                     (re-search-backward search nil t 1)
@@ -3377,101 +3377,101 @@ To search backward, use \\[negative-argument]."
                  (beg (if reverse (marker-position marker-end) (marker-position marker-beg)))
                  (end (if reverse (marker-position marker-beg) (marker-position marker-end))))
             (thread-first
-              (meow--make-selection '(select . visit) beg end)
-              (meow--select t))
+              (eerie--make-selection '(select . visit) beg end)
+              (eerie--select t))
             (if reverse
                 (message "Reverse search: %s" search)
               (message "Search: %s" search))
-            (meow--ensure-visible))
+            (eerie--ensure-visible))
         (message "Searching %s failed" search))
-      (meow--highlight-regexp-in-buffer search))))
+      (eerie--highlight-regexp-in-buffer search))))
 
-(defconst meow--matching-open-delimiters '(?\( ?\[ ?\{)
+(defconst eerie--matching-open-delimiters '(?\( ?\[ ?\{)
   "Opening delimiters supported by `%'.")
 
-(defconst meow--matching-close-delimiters '(?\) ?\] ?\})
+(defconst eerie--matching-close-delimiters '(?\) ?\] ?\})
   "Closing delimiters supported by `%'.")
 
-(defconst meow--matching-quote-delimiters '(?\" ?\')
+(defconst eerie--matching-quote-delimiters '(?\" ?\')
   "Quote delimiters supported by `%'.")
 
-(defun meow--matching-delimiter-char-p (ch)
+(defun eerie--matching-delimiter-char-p (ch)
   "Return non-nil when CH is supported by `%'."
-  (and ch (alist-get ch meow--vim-text-object-table)))
+  (and ch (alist-get ch eerie--vim-text-object-table)))
 
-(defun meow--matching-delimiter-position ()
+(defun eerie--matching-delimiter-position ()
   "Return the buffer position of the delimiter `%` should inspect."
   (cond
-   ((meow--matching-delimiter-char-p (char-after))
+   ((eerie--matching-delimiter-char-p (char-after))
     (point))
    ((and (> (point) (point-min))
          (memq (char-after) '(nil ?\n ?\r))
-         (meow--matching-delimiter-char-p (char-before)))
+         (eerie--matching-delimiter-char-p (char-before)))
     (1- (point)))))
 
-(defun meow--matching-quote-target (pos ch)
+(defun eerie--matching-quote-target (pos ch)
   "Return the matching quote target for delimiter CH at POS."
-  (when-let* ((thing (alist-get ch meow--vim-text-object-table))
+  (when-let* ((thing (alist-get ch eerie--vim-text-object-table))
               (bounds (or (save-excursion
                             (goto-char pos)
-                            (meow--parse-range-of-thing thing nil))
+                            (eerie--parse-range-of-thing thing nil))
                           (when (< pos (point-max))
                             (save-excursion
                               (goto-char (1+ pos))
-                              (meow--parse-range-of-thing thing nil))))))
+                              (eerie--parse-range-of-thing thing nil))))))
     (let ((beg (car bounds))
           (end (cdr bounds)))
       (cond
        ((= pos beg) (1- end))
        ((= pos (1- end)) beg)))))
 
-(defun meow--matching-paren-target (pos ch)
+(defun eerie--matching-paren-target (pos ch)
   "Return the matching paren-like target for delimiter CH at POS."
   (save-excursion
     (goto-char pos)
     (cond
-     ((memq ch meow--matching-open-delimiters)
+     ((memq ch eerie--matching-open-delimiters)
       (when-let ((end (ignore-errors (scan-sexps (point) 1))))
         (1- end)))
-     ((memq ch meow--matching-close-delimiters)
+     ((memq ch eerie--matching-close-delimiters)
       (ignore-errors (scan-sexps (1+ (point)) -1))))))
 
-(defun meow--matching-delimiter-target ()
+(defun eerie--matching-delimiter-target ()
   "Return the matching delimiter position for `%'."
-  (when-let* ((pos (meow--matching-delimiter-position))
+  (when-let* ((pos (eerie--matching-delimiter-position))
               (ch (save-excursion
                     (goto-char pos)
                     (char-after))))
-    (if (memq ch meow--matching-quote-delimiters)
-        (meow--matching-quote-target pos ch)
-      (meow--matching-paren-target pos ch))))
+    (if (memq ch eerie--matching-quote-delimiters)
+        (eerie--matching-quote-target pos ch)
+      (eerie--matching-paren-target pos ch))))
 
-(defun meow-jump-matching ()
+(defun eerie-jump-matching ()
   "Jump to the delimiter matching the delimiter under point."
   (interactive)
-  (meow--with-recorded-jump
-    (meow--cancel-selection)
-    (if-let ((target (meow--matching-delimiter-target)))
+  (eerie--with-recorded-jump
+    (eerie--cancel-selection)
+    (if-let ((target (eerie--matching-delimiter-target)))
         (progn
           (goto-char target)
-          (meow--ensure-visible))
+          (eerie--ensure-visible))
       (user-error "No matching delimiter at point"))))
 
-(defun meow-visual-jump-matching ()
+(defun eerie-visual-jump-matching ()
   "Extend VISUAL selection to the matching delimiter under point."
   (interactive)
-  (if-let ((target (meow--matching-delimiter-target)))
-      (meow--visual-extend-to-point target)
+  (if-let ((target (eerie--matching-delimiter-target)))
+      (eerie--visual-extend-to-point target)
     (user-error "No matching delimiter at point")))
 
-(defun meow-pop-search ()
+(defun eerie-pop-search ()
   "Searching for the previous target."
   (interactive)
   (when-let* ((search (pop regexp-search-ring)))
     (message "current search is: %s" (car regexp-search-ring))
-    (meow--cancel-selection)))
+    (eerie--cancel-selection)))
 
-(defun meow--visit-point (text reverse)
+(defun eerie--visit-point (text reverse)
   "Return the point of text for visit command.
 Argument TEXT current search text.
 Argument REVERSE if selection is reversed."
@@ -3482,16 +3482,16 @@ Argument REVERSE if selection is reversed."
       (or (funcall func text nil t 1)
           (funcall func-2 text nil t 1)))))
 
-(defun meow-visit (arg)
+(defun eerie-visit (arg)
   "Read a string from minibuffer, then find and select it.
 
 The input will be pushed into `regexp-search-ring'.  So
-\\[meow-search] can be used for further searching with the same
+\\[eerie-search] can be used for further searching with the same
 condition.
 
 A list of words and symbols in the current buffer will be
 provided for completion.  To search for regexp instead, set
-`meow-visit-sanitize-completion' to nil.  In that case,
+`eerie-visit-sanitize-completion' to nil.  In that case,
 completions will be provided in regexp form, but also covering
 the words and symbols in the current buffer.
 
@@ -3499,10 +3499,10 @@ To search backward, use \\[negative-argument]."
   (interactive "P")
   (let* ((reverse arg)
          (pos (point))
-         (text (meow--prompt-symbol-and-words
+         (text (eerie--prompt-symbol-and-words
                 (if arg "Visit backward: " "Visit: ")
                 (point-min) (point-max) t))
-         (visit-point (meow--visit-point text reverse)))
+         (visit-point (eerie--visit-point text reverse)))
     (if visit-point
         (let* ((m (match-data))
                (marker-beg (car m))
@@ -3510,80 +3510,80 @@ To search backward, use \\[negative-argument]."
                (beg (if (> pos visit-point) (marker-position marker-end) (marker-position marker-beg)))
                (end (if (> pos visit-point) (marker-position marker-beg) (marker-position marker-end))))
           (thread-first
-            (meow--make-selection '(select . visit) beg end)
-            (meow--select t))
-          (meow--push-search text)
-          (meow--ensure-visible)
-          (meow--highlight-regexp-in-buffer text)
-          (setq meow--dont-remove-overlay t))
+            (eerie--make-selection '(select . visit) beg end)
+            (eerie--select t))
+          (eerie--push-search text)
+          (eerie--ensure-visible)
+          (eerie--highlight-regexp-in-buffer text)
+          (setq eerie--dont-remove-overlay t))
       (message "Visit: %s failed" text))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; THING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-thing-prompt (prompt-text)
+(defun eerie-thing-prompt (prompt-text)
   (read-char
-   (if meow-display-thing-help
-       (concat (meow--render-char-thing-table) "\n" prompt-text)
+   (if eerie-display-thing-help
+       (concat (eerie--render-char-thing-table) "\n" prompt-text)
      prompt-text)))
 
-(defun meow--thing-get-direction (cmd)
+(defun eerie--thing-get-direction (cmd)
   (or
-   (alist-get cmd meow-thing-selection-directions)
+   (alist-get cmd eerie-thing-selection-directions)
    'forward))
 
-(defun meow-beginning-of-thing (thing)
+(defun eerie-beginning-of-thing (thing)
   "Select to the beginning of THING."
-  (interactive (list (meow-thing-prompt "Beginning of: ")))
+  (interactive (list (eerie-thing-prompt "Beginning of: ")))
   (save-window-excursion
-    (let ((back (equal 'backward (meow--thing-get-direction 'beginning)))
-          (bounds (meow--parse-inner-of-thing-char thing)))
+    (let ((back (equal 'backward (eerie--thing-get-direction 'beginning)))
+          (bounds (eerie--parse-inner-of-thing-char thing)))
       (when bounds
         (thread-first
-          (meow--make-selection '(select . transient)
+          (eerie--make-selection '(select . transient)
                                 (if back (point) (car bounds))
                                 (if back (car bounds) (point)))
-          (meow--select t))))))
+          (eerie--select t))))))
 
-(defun meow-end-of-thing (thing)
+(defun eerie-end-of-thing (thing)
   "Select to the end of THING."
-  (interactive (list (meow-thing-prompt "End of: ")))
+  (interactive (list (eerie-thing-prompt "End of: ")))
   (save-window-excursion
-    (let ((back (equal 'backward (meow--thing-get-direction 'end)))
-          (bounds (meow--parse-inner-of-thing-char thing)))
+    (let ((back (equal 'backward (eerie--thing-get-direction 'end)))
+          (bounds (eerie--parse-inner-of-thing-char thing)))
       (when bounds
         (thread-first
-          (meow--make-selection '(select . transient)
+          (eerie--make-selection '(select . transient)
                                 (if back (cdr bounds) (point))
                                 (if back (point) (cdr bounds)))
-          (meow--select t))))))
+          (eerie--select t))))))
 
-(defun meow--select-range (back bounds)
+(defun eerie--select-range (back bounds)
   (when bounds
     (thread-first
-      (meow--make-selection '(select . transient)
+      (eerie--make-selection '(select . transient)
                             (if back (cdr bounds) (car bounds))
                             (if back (car bounds) (cdr bounds)))
-      (meow--select t))))
+      (eerie--select t))))
 
-(defun meow-inner-of-thing (thing)
+(defun eerie-inner-of-thing (thing)
   "Select inner (excluding delimiters) of THING."
-  (interactive (list (meow-thing-prompt "Inner of: ")))
+  (interactive (list (eerie-thing-prompt "Inner of: ")))
   (save-window-excursion
-    (let ((back (equal 'backward (meow--thing-get-direction 'inner)))
-          (bounds (meow--parse-inner-of-thing-char thing)))
-      (meow--select-range back bounds))))
+    (let ((back (equal 'backward (eerie--thing-get-direction 'inner)))
+          (bounds (eerie--parse-inner-of-thing-char thing)))
+      (eerie--select-range back bounds))))
 
-(defun meow-bounds-of-thing (thing)
+(defun eerie-bounds-of-thing (thing)
   "Select bounds (including delimiters) of THING."
-  (interactive (list (meow-thing-prompt "Bounds of: ")))
+  (interactive (list (eerie-thing-prompt "Bounds of: ")))
   (save-window-excursion
-    (let ((back (equal 'backward (meow--thing-get-direction 'bounds)))
-          (bounds (meow--parse-bounds-of-thing-char thing)))
-      (meow--select-range back bounds))))
+    (let ((back (equal 'backward (eerie--thing-get-direction 'bounds)))
+          (bounds (eerie--parse-bounds-of-thing-char thing)))
+      (eerie--select-range back bounds))))
 
-(defconst meow--vim-text-object-table
+(defconst eerie--vim-text-object-table
   '((?\( . round)
     (?\) . round)
     (?\[ . square)
@@ -3592,57 +3592,57 @@ To search backward, use \\[negative-argument]."
     (?\} . curly)
     (?\" . double-quote)
     (?\' . single-quote))
-  "Mapping from Vim-style text object chars to Meow thing symbols.")
+  "Mapping from Vim-style text object chars to Eerie thing symbols.")
 
-(defun meow--read-vim-text-object-char (prompt)
+(defun eerie--read-vim-text-object-char (prompt)
   "Read a Vim-style text object character with PROMPT."
   (read-char prompt))
 
-(defun meow--vim-text-object-for-char (ch)
+(defun eerie--vim-text-object-for-char (ch)
   "Return the thing symbol for Vim-style text object character CH."
-  (or (alist-get ch meow--vim-text-object-table)
+  (or (alist-get ch eerie--vim-text-object-table)
       (user-error "Unsupported text object: %s" (single-key-description ch))))
 
-(defun meow--select-vim-text-object (kind thing)
+(defun eerie--select-vim-text-object (kind thing)
   "Select THING using KIND, which is either `inner' or `bounds'."
-  (let ((bounds (meow--parse-range-of-thing thing (eq kind 'inner))))
+  (let ((bounds (eerie--parse-range-of-thing thing (eq kind 'inner))))
     (unless bounds
       (user-error "No %s text object at point" (symbol-name thing)))
     (thread-first
-      (meow--make-selection '(select . transient) (car bounds) (cdr bounds))
-      (meow--select t))))
+      (eerie--make-selection '(select . transient) (car bounds) (cdr bounds))
+      (eerie--select t))))
 
-(defun meow-visual-inner-of-thing ()
+(defun eerie-visual-inner-of-thing ()
   "Select the inner Vim-style text object in VISUAL mode."
   (interactive)
-  (if (meow--multiedit-active-p)
-      (meow--multiedit-start-insert-or-append 'insert)
-    (let* ((ch (meow--read-vim-text-object-char "Visual inner object: "))
-           (thing (meow--vim-text-object-for-char ch)))
-      (meow--select-vim-text-object 'inner thing)
-      (setq-local meow--visual-type 'char)
-      (meow--switch-state (meow--visual-target-state)))))
+  (if (eerie--multiedit-active-p)
+      (eerie--multiedit-start-insert-or-append 'insert)
+    (let* ((ch (eerie--read-vim-text-object-char "Visual inner object: "))
+           (thing (eerie--vim-text-object-for-char ch)))
+      (eerie--select-vim-text-object 'inner thing)
+      (setq-local eerie--visual-type 'char)
+      (eerie--switch-state (eerie--visual-target-state)))))
 
-(defun meow-visual-bounds-of-thing ()
+(defun eerie-visual-bounds-of-thing ()
   "Select the bounds Vim-style text object in VISUAL mode."
   (interactive)
-  (if (meow--multiedit-active-p)
-      (meow--multiedit-start-insert-or-append 'append)
-    (let* ((ch (meow--read-vim-text-object-char "Visual around object: "))
-           (thing (meow--vim-text-object-for-char ch)))
-      (meow--select-vim-text-object 'bounds thing)
-      (setq-local meow--visual-type 'char)
-      (meow--switch-state (meow--visual-target-state)))))
+  (if (eerie--multiedit-active-p)
+      (eerie--multiedit-start-insert-or-append 'append)
+    (let* ((ch (eerie--read-vim-text-object-char "Visual around object: "))
+           (thing (eerie--vim-text-object-for-char ch)))
+      (eerie--select-vim-text-object 'bounds thing)
+      (setq-local eerie--visual-type 'char)
+      (eerie--switch-state (eerie--visual-target-state)))))
 
-(defun meow--operator-select-range (beg end)
+(defun eerie--operator-select-range (beg end)
   "Create an operator selection spanning BEG to END."
   (unless (and beg end (/= beg end))
     (user-error "Motion produced no target"))
   (thread-first
-    (meow--make-selection '(select . transient) beg end)
-    (meow--select t)))
+    (eerie--make-selection '(select . transient) beg end)
+    (eerie--select t)))
 
-(defun meow--operator-forward-thing-start (thing)
+(defun eerie--operator-forward-thing-start (thing)
   "Return the start of the next THING from point."
   (save-mark-and-excursion
     (when-let ((bounds (bounds-of-thing-at-point thing)))
@@ -3656,7 +3656,7 @@ To search backward, use \\[negative-argument]."
     (when-let ((bounds (bounds-of-thing-at-point thing)))
       (car bounds))))
 
-(defun meow--operator-backward-thing-start (thing)
+(defun eerie--operator-backward-thing-start (thing)
   "Return the start of the previous THING from point."
   (save-mark-and-excursion
     (when (> (point) (point-min))
@@ -3667,12 +3667,12 @@ To search backward, use \\[negative-argument]."
     (when-let ((bounds (bounds-of-thing-at-point thing)))
       (car bounds))))
 
-(defun meow--operator-current-thing-end (thing)
+(defun eerie--operator-current-thing-end (thing)
   "Return the end of the current THING at point."
   (when-let ((bounds (bounds-of-thing-at-point thing)))
     (cdr bounds)))
 
-(defun meow--operator-find-forward (ch &optional till)
+(defun eerie--operator-find-forward (ch &optional till)
   "Return the forward find target for CH.
 
 When TILL is non-nil, return the position just before CH."
@@ -3685,24 +3685,24 @@ When TILL is non-nil, return the position just before CH."
             (1- (point))
           (point))))))
 
-(defun meow--operator-motion-range (operator motion)
+(defun eerie--operator-motion-range (operator motion)
   "Return the range for OPERATOR acting on MOTION."
   (let ((orig (point)))
     (pcase motion
       (`(word-forward)
        (cons orig
              (or (and (eq operator 'change)
-                      (meow--operator-current-thing-end meow-word-thing))
-                 (meow--operator-forward-thing-start meow-word-thing))))
+                      (eerie--operator-current-thing-end eerie-word-thing))
+                 (eerie--operator-forward-thing-start eerie-word-thing))))
       (`(symbol-forward)
        (cons orig
              (or (and (eq operator 'change)
-                      (meow--operator-current-thing-end meow-symbol-thing))
-                 (meow--operator-forward-thing-start meow-symbol-thing))))
+                      (eerie--operator-current-thing-end eerie-symbol-thing))
+                 (eerie--operator-forward-thing-start eerie-symbol-thing))))
       (`(word-backward)
-       (cons orig (meow--operator-backward-thing-start meow-word-thing)))
+       (cons orig (eerie--operator-backward-thing-start eerie-word-thing)))
       (`(symbol-backward)
-       (cons orig (meow--operator-backward-thing-start meow-symbol-thing)))
+       (cons orig (eerie--operator-backward-thing-start eerie-symbol-thing)))
       (`(char-left)
        (cons orig (and (> orig (point-min)) (1- orig))))
       (`(char-right)
@@ -3712,11 +3712,11 @@ When TILL is non-nil, return the position just before CH."
       (`(line-end)
        (cons orig (line-end-position)))
       (`(find-forward ,ch)
-       (cons orig (meow--operator-find-forward ch nil)))
+       (cons orig (eerie--operator-find-forward ch nil)))
       (`(till-forward ,ch)
-       (cons orig (meow--operator-find-forward ch t))))))
+       (cons orig (eerie--operator-find-forward ch t))))))
 
-(defun meow--operator-target (operator)
+(defun eerie--operator-target (operator)
   "Read and return the target for OPERATOR."
   (let ((event (read-key (format "%s target: " (capitalize (symbol-name operator))))))
     (pcase (event-basic-type event)
@@ -3732,164 +3732,164 @@ When TILL is non-nil, return the position just before CH."
       (?$ '(motion line-end))
       (?f
        (list 'motion 'find-forward
-             (meow--read-vim-text-object-char "Find char: ")))
+             (eerie--read-vim-text-object-char "Find char: ")))
       (?t
        (list 'motion 'till-forward
-             (meow--read-vim-text-object-char "Till char: ")))
+             (eerie--read-vim-text-object-char "Till char: ")))
       (?i
        (list 'text-object 'inner
-             (meow--vim-text-object-for-char
-              (meow--read-vim-text-object-char "Inner object: "))))
+             (eerie--vim-text-object-for-char
+              (eerie--read-vim-text-object-char "Inner object: "))))
       (?a
        (list 'text-object 'bounds
-             (meow--vim-text-object-for-char
-              (meow--read-vim-text-object-char "Around object: "))))
+             (eerie--vim-text-object-for-char
+              (eerie--read-vim-text-object-char "Around object: "))))
       (_
        (user-error "Unsupported %s target" (symbol-name operator))))))
 
-(defun meow--operator-command (operator)
+(defun eerie--operator-command (operator)
   "Execute Vim-style OPERATOR on the next target."
   (let ((origin (point-marker)))
-  (pcase (meow--operator-target operator)
+  (pcase (eerie--operator-target operator)
     (`(line)
      (thread-first
-       (meow--make-selection '(expand . line)
+       (eerie--make-selection '(expand . line)
                              (line-beginning-position)
                              (line-end-position))
-       (meow--select t)))
+       (eerie--select t)))
     (`(motion ,motion-kind)
      (pcase-let ((`(,beg . ,end)
-                  (meow--operator-motion-range operator (list motion-kind))))
-       (meow--operator-select-range beg end)))
+                  (eerie--operator-motion-range operator (list motion-kind))))
+       (eerie--operator-select-range beg end)))
     (`(motion ,motion-kind ,motion-arg)
      (pcase-let ((`(,beg . ,end)
-                  (meow--operator-motion-range operator (list motion-kind motion-arg))))
-       (meow--operator-select-range beg end)))
+                  (eerie--operator-motion-range operator (list motion-kind motion-arg))))
+       (eerie--operator-select-range beg end)))
     (`(text-object ,kind ,thing)
-     (meow--select-vim-text-object kind thing)))
+     (eerie--select-vim-text-object kind thing)))
   (pcase operator
-    ('delete (meow-kill))
-    ('change (meow-change))
+    ('delete (eerie-kill))
+    ('change (eerie-change))
     ('yank
-     (meow-save)
+     (eerie-save)
      (when (and (marker-buffer origin)
                 (eq (marker-buffer origin) (current-buffer)))
        (goto-char origin))))
-  (unless (meow-insert-mode-p)
+  (unless (eerie-insert-mode-p)
     (when (region-active-p)
-      (meow--cancel-selection))
-    (meow--switch-state 'normal))))
+      (eerie--cancel-selection))
+    (eerie--switch-state 'normal))))
 
-(defun meow-operator-delete ()
+(defun eerie-operator-delete ()
   "Run a Vim-style delete operator."
   (interactive)
-  (if (and meow--multicursor-active
-           (meow--multiedit-active-p))
-      (meow--multiedit-delete-all-targets)
-    (meow--operator-command 'delete)))
+  (if (and eerie--multicursor-active
+           (eerie--multiedit-active-p))
+      (eerie--multiedit-delete-all-targets)
+    (eerie--operator-command 'delete)))
 
-(defun meow-operator-change ()
+(defun eerie-operator-change ()
   "Run a Vim-style change operator."
   (interactive)
-  (if (and meow--multicursor-active
-           (meow--multiedit-active-p))
-      (meow--multiedit-start-change)
-    (meow--operator-command 'change)))
+  (if (and eerie--multicursor-active
+           (eerie--multiedit-active-p))
+      (eerie--multiedit-start-change)
+    (eerie--operator-command 'change)))
 
-(defun meow-operator-yank ()
+(defun eerie-operator-yank ()
   "Run a Vim-style yank operator."
   (interactive)
-  (if (and meow--multicursor-active
-           (meow--multiedit-active-p))
+  (if (and eerie--multicursor-active
+           (eerie--multiedit-active-p))
       (let ((origin (point-marker))
-            (primary-text (meow--multiedit-primary-text)))
-        (meow--multiedit-reset-state)
+            (primary-text (eerie--multiedit-primary-text)))
+        (eerie--multiedit-reset-state)
         (kill-new primary-text)
         (when (region-active-p)
-          (meow--cancel-selection))
-        (when meow--multicursor-active
-          (meow--multicursor-reset-state))
+          (eerie--cancel-selection))
+        (when eerie--multicursor-active
+          (eerie--multicursor-reset-state))
         (when (and (marker-buffer origin)
                    (eq (marker-buffer origin) (current-buffer)))
           (goto-char origin))
-        (meow--switch-state 'normal))
-    (meow--operator-command 'yank)))
+        (eerie--switch-state 'normal))
+    (eerie--operator-command 'yank)))
 
-(defun meow-indent ()
+(defun eerie-indent ()
   "Indent region or current line."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-indent-region))
+  (eerie--execute-kbd-macro eerie--kbd-indent-region))
 
-(defun meow-M-x ()
+(defun eerie-M-x ()
   "Just Meta-x."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-excute-extended-command))
+  (eerie--execute-kbd-macro eerie--kbd-excute-extended-command))
 
-(defun meow-unpop-to-mark ()
+(defun eerie-unpop-to-mark ()
   "Unpop off mark ring. Does nothing if mark ring is empty."
   (interactive)
-  (meow--with-recorded-jump
-    (meow--cancel-selection)
+  (eerie--with-recorded-jump
+    (eerie--cancel-selection)
     (when mark-ring
       (setq mark-ring (cons (copy-marker (mark-marker)) mark-ring))
       (set-marker (mark-marker) (car (last mark-ring)) (current-buffer))
       (setq mark-ring (nbutlast mark-ring))
       (goto-char (marker-position (car (last mark-ring)))))))
 
-(defun meow-pop-to-mark ()
+(defun eerie-pop-to-mark ()
   "Alternative command to `pop-to-mark-command'.
 
 Before jump, a mark of current location will be created."
   (interactive)
-  (meow--with-recorded-jump
-    (meow--cancel-selection)
-    (unless (member last-command '(meow-pop-to-mark meow-unpop-to-mark meow-pop-or-unpop-to-mark))
+  (eerie--with-recorded-jump
+    (eerie--cancel-selection)
+    (unless (member last-command '(eerie-pop-to-mark eerie-unpop-to-mark eerie-pop-or-unpop-to-mark))
       (setq mark-ring (append mark-ring (list (point-marker)))))
     (pop-to-mark-command)))
 
-(defun meow-pop-or-unpop-to-mark (arg)
-  "Call `meow-pop-to-mark' or `meow-unpop-to-mark', depending on ARG.
+(defun eerie-pop-or-unpop-to-mark (arg)
+  "Call `eerie-pop-to-mark' or `eerie-unpop-to-mark', depending on ARG.
 
-With a negative prefix ARG, call `meow-unpop-to-mark'. Otherwise, call
-`meow-pop-to-mark.'
+With a negative prefix ARG, call `eerie-unpop-to-mark'. Otherwise, call
+`eerie-pop-to-mark.'
 
-See also `meow-pop-or-unpop-to-mark-repeat-unpop'."
+See also `eerie-pop-or-unpop-to-mark-repeat-unpop'."
   (interactive "p")
-  (if (or (and meow-pop-or-unpop-to-mark-repeat-unpop
-               (eq last-command 'meow-unpop-to-mark))
+  (if (or (and eerie-pop-or-unpop-to-mark-repeat-unpop
+               (eq last-command 'eerie-unpop-to-mark))
           (< arg 0))
       (progn
-        (setq this-command 'meow-unpop-to-mark)
-        (meow-unpop-to-mark))
-    (meow-pop-to-mark)))
+        (setq this-command 'eerie-unpop-to-mark)
+        (eerie-unpop-to-mark))
+    (eerie-pop-to-mark)))
 
-(defun meow-pop-to-global-mark ()
+(defun eerie-pop-to-global-mark ()
   "Alternative command to `pop-global-mark'.
 
 Before jump, a mark of current location will be created."
   (interactive)
-  (meow--with-recorded-jump
-    (meow--cancel-selection)
-    (unless (member last-command '(meow-pop-to-global-mark meow-pop-to-mark meow-unpop-to-mark))
+  (eerie--with-recorded-jump
+    (eerie--cancel-selection)
+    (unless (member last-command '(eerie-pop-to-global-mark eerie-pop-to-mark eerie-unpop-to-mark))
       (setq global-mark-ring (append global-mark-ring (list (point-marker)))))
-    (meow--execute-kbd-macro meow--kbd-pop-global-mark)))
+    (eerie--execute-kbd-macro eerie--kbd-pop-global-mark)))
 
-(defun meow-back-to-indentation ()
+(defun eerie-back-to-indentation ()
   "Back to indentation."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-back-to-indentation))
+  (eerie--execute-kbd-macro eerie--kbd-back-to-indentation))
 
-(defun meow-query-replace ()
+(defun eerie-query-replace ()
   "Query replace."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-query-replace))
+  (eerie--execute-kbd-macro eerie--kbd-query-replace))
 
-(defun meow-query-replace-regexp ()
+(defun eerie-query-replace-regexp ()
   "Query replace regexp."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-query-replace-regexp))
+  (eerie--execute-kbd-macro eerie--kbd-query-replace-regexp))
 
-(defun meow-last-buffer (arg)
+(defun eerie-last-buffer (arg)
   "Switch to last buffer.
 Argument ARG if not nil, switching in a new window."
   (interactive "P")
@@ -3900,7 +3900,7 @@ Argument ARG if not nil, switching in a new window."
     (mode-line-other-buffer))
    (t)))
 
-(defun meow-minibuffer-quit ()
+(defun eerie-minibuffer-quit ()
   "Keyboard escape quit in minibuffer."
   (interactive)
   (if (minibufferp)
@@ -3909,7 +3909,7 @@ Argument ARG if not nil, switching in a new window."
         (call-interactively #'abort-recursive-edit))
     (call-interactively #'keyboard-quit)))
 
-(defun meow-escape-or-normal-modal ()
+(defun eerie-escape-or-normal-modal ()
   "Keyboard escape quit or switch to normal state."
   (interactive)
   (cond
@@ -3917,57 +3917,57 @@ Argument ARG if not nil, switching in a new window."
     (if (fboundp 'minibuffer-keyboard-quit)
         (call-interactively #'minibuffer-keyboard-quit)
       (call-interactively #'abort-recursive-edit)))
-   ;; ((meow-keypad-mode-p)
-   ;;  (meow--exit-keypad-state))
-   ((meow-insert-mode-p)
-    (meow--switch-state 'normal))
+   ;; ((eerie-keypad-mode-p)
+   ;;  (eerie--exit-keypad-state))
+   ((eerie-insert-mode-p)
+    (eerie--switch-state 'normal))
    (t
-    (meow--switch-state 'normal))))
+    (eerie--switch-state 'normal))))
 
-(defun meow-eval-last-exp ()
+(defun eerie-eval-last-exp ()
   "Eval last sexp."
   (interactive)
-  (meow--execute-kbd-macro meow--kbd-eval-last-exp))
+  (eerie--execute-kbd-macro eerie--kbd-eval-last-exp))
 
-(defun meow-expand (&optional n)
+(defun eerie-expand (&optional n)
   (interactive)
-  (meow--with-selection-fallback
-   (when (and meow--expand-nav-function
+  (eerie--with-selection-fallback
+   (when (and eerie--expand-nav-function
               (region-active-p)
-              (meow--selection-type))
+              (eerie--selection-type))
      (let* ((n (or n (string-to-number (char-to-string last-input-event))))
             (n (if (= n 0) 10 n))
-            (sel-type (cons meow-expand-selection-type (cdr (meow--selection-type)))))
+            (sel-type (cons eerie-expand-selection-type (cdr (eerie--selection-type)))))
        (thread-first
-         (meow--make-selection sel-type (mark)
+         (eerie--make-selection sel-type (mark)
                                (save-mark-and-excursion
-                                 (let ((meow--expanding-p t))
+                                 (let ((eerie--expanding-p t))
                                    (dotimes (_ n)
                                      (funcall
-                                      (if (meow--direction-backward-p)
-                                          (car meow--expand-nav-function)
-                                        (cdr meow--expand-nav-function)))))
+                                      (if (eerie--direction-backward-p)
+                                          (car eerie--expand-nav-function)
+                                        (cdr eerie--expand-nav-function)))))
                                  (point)))
-         (meow--select t))
-       (meow--maybe-highlight-num-positions meow--expand-nav-function)))))
+         (eerie--select t))
+       (eerie--maybe-highlight-num-positions eerie--expand-nav-function)))))
 
-(defun meow-expand-1 () (interactive) (meow-expand 1))
-(defun meow-expand-2 () (interactive) (meow-expand 2))
-(defun meow-expand-3 () (interactive) (meow-expand 3))
-(defun meow-expand-4 () (interactive) (meow-expand 4))
-(defun meow-expand-5 () (interactive) (meow-expand 5))
-(defun meow-expand-6 () (interactive) (meow-expand 6))
-(defun meow-expand-7 () (interactive) (meow-expand 7))
-(defun meow-expand-8 () (interactive) (meow-expand 8))
-(defun meow-expand-9 () (interactive) (meow-expand 9))
-(defun meow-expand-0 () (interactive) (meow-expand 0))
+(defun eerie-expand-1 () (interactive) (eerie-expand 1))
+(defun eerie-expand-2 () (interactive) (eerie-expand 2))
+(defun eerie-expand-3 () (interactive) (eerie-expand 3))
+(defun eerie-expand-4 () (interactive) (eerie-expand 4))
+(defun eerie-expand-5 () (interactive) (eerie-expand 5))
+(defun eerie-expand-6 () (interactive) (eerie-expand 6))
+(defun eerie-expand-7 () (interactive) (eerie-expand 7))
+(defun eerie-expand-8 () (interactive) (eerie-expand 8))
+(defun eerie-expand-9 () (interactive) (eerie-expand 9))
+(defun eerie-expand-0 () (interactive) (eerie-expand 0))
 
-(defun meow-digit-argument ()
+(defun eerie-digit-argument ()
   (interactive)
-  (set-transient-map meow-numeric-argument-keymap)
+  (set-transient-map eerie-numeric-argument-keymap)
   (call-interactively #'digit-argument))
 
-(defun meow-universal-argument ()
+(defun eerie-universal-argument ()
   "Replacement for universal-argument."
   (interactive)
   (if current-prefix-arg
@@ -3978,14 +3978,14 @@ Argument ARG if not nil, switching in a new window."
 ;;; KMACROS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow-kmacro-lines ()
+(defun eerie-kmacro-lines ()
   "Apply KMacro to each line in region."
   (interactive)
-  (meow--with-selection-fallback
+  (eerie--with-selection-fallback
    (let ((beg (caar (region-bounds)))
          (end (cdar (region-bounds)))
          (ov-list))
-     (meow--wrap-collapse-undo
+     (eerie--wrap-collapse-undo
        ;; create overlays as marks at each line beginning.
        ;; apply kmacro at those positions.
        ;; these allow user executing kmacro those create newlines.
@@ -3998,32 +3998,32 @@ Argument ARG if not nil, switching in a new window."
        (cl-loop for ov in (reverse ov-list) do
                 (goto-char (overlay-start ov))
                 (thread-first
-                  (meow--make-selection 'line (line-end-position) (line-beginning-position))
-                  (meow--select t))
+                  (eerie--make-selection 'line (line-end-position) (line-beginning-position))
+                  (eerie--select t))
                 (call-last-kbd-macro)
                 (delete-overlay ov))))))
 
-(defun meow-kmacro-matches (arg)
+(defun eerie-kmacro-matches (arg)
   "Apply KMacro by search.
 
 Use negative argument for backward application."
   (interactive "P")
   (let ((s (car regexp-search-ring))
         (case-fold-search nil)
-        (back (meow--with-negative-argument-p arg)))
-    (meow--wrap-collapse-undo
+        (back (eerie--with-negative-argument-p arg)))
+    (eerie--wrap-collapse-undo
       (while (if back
                  (re-search-backward s nil t)
                (re-search-forward s nil t))
         (thread-first
-          (meow--make-selection '(select . visit)
+          (eerie--make-selection '(select . visit)
                                 (if back
                                     (point)
                                   (match-beginning 0))
                                 (if back
                                     (match-end 0)
                                   (point)))
-          (meow--select t))
+          (eerie--select t))
         (let ((ov (make-overlay (region-beginning) (region-end))))
           (unwind-protect
               (progn
@@ -4034,31 +4034,31 @@ Use negative argument for backward application."
                 (goto-char (max (point) (overlay-end ov))))
               (delete-overlay ov))))))))
 
-(defun meow-end-or-call-kmacro ()
+(defun eerie-end-or-call-kmacro ()
   "End kmacro recording or call macro.
 
 This command is a replacement for built-in `kmacro-end-or-call-macro'."
   (interactive)
   (cond
-   ((and meow--keypad-this-command defining-kbd-macro)
+   ((and eerie--keypad-this-command defining-kbd-macro)
     (message "Can't end kmacro with KEYPAD command"))
-   ((eq meow--beacon-defining-kbd-macro 'record)
-    (setq meow--beacon-defining-kbd-macro nil)
-    (meow-beacon-end-and-apply-kmacro))
-   ((or (meow-normal-mode-p)
-        (meow-motion-mode-p))
+   ((eq eerie--beacon-defining-kbd-macro 'record)
+    (setq eerie--beacon-defining-kbd-macro nil)
+    (eerie-beacon-end-and-apply-kmacro))
+   ((or (eerie-normal-mode-p)
+        (eerie-motion-mode-p))
     (call-interactively #'kmacro-end-or-call-macro))
    (t
     (message "Can only end or call kmacro in NORMAL or MOTION state."))))
 
-(defun meow-end-kmacro ()
+(defun eerie-end-kmacro ()
   "End kmacro recording or call macro.
 
 This command is a replacement for built-in `kmacro-end-macro'."
   (interactive)
   (cond
-   ((or (meow-normal-mode-p)
-        (meow-motion-mode-p))
+   ((or (eerie-normal-mode-p)
+        (eerie-motion-mode-p))
     (call-interactively #'kmacro-end-or-call-macro))
    (t
     (message "Can only end or call kmacro in NORMAL or MOTION state."))))
@@ -4067,29 +4067,29 @@ This command is a replacement for built-in `kmacro-end-macro'."
 ;;; GRAB SELECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun meow--cancel-second-selection ()
+(defun eerie--cancel-second-selection ()
   (delete-overlay mouse-secondary-overlay)
   (setq mouse-secondary-start (make-marker))
   (move-marker mouse-secondary-start (point)))
 
-(defun meow-grab ()
+(defun eerie-grab ()
   "Create secondary selection or a marker if no region available."
   (interactive)
   (if (region-active-p)
       (secondary-selection-from-region)
-    (meow--cancel-second-selection))
-  (meow--cancel-selection))
+    (eerie--cancel-second-selection))
+  (eerie--cancel-selection))
 
-(defun meow-pop-grab ()
+(defun eerie-pop-grab ()
   "Pop to secondary selection."
   (interactive)
   (cond
-   ((meow--second-sel-buffer)
-    (pop-to-buffer (meow--second-sel-buffer))
+   ((eerie--second-sel-buffer)
+    (pop-to-buffer (eerie--second-sel-buffer))
     (secondary-selection-to-region)
     (setq mouse-secondary-start (make-marker))
     (move-marker mouse-secondary-start (point))
-    (meow--beacon-remove-overlays))
+    (eerie--beacon-remove-overlays))
    ((markerp mouse-secondary-start)
        (or
      (when-let* ((buf (marker-buffer mouse-secondary-start)))
@@ -4098,74 +4098,74 @@ This command is a replacement for built-in `kmacro-end-macro'."
          (goto-char pos)))
      (message "No secondary selection")))))
 
-(defun meow-swap-grab ()
+(defun eerie-swap-grab ()
   "Swap region and secondary selection."
   (interactive)
   (let* ((rbeg (region-beginning))
          (rend (region-end))
          (region-str (when (region-active-p) (buffer-substring-no-properties rbeg rend)))
-         (sel-str (meow--second-sel-get-string))
+         (sel-str (eerie--second-sel-get-string))
          (next-marker (make-marker)))
-    (when region-str (meow--delete-region rbeg rend))
-    (when sel-str (meow--insert sel-str))
+    (when region-str (eerie--delete-region rbeg rend))
+    (when sel-str (eerie--insert sel-str))
     (move-marker next-marker (point))
-    (meow--second-sel-set-string (or region-str ""))
+    (eerie--second-sel-set-string (or region-str ""))
     (when (overlayp mouse-secondary-overlay)
        (delete-overlay mouse-secondary-overlay))
     (setq mouse-secondary-start next-marker)
-    (meow--cancel-selection)))
+    (eerie--cancel-selection)))
 
-(defun meow-sync-grab ()
+(defun eerie-sync-grab ()
   "Sync secondary selection with current region."
   (interactive)
-  (meow--with-selection-fallback
+  (eerie--with-selection-fallback
    (let* ((rbeg (region-beginning))
           (rend (region-end))
           (region-str (buffer-substring-no-properties rbeg rend))
           (next-marker (make-marker)))
      (move-marker next-marker (point))
-     (meow--second-sel-set-string region-str)
+     (eerie--second-sel-set-string region-str)
      (when (overlayp mouse-secondary-overlay)
        (delete-overlay mouse-secondary-overlay))
      (setq mouse-secondary-start next-marker)
-     (meow--cancel-selection))))
+     (eerie--cancel-selection))))
 
-(defun meow-describe-key (key-list &optional buffer)
+(defun eerie-describe-key (key-list &optional buffer)
   (interactive (list (help--read-key-sequence)))
   (if (= 1 (length key-list))
       (let* ((key (format-kbd-macro (cdar key-list)))
              (cmd (key-binding key)))
         (if-let* ((dispatch (and (commandp cmd)
-                                 (get cmd 'meow-dispatch))))
+                                 (get cmd 'eerie-dispatch))))
             (describe-key (kbd dispatch) buffer)
           (describe-key key-list buffer)))
     ;; for mouse events
     (describe-key key-list buffer)))
 
 ;; aliases
-(defalias 'meow-backward-delete 'meow-backspace)
-(defalias 'meow-c-d 'meow-C-d)
-(defalias 'meow-c-k 'meow-C-k)
-(defalias 'meow-delete 'meow-C-d)
-(defalias 'meow-cancel 'meow-cancel-selection)
+(defalias 'eerie-backward-delete 'eerie-backspace)
+(defalias 'eerie-c-d 'eerie-C-d)
+(defalias 'eerie-c-k 'eerie-C-k)
+(defalias 'eerie-delete 'eerie-C-d)
+(defalias 'eerie-cancel 'eerie-cancel-selection)
 
 ;; removed commands
 
-(defmacro meow--remove-command (orig rep)
+(defmacro eerie--remove-command (orig rep)
   `(defun ,orig ()
      (interactive)
      (message "Command removed, use `%s' instead." ,(symbol-name rep))))
 
-(meow--remove-command meow-begin-of-buffer meow-beginning-of-thing)
-(meow--remove-command meow-end-of-buffer meow-end-of-thing)
-(meow--remove-command meow-pop meow-pop-selection)
-(meow--remove-command meow-insert-at-begin meow-insert)
-(meow--remove-command meow-append-at-end meow-append)
-(meow--remove-command meow-head meow-left)
-(meow--remove-command meow-tail meow-right)
-(meow--remove-command meow-head-expand meow-left-expand)
-(meow--remove-command meow-tail-expand meow-right-expand)
-(meow--remove-command meow-block-expand meow-to-block)
+(eerie--remove-command eerie-begin-of-buffer eerie-beginning-of-thing)
+(eerie--remove-command eerie-end-of-buffer eerie-end-of-thing)
+(eerie--remove-command eerie-pop eerie-pop-selection)
+(eerie--remove-command eerie-insert-at-begin eerie-insert)
+(eerie--remove-command eerie-append-at-end eerie-append)
+(eerie--remove-command eerie-head eerie-left)
+(eerie--remove-command eerie-tail eerie-right)
+(eerie--remove-command eerie-head-expand eerie-left-expand)
+(eerie--remove-command eerie-tail-expand eerie-right-expand)
+(eerie--remove-command eerie-block-expand eerie-to-block)
 
 (provide 'eerie-command)
 ;;; eerie-command.el ends here

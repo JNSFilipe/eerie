@@ -1,7 +1,7 @@
-;;; meow-interactive-demo.el --- Manual smoke buffer for Meow Vim fork -*- lexical-binding: t; -*-
+;;; eerie-interactive-demo.el --- Manual smoke buffer for Eerie Vim fork -*- lexical-binding: t; -*-
 
 ;; Open this file with:
-;;   emacs -Q -L . tests/meow-interactive-demo.el --eval "(require 'meow)" --eval "(meow-global-mode 1)"
+;;   emacs -Q -L . tests/eerie-interactive-demo.el --eval "(require 'eerie)" --eval "(eerie-global-mode 1)"
 ;;
 ;; Suggested checks:
 ;; - `u`: delete or change text below, then undo it.
@@ -10,7 +10,7 @@
 ;; - `V`: start on the first, middle, and last lines of each section. It should begin with the current line selected, show visible-line hints immediately, let `1`-`9` jump the active linewise selection to another visible line, let `;` reverse that line-hint direction, and recenter when needed so you still get up to 9 hints before the real buffer edge.
 ;; - `C-v`: start on the aligned columns below, then move with `j` / `k`. It should immediately select the current character column, `C-v j d` should delete that column across the selected lines, `C-v j I` should insert on each selected line, and `C-v j A` should append on each selected line.
 ;; - `/`, `?`, `n`, `N`: search for "target" and walk the jumplist with `C-o` / `C-i`.
-;; - `gd`: place point on `meow-demo-helper` inside `meow-demo-call-site`.
+;; - `gd`: place point on `eerie-demo-helper` inside `eerie-demo-call-site`.
 ;; - `w`: start on any `targetword` below, then jump between visible occurrences with `1`-`9` and `;`; `w ; 1` from a middle occurrence should go to the previous one, not stay on the current word. After that, `f`, `ESC`, movement keys, and `d` should behave like a normal visual selection.
 ;; - `m`: from normal mode, enter multicursor mode. Then select one `targetword` with `v` or `w`, press `.`, `.`, `,`, `-`, `.`, and `ESC`. The original selected text should stay frozen as the match seed, older matches should remain highlighted as secondary overlays, `,` should remove the newest target, `-` should skip one hidden candidate without selecting it, and `ESC` should clear the whole multicursor session.
 ;; - Visual `m`: start with a plain visual selection on one `targetword`, press `m`, then `.`. That should enter the same canonical multicursor session directly from visual mode, keep the original selection as the exact-match seed, and leave both matches highlighted.
@@ -18,30 +18,30 @@
 ;; - Multicursor normal: after growing a multicursor selection with `.`, press `v` to promote it into multi-cursor normal mode. Then try normal commands like `h`, `l`, `x`, `%`, `gg`, `G`, `W`, and visible `f<char>1`, plus selection entry with `v`, `V`, `C-v`, and text objects like `vi(` on the parallel lines below. Those visual-entry keys should stay multi-cursor-aware instead of dropping back to a single primary cursor. Insert-like commands such as `i`, `a`, `I`, `A`, or `c` should still replay on `ESC`. `ESC` from the multi-cursor state itself should cancel the full cursor set.
 ;; - `di(`, `da[`, `ci"`, `dw`, `dd`, `yy`: use the marked sections below.
 
-(defun meow-demo-helper (value)
+(defun eerie-demo-helper (value)
   "Return VALUE with a visible prefix."
   (format "helper:%s" value))
 
-(defun meow-demo-call-site ()
-  "Call `meow-demo-helper' for `gd' testing."
-  (meow-demo-helper "target"))
+(defun eerie-demo-call-site ()
+  "Call `eerie-demo-helper' for `gd' testing."
+  (eerie-demo-helper "target"))
 
-(setq meow-demo-undo-text
+(setq eerie-demo-undo-text
       "Undo target: delete, change, paste, and then press u to revert.")
 
-(setq meow-demo-search-lines
+(setq eerie-demo-search-lines
       '("search target alpha target beta target gamma"
         "search target delta target epsilon target zeta"
         "search target eta target theta target iota"))
 
-(setq meow-demo-text-objects
+(setq eerie-demo-text-objects
       '("(inner round target)"
         "[around square target]"
         "{around curly target}"
         "\"quoted target\""
         "'single quoted target'"))
 
-(setq meow-demo-wrap-lines
+(setq eerie-demo-wrap-lines
       '("This line is intentionally long so V can be tested near the beginning while the window is narrow enough to wrap the line into multiple visual segments without needing any extra setup."
         "This second long line is also intentionally long so V can be tested near the middle and the end of the buffer after repeated j and k motions."))
 
@@ -69,4 +69,4 @@
 ;; A x A y A z A
 ;; targetword alpha targetword beta targetword gamma targetword
 
-;;; meow-interactive-demo.el ends here
+;;; eerie-interactive-demo.el ends here

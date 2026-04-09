@@ -1,4 +1,4 @@
-;;; eerie-shims.el --- Make Meow play well with other packages.  -*- lexical-binding: t; -*-
+;;; eerie-shims.el --- Make Eerie play well with other packages.  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -18,7 +18,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;; The file contains all the shim code we need to make meow
+;; The file contains all the shim code we need to make eerie
 ;; work with other packages.
 
 ;;; Code:
@@ -27,29 +27,29 @@
 (require 'eerie-command)
 (require 'delsel)
 
-(declare-function meow-normal-mode "eerie")
-(declare-function meow-motion-mode "eerie")
-(declare-function meow-insert-exit "eerie-command")
+(declare-function eerie-normal-mode "eerie")
+(declare-function eerie-motion-mode "eerie")
+(declare-function eerie-insert-exit "eerie-command")
 
-(defun meow--switch-to-motion (&rest _ignore)
+(defun eerie--switch-to-motion (&rest _ignore)
   "Switch to motion state, used for advice.
 Optional argument IGNORE ignored."
-  (meow--switch-state 'motion))
+  (eerie--switch-state 'motion))
 
-(defun meow--switch-to-normal (&rest _ignore)
+(defun eerie--switch-to-normal (&rest _ignore)
   "Switch to normal state, used for advice.
 Optional argument IGNORE ignored."
-  (meow--switch-state 'normal))
+  (eerie--switch-state 'normal))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; undo-tree
 
 (defvar undo-tree-enable-undo-in-region)
 
-(defun meow--setup-undo-tree (enable)
+(defun eerie--setup-undo-tree (enable)
   "Setup `undo-tree-enable-undo-in-region' for undo-tree.
 
-Command `meow-undo-in-selection' will call undo-tree undo.
+Command `eerie-undo-in-selection' will call undo-tree undo.
 
 Argument ENABLE non-nill means turn on."
   (when enable (setq undo-tree-enable-undo-in-region t)))
@@ -57,34 +57,34 @@ Argument ENABLE non-nill means turn on."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; eldoc
 
-(defvar meow--eldoc-setup nil
+(defvar eerie--eldoc-setup nil
   "Whether already setup eldoc.")
 
-(defconst meow--eldoc-commands
-  '(meow-head
-    meow-tail
-    meow-left
-    meow-right
-    meow-prev
-    meow-next
-    meow-insert
-    meow-append)
-  "A list of meow commands that trigger eldoc.")
+(defconst eerie--eldoc-commands
+  '(eerie-head
+    eerie-tail
+    eerie-left
+    eerie-right
+    eerie-prev
+    eerie-next
+    eerie-insert
+    eerie-append)
+  "A list of eerie commands that trigger eldoc.")
 
-(defun meow--setup-eldoc (enable)
+(defun eerie--setup-eldoc (enable)
   "Setup commands that trigger eldoc.
 
 Basically, all navigation commands should trigger eldoc.
 Argument ENABLE non-nill means turn on."
-  (setq meow--eldoc-setup enable)
+  (setq eerie--eldoc-setup enable)
   (if enable
-      (apply #'eldoc-add-command meow--eldoc-commands)
-    (apply #'eldoc-remove-command meow--eldoc-commands)))
+      (apply #'eldoc-add-command eerie--eldoc-commands)
+    (apply #'eldoc-remove-command eerie--eldoc-commands)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; company
 
-(defvar meow--company-setup nil
+(defvar eerie--company-setup nil
   "Whether already setup company.")
 
 (declare-function company--active-p "company")
@@ -92,107 +92,107 @@ Argument ENABLE non-nill means turn on."
 
 (defvar company-candidates)
 
-(defun meow--company-maybe-abort-advice ()
-  "Adviced for `meow-insert-exit'."
+(defun eerie--company-maybe-abort-advice ()
+  "Adviced for `eerie-insert-exit'."
   (when company-candidates
     (company-abort)))
 
-(defun meow--setup-company (enable)
+(defun eerie--setup-company (enable)
   "Setup for company.
 Argument ENABLE non-nil means turn on."
-  (setq meow--company-setup enable)
+  (setq eerie--company-setup enable)
   (if enable
-      (add-hook 'meow-insert-exit-hook #'meow--company-maybe-abort-advice)
-    (remove-hook 'meow-insert-exit-hook #'meow--company-maybe-abort-advice)))
+      (add-hook 'eerie-insert-exit-hook #'eerie--company-maybe-abort-advice)
+    (remove-hook 'eerie-insert-exit-hook #'eerie--company-maybe-abort-advice)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; corfu
 
 (declare-function corfu-quit "corfu")
 
-(defvar meow--corfu-setup nil
+(defvar eerie--corfu-setup nil
   "Whether already setup corfu.")
 
-(defun meow--corfu-maybe-abort-advice ()
-  "Adviced for `meow-insert-exit'."
+(defun eerie--corfu-maybe-abort-advice ()
+  "Adviced for `eerie-insert-exit'."
   (when (bound-and-true-p corfu-mode) (corfu-quit)))
 
-(defun meow--setup-corfu (enable)
+(defun eerie--setup-corfu (enable)
   "Setup for corfu.
 Argument ENABLE non-nil means turn on."
-  (setq meow--corfu-setup enable)
+  (setq eerie--corfu-setup enable)
   (if enable
-      (add-hook 'meow-insert-exit-hook #'meow--corfu-maybe-abort-advice)
-    (remove-hook 'meow-insert-exit-hook #'meow--corfu-maybe-abort-advice)))
+      (add-hook 'eerie-insert-exit-hook #'eerie--corfu-maybe-abort-advice)
+    (remove-hook 'eerie-insert-exit-hook #'eerie--corfu-maybe-abort-advice)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; repeat-map
 
-(defvar meow--diff-hl-setup nil
+(defvar eerie--diff-hl-setup nil
   "Whether already setup diff-hl.")
 
-(defun meow--setup-diff-hl (enable)
+(defun eerie--setup-diff-hl (enable)
   "Setup diff-hl."
   (if enable
       (progn
-        (advice-add 'diff-hl-show-hunk-inline-popup :before 'meow--switch-to-motion)
-        (advice-add 'diff-hl-show-hunk-posframe :before 'meow--switch-to-motion)
-        (advice-add 'diff-hl-show-hunk-hide :after 'meow--switch-to-normal))
-    (advice-remove 'diff-hl-show-hunk-inline-popup 'meow--switch-to-motion)
-    (advice-remove 'diff-hl-show-hunk-posframe 'meow--switch-to-motion)
-    (advice-remove 'diff-hl-show-hunk-hide 'meow--switch-to-normal)))
+        (advice-add 'diff-hl-show-hunk-inline-popup :before 'eerie--switch-to-motion)
+        (advice-add 'diff-hl-show-hunk-posframe :before 'eerie--switch-to-motion)
+        (advice-add 'diff-hl-show-hunk-hide :after 'eerie--switch-to-normal))
+    (advice-remove 'diff-hl-show-hunk-inline-popup 'eerie--switch-to-motion)
+    (advice-remove 'diff-hl-show-hunk-posframe 'eerie--switch-to-motion)
+    (advice-remove 'diff-hl-show-hunk-hide 'eerie--switch-to-normal)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; wgrep
 
-(defvar meow--wgrep-setup nil
+(defvar eerie--wgrep-setup nil
   "Whether already setup wgrep.")
 
-(defun meow--setup-wgrep (enable)
+(defun eerie--setup-wgrep (enable)
   "Setup wgrep.
 
 We use advice here because wgrep doesn't call its hooks.
 Argument ENABLE non-nil means turn on."
-  (setq meow--wgrep-setup enable)
+  (setq eerie--wgrep-setup enable)
   (if enable
       (progn
-        (advice-add 'wgrep-change-to-wgrep-mode :after #'meow--switch-to-normal)
-        (advice-add 'wgrep-exit :after #'meow--switch-to-motion)
-        (advice-add 'wgrep-finish-edit :after #'meow--switch-to-motion)
-        (advice-add 'wgrep-abort-changes :after #'meow--switch-to-motion)
-        (advice-add 'wgrep-save-all-buffers :after #'meow--switch-to-motion))
-    (advice-remove 'wgrep-change-to-wgrep-mode #'meow--switch-to-normal)
-    (advice-remove 'wgrep-exit #'meow--switch-to-motion)
-    (advice-remove 'wgrep-abort-changes #'meow--switch-to-motion)
-    (advice-remove 'wgrep-finish-edit #'meow--switch-to-motion)
-    (advice-remove 'wgrep-save-all-buffers #'meow--switch-to-motion)))
+        (advice-add 'wgrep-change-to-wgrep-mode :after #'eerie--switch-to-normal)
+        (advice-add 'wgrep-exit :after #'eerie--switch-to-motion)
+        (advice-add 'wgrep-finish-edit :after #'eerie--switch-to-motion)
+        (advice-add 'wgrep-abort-changes :after #'eerie--switch-to-motion)
+        (advice-add 'wgrep-save-all-buffers :after #'eerie--switch-to-motion))
+    (advice-remove 'wgrep-change-to-wgrep-mode #'eerie--switch-to-normal)
+    (advice-remove 'wgrep-exit #'eerie--switch-to-motion)
+    (advice-remove 'wgrep-abort-changes #'eerie--switch-to-motion)
+    (advice-remove 'wgrep-finish-edit #'eerie--switch-to-motion)
+    (advice-remove 'wgrep-save-all-buffers #'eerie--switch-to-motion)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; grep-edit
 
 
-(defvar meow--grep-edit-setup nil
+(defvar eerie--grep-edit-setup nil
   "Wheter already setup grep-edit.")
 
 (defvar grep-edit-mode-hook)
 
 (declare-function grep-edit-save-changes "grep")
 
-(defun meow--setup-grep-edit (enable)
+(defun eerie--setup-grep-edit (enable)
   "Setup grep-edit.
 
 Argument ENABLE non-nil means turn on."
   (if enable
       (progn
-        (add-hook 'grep-edit-mode-hook #'meow--switch-to-normal)
-        (advice-add #'grep-edit-save-changes :after #'meow--switch-to-motion))
-    (remove-hook 'grep-edit-mode-hook #'meow--switch-to-normal)
-    (advice-remove 'grep-edit-save-changes #'meow--switch-to-motion)))
+        (add-hook 'grep-edit-mode-hook #'eerie--switch-to-normal)
+        (advice-add #'grep-edit-save-changes :after #'eerie--switch-to-motion))
+    (remove-hook 'grep-edit-mode-hook #'eerie--switch-to-normal)
+    (advice-remove 'grep-edit-save-changes #'eerie--switch-to-motion)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; wdired
 
-(defvar meow--wdired-setup nil
+(defvar eerie--wdired-setup nil
   "Whether already setup wdired.")
 
 (defvar wdired-mode-hook)
@@ -201,117 +201,117 @@ Argument ENABLE non-nil means turn on."
 (declare-function wdired-finish-edit "wdired")
 (declare-function wdired-abort-changes "wdired")
 
-(defun meow--setup-wdired (enable)
+(defun eerie--setup-wdired (enable)
   "Setup wdired.
 
 Argument ENABLE non-nil means turn on."
-  (setq meow--wdired-setup enable)
+  (setq eerie--wdired-setup enable)
   (if enable
       (progn
-        (add-hook 'wdired-mode-hook #'meow--switch-to-normal)
-        (advice-add #'wdired-exit :after #'meow--switch-to-motion)
-        (advice-add #'wdired-abort-changes :after #'meow--switch-to-motion)
-        (advice-add #'wdired-finish-edit :after #'meow--switch-to-motion))
-    (remove-hook 'wdired-mode-hook #'meow--switch-to-normal)
-    (advice-remove #'wdired-exit #'meow--switch-to-motion)
-    (advice-remove #'wdired-abort-changes #'meow--switch-to-motion)
-    (advice-remove #'wdired-finish-edit #'meow--switch-to-motion)))
+        (add-hook 'wdired-mode-hook #'eerie--switch-to-normal)
+        (advice-add #'wdired-exit :after #'eerie--switch-to-motion)
+        (advice-add #'wdired-abort-changes :after #'eerie--switch-to-motion)
+        (advice-add #'wdired-finish-edit :after #'eerie--switch-to-motion))
+    (remove-hook 'wdired-mode-hook #'eerie--switch-to-normal)
+    (advice-remove #'wdired-exit #'eerie--switch-to-motion)
+    (advice-remove #'wdired-abort-changes #'eerie--switch-to-motion)
+    (advice-remove #'wdired-finish-edit #'eerie--switch-to-motion)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; rectangle-mark-mode
 
-(defvar meow--rectangle-mark-setup nil
+(defvar eerie--rectangle-mark-setup nil
   "Whether already setup rectangle-mark.")
 
-(defun meow--rectangle-mark-init ()
-  "Patch the meow selection type to prevent it from being cancelled."
+(defun eerie--rectangle-mark-init ()
+  "Patch the eerie selection type to prevent it from being cancelled."
   (when (bound-and-true-p rectangle-mark-mode)
-    (setq meow--selection
+    (setq eerie--selection
           '((expand . char) 0 0))))
 
-(defun meow--setup-rectangle-mark (enable)
+(defun eerie--setup-rectangle-mark (enable)
   "Setup `rectangle-mark-mode'.
 Argument ENABLE non-nil means turn on."
-  (setq meow--rectangle-mark-setup enable)
+  (setq eerie--rectangle-mark-setup enable)
   (if enable
-      (add-hook 'rectangle-mark-mode-hook 'meow--rectangle-mark-init)
-    (remove-hook 'rectangle-mark-mode-hook 'meow--rectangle-mark-init)))
+      (add-hook 'rectangle-mark-mode-hook 'eerie--rectangle-mark-init)
+    (remove-hook 'rectangle-mark-mode-hook 'eerie--rectangle-mark-init)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; edebug
 
-(defvar meow--edebug-setup nil)
+(defvar eerie--edebug-setup nil)
 
-(defun meow--edebug-hook-function ()
-  "Switch meow state when entering/leaving edebug."
+(defun eerie--edebug-hook-function ()
+  "Switch eerie state when entering/leaving edebug."
   (if (bound-and-true-p edebug-mode)
-      (meow--switch-to-motion)
-    (meow--switch-to-normal)))
+      (eerie--switch-to-motion)
+    (eerie--switch-to-normal)))
 
-(defun meow--setup-edebug (enable)
+(defun eerie--setup-edebug (enable)
   "Setup edebug.
 Argument ENABLE non-nil means turn on."
-  (setq meow--edebug-setup enable)
+  (setq eerie--edebug-setup enable)
   (if enable
-      (add-hook 'edebug-mode-hook 'meow--edebug-hook-function)
-    (remove-hook 'edebug-mode-hook 'meow--edebug-hook-function)))
+      (add-hook 'edebug-mode-hook 'eerie--edebug-hook-function)
+    (remove-hook 'edebug-mode-hook 'eerie--edebug-hook-function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; magit
 
-(defvar meow--magit-setup nil)
+(defvar eerie--magit-setup nil)
 
-(defun meow--magit-blame-hook-function ()
-  "Switch meow state when entering/leaving `magit-blame-read-only-mode'."
+(defun eerie--magit-blame-hook-function ()
+  "Switch eerie state when entering/leaving `magit-blame-read-only-mode'."
   (if (bound-and-true-p magit-blame-read-only-mode)
-      (meow--switch-to-motion)
-    (meow--switch-to-normal)))
+      (eerie--switch-to-motion)
+    (eerie--switch-to-normal)))
 
-(defun meow--setup-magit (enable)
+(defun eerie--setup-magit (enable)
   "Setup magit.
 Argument ENABLE non-nil means turn on."
-  (setq meow--magit-setup enable)
+  (setq eerie--magit-setup enable)
   (if enable
-      (add-hook 'magit-blame-mode-hook 'meow--magit-blame-hook-function)
-    (remove-hook 'magit-blame-mode-hook 'meow--magit-blame-hook-function)))
+      (add-hook 'magit-blame-mode-hook 'eerie--magit-blame-hook-function)
+    (remove-hook 'magit-blame-mode-hook 'eerie--magit-blame-hook-function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cider (debug)
 
-(defvar meow--cider-setup nil)
+(defvar eerie--cider-setup nil)
 
-(defun meow--cider-debug-hook-function ()
-  "Switch meow state when entering/leaving cider debug."
+(defun eerie--cider-debug-hook-function ()
+  "Switch eerie state when entering/leaving cider debug."
   (if (bound-and-true-p cider--debug-mode)
-      (meow--switch-to-motion)
-    (meow--switch-to-normal)))
+      (eerie--switch-to-motion)
+    (eerie--switch-to-normal)))
 
-(defun meow--setup-cider (enable)
+(defun eerie--setup-cider (enable)
   "Setup cider.
 Argument ENABLE non-nil means turn on."
-  (setq meow--cider-setup enable)
+  (setq eerie--cider-setup enable)
   (if enable
-      (add-hook 'cider--debug-mode-hook 'meow--cider-debug-hook-function)
-    (remove-hook 'cider--debug-mode-hook 'meow--cider-debug-hook-function)))
+      (add-hook 'cider--debug-mode-hook 'eerie--cider-debug-hook-function)
+    (remove-hook 'cider--debug-mode-hook 'eerie--cider-debug-hook-function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; sly (db)
 
-(defvar meow--sly-setup nil)
+(defvar eerie--sly-setup nil)
 
-(defun meow--sly-debug-hook-function ()
-  "Switch meow state when entering/leaving sly-db-mode."
+(defun eerie--sly-debug-hook-function ()
+  "Switch eerie state when entering/leaving sly-db-mode."
   (if (bound-and-true-p sly-db-mode-hook)
-      (meow--switch-to-motion)
-    (meow--switch-to-motion)))
+      (eerie--switch-to-motion)
+    (eerie--switch-to-motion)))
 
-(defun meow--setup-sly (enable)
+(defun eerie--setup-sly (enable)
   "Setup sly.
 Argument ENABLE non-nil means turn on."
-  (setq meow--sly-setup enable)
+  (setq eerie--sly-setup enable)
   (if enable
-      (add-hook 'sly-db-hook 'meow--sly-debug-hook-function)
-    (remove-hook 'sly-db-hook 'meow--sly-debug-hook-function)))
+      (add-hook 'sly-db-hook 'eerie--sly-debug-hook-function)
+    (remove-hook 'sly-db-hook 'eerie--sly-debug-hook-function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; macrostep
@@ -319,10 +319,10 @@ Argument ENABLE non-nil means turn on."
 (defvar macrostep-overlays)
 (defvar macrostep-mode)
 
-(defvar meow--macrostep-setup nil)
-(defvar meow--macrostep-setup-previous-state nil)
+(defvar eerie--macrostep-setup nil)
+(defvar eerie--macrostep-setup-previous-state nil)
 
-(defun meow--macrostep-inside-overlay-p ()
+(defun eerie--macrostep-inside-overlay-p ()
   "Return whether point is inside a `macrostep-mode' overlay."
   (seq-some (let ((pt (point)))
               (lambda (ov)
@@ -330,26 +330,26 @@ Argument ENABLE non-nil means turn on."
                      (< pt (overlay-end ov)))))
             macrostep-overlays))
 
-(defun meow--macrostep-post-command-function ()
+(defun eerie--macrostep-post-command-function ()
   "Function to run in `post-commmand-hook' when `macrostep-mode' is enabled.
 
 `macrostep-mode' uses a local keymap for the overlay showing the
 expansion.  Switch to Motion state when we enter the overlay and
 try to switch back to the previous state when leaving it."
-  (if (meow--macrostep-inside-overlay-p)
+  (if (eerie--macrostep-inside-overlay-p)
       ;; The overlay is not editable, so the `macrostep-mode' commands are
       ;; likely more important than the Beacon-state commands and possibly more
       ;; important than any custom-state commands.  It is less important than
       ;; Keypad state.
-      (unless (eq meow--current-state 'keypad)
-        (meow--switch-to-motion))
-    (meow--switch-state meow--macrostep-setup-previous-state)))
+      (unless (eq eerie--current-state 'keypad)
+        (eerie--switch-to-motion))
+    (eerie--switch-state eerie--macrostep-setup-previous-state)))
 
-(defun meow--macrostep-record-outside-state (state)
-  "Record the Meow STATE in most circumstances, so that we can return to it later.
+(defun eerie--macrostep-record-outside-state (state)
+  "Record the Eerie STATE in most circumstances, so that we can return to it later.
 
-This function receives the STATE to which one switches via `meow--switch-state'
-inside `meow-switch-state-hook'.
+This function receives the STATE to which one switches via `eerie--switch-state'
+inside `eerie-switch-state-hook'.
 
 Record the state if:
 - We are outside the overlay and not in Keypad state.
@@ -357,53 +357,53 @@ Record the state if:
   ;; We assume that the user will not try to switch to Motion state for the
   ;; entire buffer while we are already in Motion state while inside an overlay.
   (unless (eq state 'keypad)
-    (if (not (meow--macrostep-inside-overlay-p))
-        (setq-local meow--macrostep-setup-previous-state state)
+    (if (not (eerie--macrostep-inside-overlay-p))
+        (setq-local eerie--macrostep-setup-previous-state state)
       (unless (eq state 'motion)
-        (setq-local meow--macrostep-setup-previous-state state)))))
+        (setq-local eerie--macrostep-setup-previous-state state)))))
 
-(defun meow--macrostep-hook-function ()
-  "Switch Meow state when entering/leaving `macrostep-mode' or its overlays."
+(defun eerie--macrostep-hook-function ()
+  "Switch Eerie state when entering/leaving `macrostep-mode' or its overlays."
   (if macrostep-mode
       (progn
-        (setq-local meow--macrostep-setup-previous-state meow--current-state)
+        (setq-local eerie--macrostep-setup-previous-state eerie--current-state)
         ;; Add to end of `post-command-hook', so that this function is run after
         ;; the check for whether we should switch to Beacon state.
-        (add-hook 'post-command-hook #'meow--macrostep-post-command-function 90 t)
-        (add-hook 'meow-switch-state-hook #'meow--macrostep-record-outside-state nil t))
+        (add-hook 'post-command-hook #'eerie--macrostep-post-command-function 90 t)
+        (add-hook 'eerie-switch-state-hook #'eerie--macrostep-record-outside-state nil t))
     ;; The command `macrostep-collapse' does not seem to trigger
     ;; `post-command-hook', so we switch back manually.
-    (meow--switch-state meow--macrostep-setup-previous-state)
-    (setq-local meow--macrostep-setup-previous-state nil)
-    (remove-hook 'meow-switch-state-hook #'meow--macrostep-record-outside-state t)
-    (remove-hook 'post-command-hook #'meow--macrostep-post-command-function t)))
+    (eerie--switch-state eerie--macrostep-setup-previous-state)
+    (setq-local eerie--macrostep-setup-previous-state nil)
+    (remove-hook 'eerie-switch-state-hook #'eerie--macrostep-record-outside-state t)
+    (remove-hook 'post-command-hook #'eerie--macrostep-post-command-function t)))
 
-(defun meow--setup-macrostep (enable)
+(defun eerie--setup-macrostep (enable)
   "Setup macrostep.
 Argument ENABLE non-nil means turn on."
-  (setq meow--macrostep-setup enable)
+  (setq eerie--macrostep-setup enable)
   (if enable
-      (add-hook 'macrostep-mode-hook 'meow--macrostep-hook-function)
-    (remove-hook 'macrostep-mode-hook 'meow--macrostep-hook-function)))
+      (add-hook 'macrostep-mode-hook 'eerie--macrostep-hook-function)
+    (remove-hook 'macrostep-mode-hook 'eerie--macrostep-hook-function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; realgud (debug)
 
-(defvar meow--realgud-setup nil)
+(defvar eerie--realgud-setup nil)
 
-(defun meow--realgud-debug-hook-function ()
-  "Switch meow state when entering/leaving realgud-short-key-mode."
+(defun eerie--realgud-debug-hook-function ()
+  "Switch eerie state when entering/leaving realgud-short-key-mode."
   (if (bound-and-true-p realgud-short-key-mode)
-      (meow--switch-to-motion)
-    (meow--switch-to-normal)))
+      (eerie--switch-to-motion)
+    (eerie--switch-to-normal)))
 
-(defun meow--setup-realgud (enable)
+(defun eerie--setup-realgud (enable)
   "Setup realgud.
 Argument ENABLE non-nil means turn on."
-  (setq meow--realgud-setup enable)
+  (setq eerie--realgud-setup enable)
   (if enable
-      (add-hook 'realgud-short-key-mode-hook 'meow--realgud-debug-hook-function)
-    (remove-hook 'realgud-short-key-mode-hook 'meow--realgud-debug-hook-function)))
+      (add-hook 'realgud-short-key-mode-hook 'eerie--realgud-debug-hook-function)
+    (remove-hook 'realgud-short-key-mode-hook 'eerie--realgud-debug-hook-function)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; which-key
@@ -412,197 +412,197 @@ Argument ENABLE non-nil means turn on."
 (declare-function which-key--create-buffer-and-show "which-key"
                   (&optional prefix-keys from-keymap filter prefix-title))
 
-(defvar meow--which-key-setup nil)
+(defvar eerie--which-key-setup nil)
 
-(defun meow--which-key-describe-keymap ()
+(defun eerie--which-key-describe-keymap ()
   "Use which-key for keypad popup."
   (if which-key-mode
       (setq
        which-key-use-C-h-commands nil
-       meow-keypad-describe-keymap-function
+       eerie-keypad-describe-keymap-function
 	(lambda (keymap)
-	  (which-key--create-buffer-and-show nil keymap nil (concat meow-keypad-message-prefix (meow--keypad-format-keys))))
-        meow-keypad-clear-describe-keymap-function 'which-key--hide-popup)
+	  (which-key--create-buffer-and-show nil keymap nil (concat eerie-keypad-message-prefix (eerie--keypad-format-keys))))
+        eerie-keypad-clear-describe-keymap-function 'which-key--hide-popup)
 
-    (setq meow-keypad-describe-keymap-function 'meow-describe-keymap
-          meow-keypad-clear-describe-keymap-function nil
+    (setq eerie-keypad-describe-keymap-function 'eerie-describe-keymap
+          eerie-keypad-clear-describe-keymap-function nil
           which-key-use-C-h-commands t)))
 
-(defun meow--setup-which-key (enable)
+(defun eerie--setup-which-key (enable)
   "Setup which-key.
 Argument ENABLE non-nil means turn on."
-  (setq meow--which-key-setup enable)
+  (setq eerie--which-key-setup enable)
   (if enable
-      (add-hook 'which-key-mode-hook 'meow--which-key-describe-keymap)
-    (remove-hook 'which-key-mode-hook 'meow--which-key-describe-keymap)))
+      (add-hook 'which-key-mode-hook 'eerie--which-key-describe-keymap)
+    (remove-hook 'which-key-mode-hook 'eerie--which-key-describe-keymap)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; input methods
 
-(defvar meow--input-method-setup nil)
+(defvar eerie--input-method-setup nil)
 
-(defun meow--input-method-advice (fnc key)
+(defun eerie--input-method-advice (fnc key)
   "Advice for `quail-input-method'.
 
 Only use the input method in insert mode.
 Argument FNC, input method function.
 Argument KEY, the current input."
-  (funcall (if (and (boundp 'meow-mode) meow-mode (not (meow-insert-mode-p))) #'list fnc) key))
+  (funcall (if (and (boundp 'eerie-mode) eerie-mode (not (eerie-insert-mode-p))) #'list fnc) key))
 
-(defun meow--setup-input-method (enable)
+(defun eerie--setup-input-method (enable)
   "Setup input-method.
 Argument ENABLE non-nil means turn on."
-  (setq meow--input-method-setup enable)
+  (setq eerie--input-method-setup enable)
   (if enable
-      (advice-add 'quail-input-method :around 'meow--input-method-advice)
-    (advice-remove 'quail-input-method 'meow--input-method-advice)))
+      (advice-add 'quail-input-method :around 'eerie--input-method-advice)
+    (advice-remove 'quail-input-method 'eerie--input-method-advice)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ddskk
 
 (defvar skk-henkan-mode)
 
-(defvar meow--ddskk-setup nil)
-(defun meow--ddskk-skk-previous-candidate-advice (fnc &optional arg)
+(defvar eerie--ddskk-setup nil)
+(defun eerie--ddskk-skk-previous-candidate-advice (fnc &optional arg)
   (if (and (not (eq skk-henkan-mode 'active))
            (not (eq last-command 'skk-kakutei-henkan))
            last-command-event
            (eq last-command-event
                (seq-first (car (where-is-internal
-                                'meow-prev
-                                meow-normal-state-keymap)))))
+                                'eerie-prev
+                                eerie-normal-state-keymap)))))
       (forward-line -1)
     (funcall fnc arg)))
 
-(defun meow--setup-ddskk (enable)
-  (setq meow--ddskk-setup enable)
+(defun eerie--setup-ddskk (enable)
+  (setq eerie--ddskk-setup enable)
   (if enable
       (advice-add 'skk-previous-candidate :around
-                  'meow--ddskk-skk-previous-candidate-advice)))
+                  'eerie--ddskk-skk-previous-candidate-advice)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; polymode
 
 (defvar polymode-move-these-vars-from-old-buffer)
 
-(defvar meow--polymode-setup nil)
+(defvar eerie--polymode-setup nil)
 
-(defun meow--setup-polymode (enable)
+(defun eerie--setup-polymode (enable)
   "Setup polymode.
 
 Argument ENABLE non-nil means turn on."
-  (setq meow--polymode-setup enable)
+  (setq eerie--polymode-setup enable)
   (when enable
-    (dolist (v '(meow--selection
-                 meow--selection-history
-                 meow--current-state
-                 meow-normal-mode
-                 meow-insert-mode
-                 meow-keypad-mode
-                 meow-beacon-mode
-                 meow-motion-mode))
+    (dolist (v '(eerie--selection
+                 eerie--selection-history
+                 eerie--current-state
+                 eerie-normal-mode
+                 eerie-insert-mode
+                 eerie-keypad-mode
+                 eerie-beacon-mode
+                 eerie-motion-mode))
       ;; These vars allow us the select through the polymode chunk
       (add-to-list 'polymode-move-these-vars-from-old-buffer v))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; eat-eshell
 
-(defvar meow--eat-eshell-setup nil)
-(defvar meow--eat-eshell-mode-override nil)
+(defvar eerie--eat-eshell-setup nil)
+(defvar eerie--eat-eshell-mode-override nil)
 
 (declare-function eat-eshell-emacs-mode "eat")
 (declare-function eat-eshell-semi-char-mode "eat")
 (declare-function eat-eshell-char-mode "eat")
 
-(declare-function meow-insert-mode "eerie-core")
+(declare-function eerie-insert-mode "eerie-core")
 
-(defun meow--eat-eshell-mode-override-enable ()
-  (setq-local meow--eat-eshell-mode-override t)
-  (add-hook 'meow-insert-enter-hook #'eat-eshell-char-mode nil t)
-  (add-hook 'meow-insert-exit-hook #'eat-eshell-emacs-mode nil t)
-  (if (bound-and-true-p meow-insert-mode)
+(defun eerie--eat-eshell-mode-override-enable ()
+  (setq-local eerie--eat-eshell-mode-override t)
+  (add-hook 'eerie-insert-enter-hook #'eat-eshell-char-mode nil t)
+  (add-hook 'eerie-insert-exit-hook #'eat-eshell-emacs-mode nil t)
+  (if (bound-and-true-p eerie-insert-mode)
       (eat-eshell-char-mode)
     (eat-eshell-emacs-mode)))
 
-(defun meow--eat-eshell-mode-override-disable ()
-  (setq-local meow--eat-eshell-mode-override nil)
-  (remove-hook 'meow-insert-enter-hook #'eat-eshell-char-mode t)
-  (remove-hook 'meow-insert-exit-hook #'eat-eshell-emacs-mode t))
+(defun eerie--eat-eshell-mode-override-disable ()
+  (setq-local eerie--eat-eshell-mode-override nil)
+  (remove-hook 'eerie-insert-enter-hook #'eat-eshell-char-mode t)
+  (remove-hook 'eerie-insert-exit-hook #'eat-eshell-emacs-mode t))
 
-(defun meow--setup-eat-eshell (enable)
-  (setq meow--eat-eshell-setup enable)
+(defun eerie--setup-eat-eshell (enable)
+  (setq eerie--eat-eshell-setup enable)
   (if enable
-      (progn (add-hook 'eat-eshell-exec-hook #'meow--eat-eshell-mode-override-enable)
-             (add-hook 'eat-eshell-exit-hook #'meow--eat-eshell-mode-override-disable)
-             (add-hook 'eat-eshell-exit-hook #'meow--update-cursor))
+      (progn (add-hook 'eat-eshell-exec-hook #'eerie--eat-eshell-mode-override-enable)
+             (add-hook 'eat-eshell-exit-hook #'eerie--eat-eshell-mode-override-disable)
+             (add-hook 'eat-eshell-exit-hook #'eerie--update-cursor))
 
-    (remove-hook 'eat-eshell-exec-hook #'meow--eat-eshell-mode-override-enable)
-    (remove-hook 'eat-eshell-exit-hook #'meow--eat-eshell-mode-override-disable)
-    (remove-hook 'eat-eshell-exit-hook #'meow--update-cursor)))
+    (remove-hook 'eat-eshell-exec-hook #'eerie--eat-eshell-mode-override-enable)
+    (remove-hook 'eat-eshell-exit-hook #'eerie--eat-eshell-mode-override-disable)
+    (remove-hook 'eat-eshell-exit-hook #'eerie--update-cursor)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ediff
-(defvar meow--ediff-setup nil)
+(defvar eerie--ediff-setup nil)
 
-(defun meow--setup-ediff (enable)
+(defun eerie--setup-ediff (enable)
   "Setup Ediff.
 Argument ENABLE, non-nil means turn on."
   (if enable
-      (add-hook 'ediff-mode-hook 'meow-motion-mode)
-    (remove-hook 'ediff-mode-hook 'meow-motion-mode)))
+      (add-hook 'ediff-mode-hook 'eerie-motion-mode)
+    (remove-hook 'ediff-mode-hook 'eerie-motion-mode)))
 
 ;; Enable / Disable shims
 
-(defun meow--enable-shims ()
+(defun eerie--enable-shims ()
   "Use a bunch of shim setups."
   ;; This lets us start input without canceling selection.
   ;; We will backup `delete-active-region'.
-  (setq meow--backup-var-delete-activate-region delete-active-region)
+  (setq eerie--backup-var-delete-activate-region delete-active-region)
   (setq delete-active-region nil)
-  (meow--setup-eldoc t)
-  (meow--setup-rectangle-mark t)
+  (eerie--setup-eldoc t)
+  (eerie--setup-rectangle-mark t)
 
-  (eval-after-load "macrostep" (lambda () (meow--setup-macrostep t)))
-  (eval-after-load "wdired" (lambda () (meow--setup-wdired t)))
-  (eval-after-load "edebug" (lambda () (meow--setup-edebug t)))
-  (eval-after-load "magit" (lambda () (meow--setup-magit t)))
-  (eval-after-load "wgrep" (lambda () (meow--setup-wgrep t)))
-  (eval-after-load "grep" (lambda () (meow--setup-grep-edit t)))
-  (eval-after-load "company" (lambda () (meow--setup-company t)))
-  (eval-after-load "corfu" (lambda () (meow--setup-corfu t)))
-  (eval-after-load "polymode" (lambda () (meow--setup-polymode t)))
-  (eval-after-load "cider" (lambda () (meow--setup-cider t)))
-  (eval-after-load "sly" (lambda () (meow--setup-sly t)))
-  (eval-after-load "realgud" (lambda () (meow--setup-realgud t)))
-  (eval-after-load "which-key" (lambda () (meow--setup-which-key t)))
-  (eval-after-load "undo-tree" (lambda () (meow--setup-undo-tree t)))
-  (eval-after-load "diff-hl" (lambda () (meow--setup-diff-hl t)))
-  (eval-after-load "quail" (lambda () (meow--setup-input-method t)))
-  (eval-after-load "skk" (lambda () (meow--setup-ddskk t)))
-  (eval-after-load "eat" (lambda () (meow--setup-eat-eshell t)))
-  (eval-after-load "ediff" (lambda () (meow--setup-ediff t))))
+  (eval-after-load "macrostep" (lambda () (eerie--setup-macrostep t)))
+  (eval-after-load "wdired" (lambda () (eerie--setup-wdired t)))
+  (eval-after-load "edebug" (lambda () (eerie--setup-edebug t)))
+  (eval-after-load "magit" (lambda () (eerie--setup-magit t)))
+  (eval-after-load "wgrep" (lambda () (eerie--setup-wgrep t)))
+  (eval-after-load "grep" (lambda () (eerie--setup-grep-edit t)))
+  (eval-after-load "company" (lambda () (eerie--setup-company t)))
+  (eval-after-load "corfu" (lambda () (eerie--setup-corfu t)))
+  (eval-after-load "polymode" (lambda () (eerie--setup-polymode t)))
+  (eval-after-load "cider" (lambda () (eerie--setup-cider t)))
+  (eval-after-load "sly" (lambda () (eerie--setup-sly t)))
+  (eval-after-load "realgud" (lambda () (eerie--setup-realgud t)))
+  (eval-after-load "which-key" (lambda () (eerie--setup-which-key t)))
+  (eval-after-load "undo-tree" (lambda () (eerie--setup-undo-tree t)))
+  (eval-after-load "diff-hl" (lambda () (eerie--setup-diff-hl t)))
+  (eval-after-load "quail" (lambda () (eerie--setup-input-method t)))
+  (eval-after-load "skk" (lambda () (eerie--setup-ddskk t)))
+  (eval-after-load "eat" (lambda () (eerie--setup-eat-eshell t)))
+  (eval-after-load "ediff" (lambda () (eerie--setup-ediff t))))
 
-(defun meow--disable-shims ()
+(defun eerie--disable-shims ()
   "Remove shim setups."
-  (setq delete-active-region meow--backup-var-delete-activate-region)
-  (when meow--macrostep-setup (meow--setup-macrostep nil))
-  (when meow--eldoc-setup (meow--setup-eldoc nil))
-  (when meow--rectangle-mark-setup (meow--setup-rectangle-mark nil))
-  (when meow--wdired-setup (meow--setup-wdired nil))
-  (when meow--edebug-setup (meow--setup-edebug nil))
-  (when meow--magit-setup (meow--setup-magit nil))
-  (when meow--company-setup (meow--setup-company nil))
-  (when meow--corfu-setup (meow--setup-corfu nil))
-  (when meow--wgrep-setup (meow--setup-wgrep nil))
-  (when meow--grep-edit-setup (meow--setup-grep-edit nil))
-  (when meow--polymode-setup (meow--setup-polymode nil))
-  (when meow--cider-setup (meow--setup-cider nil))
-  (when meow--which-key-setup (meow--setup-which-key nil))
-  (when meow--diff-hl-setup (meow--setup-diff-hl nil))
-  (when meow--input-method-setup (meow--setup-input-method nil))
-  (when meow--ddskk-setup (meow--setup-ddskk nil))
-  (when meow--eat-eshell-setup (meow--setup-eat-eshell nil))
-  (when meow--ediff-setup (meow--setup-ediff nil)))
+  (setq delete-active-region eerie--backup-var-delete-activate-region)
+  (when eerie--macrostep-setup (eerie--setup-macrostep nil))
+  (when eerie--eldoc-setup (eerie--setup-eldoc nil))
+  (when eerie--rectangle-mark-setup (eerie--setup-rectangle-mark nil))
+  (when eerie--wdired-setup (eerie--setup-wdired nil))
+  (when eerie--edebug-setup (eerie--setup-edebug nil))
+  (when eerie--magit-setup (eerie--setup-magit nil))
+  (when eerie--company-setup (eerie--setup-company nil))
+  (when eerie--corfu-setup (eerie--setup-corfu nil))
+  (when eerie--wgrep-setup (eerie--setup-wgrep nil))
+  (when eerie--grep-edit-setup (eerie--setup-grep-edit nil))
+  (when eerie--polymode-setup (eerie--setup-polymode nil))
+  (when eerie--cider-setup (eerie--setup-cider nil))
+  (when eerie--which-key-setup (eerie--setup-which-key nil))
+  (when eerie--diff-hl-setup (eerie--setup-diff-hl nil))
+  (when eerie--input-method-setup (eerie--setup-input-method nil))
+  (when eerie--ddskk-setup (eerie--setup-ddskk nil))
+  (when eerie--eat-eshell-setup (eerie--setup-eat-eshell nil))
+  (when eerie--ediff-setup (eerie--setup-ediff nil)))
 
 ;;; eerie-shims.el ends here
 (provide 'eerie-shims)

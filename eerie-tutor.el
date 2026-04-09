@@ -1,4 +1,4 @@
-;;; eerie-tutor.el --- Tutor for Meow  -*- lexical-binding: t; -*-
+;;; eerie-tutor.el --- Tutor for Eerie  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -18,15 +18,15 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;; A tutorial for Meow.
+;; A tutorial for Eerie.
 ;;
-;; To start, with M-x meow-tutor
+;; To start, with M-x eerie-tutor
 
 ;;; Code:
 
 (require 'eerie-var)
 
-(defconst meow--tutor-content
+(defconst eerie--tutor-content
   "
              ███╗░░░███╗███████╗░█████╗░░██╗░░░░░░░██╗
              ████╗░████║██╔════╝██╔══██╗░██║░░██╗░░██║
@@ -39,8 +39,8 @@
 =                      MEOW INTRODUCTION                         =
 ==================================================================
 
- Meow is yet another modal editing mode for Emacs.
- What's modal editing? How do I use Meow? Let's start our journey!
+ Eerie is yet another modal editing mode for Emacs.
+ What's modal editing? How do I use Eerie? Let's start our journey!
 
  If you wonder what a keystroke means when reading this, just ask
  Emacs! Press C-h k then press the key you want to query.
@@ -49,41 +49,41 @@
 =                     BASIC CURSOR MOVEMENT                      =
 ==================================================================
 
-  To move up, press \\[meow-prev]
-  To move down, press \\[meow-next]
-  To move left, press \\[meow-left]
-  To move right, press \\[meow-right]
+  To move up, press \\[eerie-prev]
+  To move down, press \\[eerie-next]
+  To move left, press \\[eerie-left]
+  To move right, press \\[eerie-right]
        ↑
-       \\[meow-prev]
-   ← \\[meow-left]   \\[meow-right] →
-       \\[meow-next]
+       \\[eerie-prev]
+   ← \\[eerie-left]   \\[eerie-right] →
+       \\[eerie-next]
        ↓
 
- You can move the cursor using the \\[meow-left], \\[meow-next], \\[meow-prev], \\[meow-right] keys, as shown
- above. Arrow keys also work, but it is faster to use the \\[meow-left]\\[meow-next]\\[meow-prev]\\[meow-right]
+ You can move the cursor using the \\[eerie-left], \\[eerie-next], \\[eerie-prev], \\[eerie-right] keys, as shown
+ above. Arrow keys also work, but it is faster to use the \\[eerie-left]\\[eerie-next]\\[eerie-prev]\\[eerie-right]
  keys as they are closer to the other keys you will be using.
- Try moving around to get a feel for \\[meow-left]\\[meow-next]\\[meow-prev]\\[meow-right].
- Once you're ready, hold \\[meow-next] to continue to the next lesson.
+ Try moving around to get a feel for \\[eerie-left]\\[eerie-next]\\[eerie-prev]\\[eerie-right].
+ Once you're ready, hold \\[eerie-next] to continue to the next lesson.
 
- Meow provides modal editing which means you have different
+ Eerie provides modal editing which means you have different
  modes for inserting and editing text. The primary modes you will
  use are Normal mode and Insert mode. While in Normal mode, the
  keys you press won't actually type text. Instead, they will
  perform various actions with the text. This allows for more
  efficient editing. This tutor will teach you how you can make
- use of Meow's modal editing features. To begin, ensure your
- caps-lock key is not pressed and hold the \\[meow-next] key until you reach
+ use of Eerie's modal editing features. To begin, ensure your
+ caps-lock key is not pressed and hold the \\[eerie-next] key until you reach
  the first lesson.
 
 =================================================================
 =                           DELETION                            =
 =================================================================
 
- Pressing the \\[meow-delete] key deletes the character under the cursor.
- \\[meow-backward-delete] key deletes the character before the cursor (backspace).
+ Pressing the \\[eerie-delete] key deletes the character under the cursor.
+ \\[eerie-backward-delete] key deletes the character before the cursor (backspace).
 
  1. Move the cursor to the line below marked -->.
- 2. Move the cursor to each extra character, and press \\[meow-delete] to
+ 2. Move the cursor to each extra character, and press \\[eerie-delete] to
     delete it.
 
  --> Thhiss senttencee haass exxtra charracterss.
@@ -95,13 +95,13 @@
 =                          INSERT MODE                          =
 =================================================================
 
- Pressing the \\[meow-insert] key enters the Insert mode. In that mode you can
+ Pressing the \\[eerie-insert] key enters the Insert mode. In that mode you can
  enter text. <ESC> returns you back to Normal mode. The modeline
- will display your current mode. When you press \\[meow-insert], '%s'
+ will display your current mode. When you press \\[eerie-insert], '%s'
  changes to '%s'.
 
  1. Move the cursor to the line below marked -->.
- 2. Insert the missing characters with \\[meow-insert] key.
+ 2. Insert the missing characters with \\[eerie-insert] key.
  3. Press <ESC> to return back to Normal mode.
  4. Repeat until the line matches the line below it.
 
@@ -116,28 +116,28 @@
 =                      MORE ON INSERT MODE                      =
 =================================================================
 
- Pressing \\[meow-insert] is not the only way to enter Insert Mode. Here are
+ Pressing \\[eerie-insert] is not the only way to enter Insert Mode. Here are
  some other ways to enter Insert mode at different locations.
 
  Common examples of insertion commands include:
 
-   \\[meow-insert]   - Insert cursor before the selection.
-   \\[meow-append]   - Insert cursor after the selection.
-   \\[meow-join] \\[meow-append] - Insert cursor at the start of the line.
-   \\[meow-line] \\[meow-append] - Insert cursor at the end of the line.
+   \\[eerie-insert]   - Insert cursor before the selection.
+   \\[eerie-append]   - Insert cursor after the selection.
+   \\[eerie-join] \\[eerie-append] - Insert cursor at the start of the line.
+   \\[eerie-line] \\[eerie-append] - Insert cursor at the end of the line.
 
- These commands are composable. \\[meow-join] will select the beginning of the
+ These commands are composable. \\[eerie-join] will select the beginning of the
  current line up until the end of the non-empty line above.
- \\[meow-append] switches to Insert mode at the end of current selection.
+ \\[eerie-append] switches to Insert mode at the end of current selection.
  Using both commands together will result in the cursor position being at
- the beginning of the line (Insert mode). \\[meow-line] selects the whole
+ the beginning of the line (Insert mode). \\[eerie-line] selects the whole
  line and enables the use of the same insertion commands.
 
  1. Move to anywhere in the line below marked -->.
- 2. Press \\[meow-line] \\[meow-append], your cursor will move to the end of the line
+ 2. Press \\[eerie-line] \\[eerie-append], your cursor will move to the end of the line
     and you will be able to type.
  3. Type the necessary text to match the line below.
- 4. Press \\[meow-join] \\[meow-append] for the cursor to move to the beginning of the line.
+ 4. Press \\[eerie-join] \\[eerie-append] for the cursor to move to the beginning of the line.
     This will place the cursor before -->. For now just return to
     Normal mode and move cursor past it.
 
@@ -148,59 +148,59 @@
 =                             RECAP                             =
 =================================================================
 
- + Use the \\[meow-left], \\[meow-next], \\[meow-prev], \\[meow-right] keys to move the cursor.
+ + Use the \\[eerie-left], \\[eerie-next], \\[eerie-prev], \\[eerie-right] keys to move the cursor.
 
- + Press \\[meow-delete] to delete the character under the cursor.
+ + Press \\[eerie-delete] to delete the character under the cursor.
 
- + Press \\[meow-backward-delete] to delete the character before the cursor.
+ + Press \\[eerie-backward-delete] to delete the character before the cursor.
 
- + Press \\[meow-insert] to enter Insert mode to input text. Press <ESC> to
+ + Press \\[eerie-insert] to enter Insert mode to input text. Press <ESC> to
    return to Normal mode.
 
- + Press \\[meow-join] to select the start of the current line and
+ + Press \\[eerie-join] to select the start of the current line and
    the non-empty line above.
 
- + Press \\[meow-append] to enter Insert mode, with the cursor position being
+ + Press \\[eerie-append] to enter Insert mode, with the cursor position being
    at the end of the selected region.
 
 =================================================================
 =                    MOTIONS AND SELECTIONS                     =
 =================================================================
 
- Pressing \\[meow-next-word] will select everything from the cursor position
+ Pressing \\[eerie-next-word] will select everything from the cursor position
  until the end of the current word.
  Numbers that show up on the screen indicate a quick way to extend your selection.
- You can unselect the region with the \\[meow-cancel-selection] key.
+ You can unselect the region with the \\[eerie-cancel-selection] key.
 
- Pressing \\[meow-kill] will delete the current selection.
+ Pressing \\[eerie-kill] will delete the current selection.
 
- The \\[meow-delete] key deletes the character below the cursor, while
- \\[meow-kill] deletes all of the selected text.
+ The \\[eerie-delete] key deletes the character below the cursor, while
+ \\[eerie-kill] deletes all of the selected text.
 
  1. Move the cursor to the line below marked -->.
  2. Move to the beginning of a word that needs to be deleted.
- 3. Press \\[meow-next-word] to select a word.
- 4. Press \\[meow-kill] to delete the selection.
+ 3. Press \\[eerie-next-word] to select a word.
+ 4. Press \\[eerie-kill] to delete the selection.
  5. Repeat for all extra words in the line.
 
  --> This sentence pencil has vacuum extra words in the it.
      This sentence has vacuum words in it.
 
- Note: Pressing \\[meow-kill] without a selection will delete everything
+ Note: Pressing \\[eerie-kill] without a selection will delete everything
        from cursor position until the end of line.
 
 =================================================================
 =                       WORDS VS SYMBOLS                        =
 =================================================================
 
- Pressing \\[meow-mark-word] will select the whole word under the cursor. \\[meow-mark-symbol] will
+ Pressing \\[eerie-mark-word] will select the whole word under the cursor. \\[eerie-mark-symbol] will
  select the whole symbol. Symbols are separated only by whitespace,
  whereas words can also be separated by other characters.
 
  To understand the difference better, do the following exercise:
 
  1. Move the cursor to the line below marked -->.
- 2. Use \\[meow-mark-word] and \\[meow-mark-symbol] on each word in a sentence.
+ 2. Use \\[eerie-mark-word] and \\[eerie-mark-symbol] on each word in a sentence.
  3. Observe the difference in selection.
 
  --> Select-this and this.
@@ -212,26 +212,26 @@
  Motions are useful for extending the current selection and for
  quick movement around the text.
 
-   \\[meow-next-word] - Moves forward to the end of the current word.
-   \\[meow-back-word] - Moves backward to the beginning of the current word.
-   \\[meow-next-symbol] - Moves to the end of the current symbol.
-   \\[meow-back-symbol] - Moves to the start of the current symbol.
+   \\[eerie-next-word] - Moves forward to the end of the current word.
+   \\[eerie-back-word] - Moves backward to the beginning of the current word.
+   \\[eerie-next-symbol] - Moves to the end of the current symbol.
+   \\[eerie-back-symbol] - Moves to the start of the current symbol.
 
- After selecting the word under the cursor with \\[meow-mark-word] you can
+ After selecting the word under the cursor with \\[eerie-mark-word] you can
  extend the selection using the same commands.
 
-   \\[meow-next-word] - Adds the next word to the selection.
-   \\[meow-back-word] - Adds the previous word to the selection.
-   \\[meow-next-symbol] - Adds the next symbol to the selection.
-   \\[meow-back-symbol] - Adds the previous symbol to the selection.
+   \\[eerie-next-word] - Adds the next word to the selection.
+   \\[eerie-back-word] - Adds the previous word to the selection.
+   \\[eerie-next-symbol] - Adds the next symbol to the selection.
+   \\[eerie-back-symbol] - Adds the previous symbol to the selection.
 
  In-case too much gets selected, you can undo the previous selection
- with \\[meow-pop-selection] key.
+ with \\[eerie-pop-selection] key.
 
  1. Move the cursor to the line below marked -->.
- 2. Select the word with \\[meow-mark-word].
- 3. Extend the selection with \\[meow-next-word].
- 4. Press \\[meow-kill] to delete the selection.
+ 2. Select the word with \\[eerie-mark-word].
+ 3. Extend the selection with \\[eerie-next-word].
+ 4. Press \\[eerie-kill] to delete the selection.
 
  --> This sentence is most definitelly not at all short.
      This sentence is short.
@@ -240,16 +240,16 @@
 =                        SELECTING LINES                        =
 =================================================================
 
- Pressing \\[meow-line] will select the whole line. Pressing it again will
+ Pressing \\[eerie-line] will select the whole line. Pressing it again will
  add the next line to the selection. Numbers can also be used
  to select multiple lines at once. Cursor position can be reversed with
- \\[meow-reverse] to extend the selection in the other direction.
+ \\[eerie-reverse] to extend the selection in the other direction.
 
  1. Move the cursor to the second line below marked -->.
- 2. Press \\[meow-line] to select the current line, and \\[meow-kill] to delete it.
+ 2. Press \\[eerie-line] to select the current line, and \\[eerie-kill] to delete it.
  3. Move to the fourth line.
- 4. Select 2 lines either by hitting \\[meow-line] twice or \\[meow-line] 1 in combination.
- 5. Delete the selection with \\[meow-kill].
+ 4. Select 2 lines either by hitting \\[eerie-line] twice or \\[eerie-line] 1 in combination.
+ 5. Delete the selection with \\[eerie-kill].
  6. (Optional) Try reversing the cursor and extending the selection.
 
  --> 1) Roses are red,
@@ -270,10 +270,10 @@
 
  Common selection expanding motions by a THING:
 
-   \\[meow-beginning-of-thing] - expand before cursor until beginning of...
-   \\[meow-end-of-thing] - expand after cursor until end of...
-   \\[meow-inner-of-thing] - select the inner part of...
-   \\[meow-bounds-of-thing] - select the whole part of...
+   \\[eerie-beginning-of-thing] - expand before cursor until beginning of...
+   \\[eerie-end-of-thing] - expand after cursor until end of...
+   \\[eerie-inner-of-thing] - select the inner part of...
+   \\[eerie-bounds-of-thing] - select the whole part of...
 
  Some of THING modifiers may include:
 
@@ -287,10 +287,10 @@
   b - buffer
 
  1. Move the cursor to the paragraph below.
- 2. Type \\[meow-bounds-of-thing] p to select the whole paragraph.
- 3. Type \\[meow-cancel-selection] to cancel the selection.
- 4. Type \\[meow-inner-of-thing] l to select one line.
- 5. Type \\[meow-cancel-selection] to cancel the selection.
+ 2. Type \\[eerie-bounds-of-thing] p to select the whole paragraph.
+ 3. Type \\[eerie-cancel-selection] to cancel the selection.
+ 4. Type \\[eerie-inner-of-thing] l to select one line.
+ 5. Type \\[eerie-cancel-selection] to cancel the selection.
  6. Play with the commands you learned this section. You can do anything
     you want with these powerful commands!
 
@@ -307,15 +307,15 @@
 =                      MOVE AROUND THINGs                       =
 =================================================================
 
- You can also move around things. In fact, Meow combines move and
+ You can also move around things. In fact, Eerie combines move and
  selection together. Every time you select something, the cursor
  will move to the beginning/end/inner/bound of things depending
  on your commands. Let's practice!
 
  * How to jump to the beginning of buffer quickly?
 
-   Type \\[meow-beginning-of-thing] and \"b\". Remember to come
-   back by typing \\[meow-pop-selection].
+   Type \\[eerie-beginning-of-thing] and \"b\". Remember to come
+   back by typing \\[eerie-pop-selection].
 
  * How to jump to the end of buffer quickly?
 
@@ -324,7 +324,7 @@
  * How to jump to the end of the current function quickly?
 
    1. Move cursor to the function below marked -->.
-   2. Type \\[meow-bounds-of-thing] and \"c\", then \\[meow-append].
+   2. Type \\[eerie-bounds-of-thing] and \"c\", then \\[eerie-append].
   
    -->
    fn count_ones(mut n: i64) -> usize {
@@ -336,8 +336,8 @@
     count
    }
 
- Note that Meow needs the major mode for the programming language
- to find functions correctly. Then if you type \\[meow-bounds-of-thing] and \"d\" to
+ Note that Eerie needs the major mode for the programming language
+ to find functions correctly. Then if you type \\[eerie-bounds-of-thing] and \"d\" to
  select the whole function here, it won't work. Go to your
  favorite programming language mode and practice!
 
@@ -345,60 +345,60 @@
 =                   THE FIND/TILL COMMAND                       =
 =================================================================
 
- Type \\[meow-till] to select until the next specific character.
+ Type \\[eerie-till] to select until the next specific character.
 
  1. Move the cursor to the line below marked -->.
- 2. Press \\[meow-till]. A prompt will appear in minibuffer.
+ 2. Press \\[eerie-till]. A prompt will appear in minibuffer.
  4. Type 'a'. The correct position for the next 'a' will be
     selected.
 
  --> I like to eat apples since my favorite fruit is apples.
 
  Note: If you want to go backwards, use \\[negative-argument] as a prefix; there is also
-       a similar command on \\[meow-find], which will jump over that
+       a similar command on \\[eerie-find], which will jump over that
        character.
 
 =================================================================
 =                            RECAP                              =
 =================================================================
 
- + Unselect region with \\[meow-cancel-selection] key.
+ + Unselect region with \\[eerie-cancel-selection] key.
 
- + Reverse cursor position in selected region with \\[meow-reverse] key.
+ + Reverse cursor position in selected region with \\[eerie-reverse] key.
 
- + Undo selection with \\[meow-pop-selection].
+ + Undo selection with \\[eerie-pop-selection].
 
- + Press \\[meow-next-word] to select until the end of current word.
+ + Press \\[eerie-next-word] to select until the end of current word.
 
- + Press \\[meow-back-word] to select until the start of closest word.
+ + Press \\[eerie-back-word] to select until the start of closest word.
 
- + Press \\[meow-next-symbol] to select until the end of symbol.
+ + Press \\[eerie-next-symbol] to select until the end of symbol.
 
- + Press \\[meow-back-symbol] to select until the start of symbol.
+ + Press \\[eerie-back-symbol] to select until the start of symbol.
 
- + Press \\[meow-line] to select the entire current line. Type \\[meow-line] again to
+ + Press \\[eerie-line] to select the entire current line. Type \\[eerie-line] again to
    select the next line.
 
  + Motion can be repeated multiple times by using a number modifier.
 
  + Extend selection by using THING modifiers
-   Motion Prefix: (\\[meow-beginning-of-thing] \\[meow-end-of-thing] \\[meow-inner-of-thing] \\[meow-bounds-of-thing])
+   Motion Prefix: (\\[eerie-beginning-of-thing] \\[eerie-end-of-thing] \\[eerie-inner-of-thing] \\[eerie-bounds-of-thing])
    THING as a Suffix: (r,s,c,g,p,l,d,b)
 
- + Find by a single character with \\[meow-till] and \\[meow-find].
+ + Find by a single character with \\[eerie-till] and \\[eerie-find].
 
 =================================================================
 =                      THE CHANGE COMMAND                       =
 =================================================================
 
- Pressing \\[meow-change] will delete the current selection and switch to
+ Pressing \\[eerie-change] will delete the current selection and switch to
  Insert mode. If there is no selection it will only delete
  the character under the cursor and switch to Insert mode.
- It is a shorthand for \\[meow-delete] \\[meow-insert].
+ It is a shorthand for \\[eerie-delete] \\[eerie-insert].
 
  1. Move the cursor to the line below marked -->.
- 2. Select the incorrect word with \\[meow-next-word].
- 3. Press \\[meow-change] to delete the word and enter Insert mode.
+ 2. Select the incorrect word with \\[eerie-next-word].
+ 3. Press \\[eerie-change] to delete the word and enter Insert mode.
  4. Replace it with correct word and return to Normal mode.
  5. Repeat until the line matches the line below it.
 
@@ -409,13 +409,13 @@
 =                         KILL AND YANK                         =
 =================================================================
 
- The \\[meow-kill] key also copies the deleted content which can then be
- pasted with \\[meow-yank].
+ The \\[eerie-kill] key also copies the deleted content which can then be
+ pasted with \\[eerie-yank].
 
  1. Move the cursor to the line below marked -->.
- 2. Type \\[meow-line] to select the line.
- 3. Type \\[meow-kill] to cut the current selection.
- 4. Type \\[meow-yank] to paste the copied content.
+ 2. Type \\[eerie-line] to select the line.
+ 3. Type \\[eerie-kill] to cut the current selection.
+ 4. Type \\[eerie-yank] to paste the copied content.
  5. You can paste as many times as you want.
 
  --> Violets are blue, and I love you.
@@ -424,13 +424,13 @@
 =                         SAVE AND YANK                         =
 =================================================================
 
- Pressing \\[meow-save] copies the selection, which can then be pasted
- with \\[meow-yank] under the cursor.
+ Pressing \\[eerie-save] copies the selection, which can then be pasted
+ with \\[eerie-yank] under the cursor.
 
  1. Move the cursor to the line below marked -->.
- 2. Press \\[meow-line] to select one line forward.
- 3. Press \\[meow-save] to copy the current selection.
- 4. Press \\[meow-yank] to paste the copied content.
+ 2. Press \\[eerie-line] to select one line forward.
+ 3. Press \\[eerie-save] to copy the current selection.
+ 4. Press \\[eerie-yank] to paste the copied content.
  5. You can paste as many times as you want.
 
  --> Violets are blue, and I love you.
@@ -439,14 +439,14 @@
 =                            UNDOING                            =
 =================================================================
 
- Pressing \\[meow-undo] triggers undo. The \\[meow-undo-in-selection] key will only undo the changes
+ Pressing \\[eerie-undo] triggers undo. The \\[eerie-undo-in-selection] key will only undo the changes
  in the selected region.
 
  1. Move the cursor to the line below marked -->.
- 2. Move to the first error, and press \\[meow-delete] to delete it.
- 3. Type \\[meow-undo] to undo your deletion.
+ 2. Move to the first error, and press \\[eerie-delete] to delete it.
+ 3. Type \\[eerie-undo] to undo your deletion.
  4. Fix all the errors on the line.
- 5. Type \\[meow-undo] several times to undo your fixes.
+ 5. Type \\[eerie-undo] several times to undo your fixes.
 
  --> Fiix the errors on thhis line and reeplace them witth undo.
      Fix the errors on this line and replace them with undo.
@@ -455,37 +455,37 @@
 =                             RECAP                             =
 =================================================================
 
- + Press \\[meow-change] to delete the selection and enter Insert mode.
+ + Press \\[eerie-change] to delete the selection and enter Insert mode.
 
- + Press \\[meow-save] to copy the selection.
+ + Press \\[eerie-save] to copy the selection.
 
- + Press \\[meow-yank] to paste the copied or deleted text.
+ + Press \\[eerie-yank] to paste the copied or deleted text.
 
- + Press \\[meow-undo] to undo last change.
+ + Press \\[eerie-undo] to undo last change.
 
- + Press \\[meow-undo-in-selection] to only undo changes in the selected region.
+ + Press \\[eerie-undo-in-selection] to only undo changes in the selected region.
 
 =================================================================
 =               BEACON (BATCHED KEYBOARD MACROS)                =
 =================================================================
 
- Keyboard macro is a function that is built-in to Emacs. Now with Meow, it's
+ Keyboard macro is a function that is built-in to Emacs. Now with Eerie, it's
  more powerful. We can do things like multi-editing with Beacon
- mode in Meow.
+ mode in Eerie.
 
- Select a region, then press \\[meow-grab] to \"grab\" it, then enter
- Insert mode, meow will now enter Beacon mode. Meow will create multiple
+ Select a region, then press \\[eerie-grab] to \"grab\" it, then enter
+ Insert mode, eerie will now enter Beacon mode. Eerie will create multiple
  cursors and all edits you do to one cursor will be synced to other
- cursors after you exit Insert mode. Type \\[meow-grab] again to cancel
+ cursors after you exit Insert mode. Type \\[eerie-grab] again to cancel
  grabbing.
 
  1. Move the cursor to the first line below marked -->.
  2. Select the six lines.
- 3. Type \\[meow-grab] to grab the selection. Edits you
+ 3. Type \\[eerie-grab] to grab the selection. Edits you
     make will be synced to the other cursors.
  4. Use Insert mode to correct the lines. Then exit Insert mode.
     Other cursors will fix the other lines after you exit Insert mode.
- 5. Type \\[meow-grab] to cancel the grabbing.
+ 5. Type \\[eerie-grab] to cancel the grabbing.
 
  --> Fix th six nes at same ime.
  --> Fix th six nes at same ime.
@@ -508,13 +508,13 @@
 
  1. Move the cursor to the line below marked -->
  2. Select the \"1 2 3\"
- 3. Press \\[meow-grab] to grab the selection
- 4. Press \\[meow-back-word] to create fake cursors at the beginning of each word
+ 3. Press \\[eerie-grab] to grab the selection
+ 4. Press \\[eerie-back-word] to create fake cursors at the beginning of each word
     in the backwards direction.
  5. Enter Insert Mode then edit.
- 6. Press \\[meow-normal-mode] to stop macro recording and apply
+ 6. Press \\[eerie-normal-mode] to stop macro recording and apply
     your edits to all fake cursors.
- 7. Press \\[meow-grab] to cancel grab.
+ 7. Press \\[eerie-grab] to cancel grab.
  --> 1 2 3
      [| \"1\" |] [| \"2\" |] [| \"3\" |]
 
@@ -524,16 +524,16 @@
         x_y_foo_bar_baz
 
  1. Move the cursor to the line below marked -->
- 2. Select the whole symbol with \\[meow-mark-symbol]
- 3. Press \\[meow-grab] to activate secondary selection
- 4. Press \\[negative-argument] \\[meow-find] and - to backward search for
+ 2. Select the whole symbol with \\[eerie-mark-symbol]
+ 3. Press \\[eerie-grab] to activate secondary selection
+ 4. Press \\[negative-argument] \\[eerie-find] and - to backward search for
     character -, will create fake cursor at each -
- 5. Meow will start recording. Press \\[meow-change] to switch to Insert mode
+ 5. Eerie will start recording. Press \\[eerie-change] to switch to Insert mode
     (character under current cursor is deleted)
  6. type _
  7. Press ESC to go back to NORMAL, then the macro will
     be applied to all fake cursors.
- 8. Press \\[meow-grab] again to cancel the grab
+ 8. Press \\[eerie-grab] again to cancel the grab
 
  --> x-y-foo-bar-baz
      x_y_foo_bar_baz
@@ -542,35 +542,35 @@
 =                     QUICK VISIT AND SEARCH                    =
 =================================================================
 
- The visit command \\[meow-visit] can help to select a symbol in your
- buffer with completion. Once you have something selected with the \\[meow-visit] key,
- you can use \\[meow-search] to search for the next occurrence of that selection.
+ The visit command \\[eerie-visit] can help to select a symbol in your
+ buffer with completion. Once you have something selected with the \\[eerie-visit] key,
+ you can use \\[eerie-search] to search for the next occurrence of that selection.
 
- If you want a backward search, you can reverse the selection with \\[meow-reverse]
- because \\[meow-search] will respect the direction of the current selection.
+ If you want a backward search, you can reverse the selection with \\[eerie-reverse]
+ because \\[eerie-search] will respect the direction of the current selection.
 
  1. Move the cursor to the line below marked -->.
- 2. Select the word \"dog\" with \\[meow-visit] dog RET.
- 3. Change it to \"cat\" with \\[meow-change] cat ESC.
- 4. Save it with \\[meow-save].
- 5. Search for next \"dog\" and replace it with \\[meow-search] \\[meow-replace].
+ 2. Select the word \"dog\" with \\[eerie-visit] dog RET.
+ 3. Change it to \"cat\" with \\[eerie-change] cat ESC.
+ 4. Save it with \\[eerie-save].
+ 5. Search for next \"dog\" and replace it with \\[eerie-search] \\[eerie-replace].
  6. Repeat 5 to replace next \"dog\".
 
  --> I'm going to tell you something:
      dog is beautiful
      and dog is agile
-     the last one, dog says meow
+     the last one, dog says eerie
 
- Note: You can also start searching after \\[meow-mark-word] or \\[meow-mark-symbol]. Actually, you
-       can use \\[meow-search] whenever you have any kind of selection. The search command
+ Note: You can also start searching after \\[eerie-mark-word] or \\[eerie-mark-symbol]. Actually, you
+       can use \\[eerie-search] whenever you have any kind of selection. The search command
        is built on regular expression. The symbol boundary will be
-       added to your search if the selection is created with \\[meow-visit], \\[meow-mark-word] and \\[meow-mark-symbol].
+       added to your search if the selection is created with \\[eerie-visit], \\[eerie-mark-word] and \\[eerie-mark-symbol].
 
 =================================================================
 =                    KEYPAD                                     =
 =================================================================
 
- One of the most notable features of Meow is the Keypad. It
+ One of the most notable features of Eerie is the Keypad. It
  enables the use of modifier keybinds without pressing modifiers.
 
  To enter Keypad mode, press SPC in Normal mode or Motion mode.
@@ -628,20 +628,20 @@
 =================================================================
 
  All these keybinds are shown on the cheat sheet which can be
- opened by pressing \\[meow-cheatsheet].
+ opened by pressing \\[eerie-cheatsheet].
 
 =================================================================
 ")
 
-(defun meow-tutor ()
-  "Open a buffer with meow tutor."
+(defun eerie-tutor ()
+  "Open a buffer with eerie tutor."
   (interactive)
-  (let ((buf (get-buffer-create "*Meow Tutor*")))
+  (let ((buf (get-buffer-create "*Eerie Tutor*")))
     (with-current-buffer buf
       (erase-buffer)
-      (insert (format (substitute-command-keys meow--tutor-content)
-                      (alist-get 'normal meow-replace-state-name-list)
-                      (alist-get 'insert meow-replace-state-name-list)))
+      (insert (format (substitute-command-keys eerie--tutor-content)
+                      (alist-get 'normal eerie-replace-state-name-list)
+                      (alist-get 'insert eerie-replace-state-name-list)))
       (goto-char (point-min))
       (display-line-numbers-mode))
     (switch-to-buffer buf)))

@@ -1,4 +1,4 @@
-;;; eerie-cheatsheet.el --- Cheatsheet for Meow  -*- lexical-binding: t; -*-
+;;; eerie-cheatsheet.el --- Cheatsheet for Eerie  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -18,7 +18,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;; Cheatsheet for Meow.
+;; Cheatsheet for Eerie.
 
 ;;; Code:
 
@@ -26,51 +26,51 @@
 (require 'eerie-util)
 (require 'eerie-cheatsheet-layout)
 
-(defconst meow--cheatsheet-note
+(defconst eerie--cheatsheet-note
   (format "
 NOTE:
 %s means this command will expand current region.
-" (propertize "ex" 'face 'meow-cheatsheet-highlight)))
+" (propertize "ex" 'face 'eerie-cheatsheet-highlight)))
 
-(defun meow--render-cheatsheet-thing-table ()
+(defun eerie--render-cheatsheet-thing-table ()
   (concat
    (format
     "%s, %s, %s and %s require a %s as input:\n"
-    (propertize "←thing→ (inner)" 'face 'meow-cheatsheet-highlight)
-    (propertize "[thing] (bounds)" 'face 'meow-cheatsheet-highlight)
-    (propertize "←thing (begin)" 'face 'meow-cheatsheet-highlight)
-    (propertize "thing→ (end)" 'face 'meow-cheatsheet-highlight)
-    (propertize "THING" 'face 'meow-cheatsheet-highlight))
-   (meow--cheatsheet-render-char-thing-table 'meow-cheatsheet-highlight)))
+    (propertize "←thing→ (inner)" 'face 'eerie-cheatsheet-highlight)
+    (propertize "[thing] (bounds)" 'face 'eerie-cheatsheet-highlight)
+    (propertize "←thing (begin)" 'face 'eerie-cheatsheet-highlight)
+    (propertize "thing→ (end)" 'face 'eerie-cheatsheet-highlight)
+    (propertize "THING" 'face 'eerie-cheatsheet-highlight))
+   (eerie--cheatsheet-render-char-thing-table 'eerie-cheatsheet-highlight)))
 
-(defvar meow-cheatsheet-physical-layout meow-cheatsheet-physical-layout-ansi
+(defvar eerie-cheatsheet-physical-layout eerie-cheatsheet-physical-layout-ansi
   "Physical keyboard layout used to display cheatsheet.
 
-Currently `meow-cheatsheet-physical-layout-ansi' is supported.")
+Currently `eerie-cheatsheet-physical-layout-ansi' is supported.")
 
-(defvar meow-cheatsheet-layout meow-cheatsheet-layout-qwerty
+(defvar eerie-cheatsheet-layout eerie-cheatsheet-layout-qwerty
   "Keyboard layout used to display cheatsheet.
 
-Currently `meow-cheatsheet-layout-qwerty', `meow-cheatsheet-layout-dvorak',
-`meow-cheatsheet-layout-dvp' and `meow-cheatsheet-layout-colemak' is supported.")
+Currently `eerie-cheatsheet-layout-qwerty', `eerie-cheatsheet-layout-dvorak',
+`eerie-cheatsheet-layout-dvp' and `eerie-cheatsheet-layout-colemak' is supported.")
 
-(defun meow--short-command-name (cmd)
+(defun eerie--short-command-name (cmd)
   (or
    (when (symbolp cmd)
      (when-let* ((s
-                  (or (alist-get cmd meow-command-to-short-name-list)
+                  (or (alist-get cmd eerie-command-to-short-name-list)
                       (cl-case cmd
                         (undefined "")
                         (t (thread-last
                              (symbol-name cmd)
-                             (replace-regexp-in-string "meow-" "")))))))
+                             (replace-regexp-in-string "eerie-" "")))))))
        (if (<= (length s) 9)
            (format "% 9s" s)
-         (meow--truncate-string 9 s meow-cheatsheet-ellipsis))))
+         (eerie--truncate-string 9 s eerie-cheatsheet-ellipsis))))
    "         "))
 
-(defun meow--cheatsheet-replace-keysyms ()
-  (dolist (it meow-cheatsheet-layout)
+(defun eerie--cheatsheet-replace-keysyms ()
+  (dolist (it eerie-cheatsheet-layout)
     (let* ((keysym (car it))
            (lower (cadr it))
            (upper (caddr it))
@@ -85,7 +85,7 @@ Currently `meow-cheatsheet-layout-qwerty', `meow-cheatsheet-layout-dvorak',
           (forward-line 1)
           (forward-char x)
           (delete-char -9)
-          (insert (propertize (meow--short-command-name upper-cmd) 'face 'meow-cheatsheet-highlight))
+          (insert (propertize (eerie--short-command-name upper-cmd) 'face 'eerie-cheatsheet-highlight))
           (forward-line 2)
           (forward-char x)
           (delete-char -9)
@@ -93,9 +93,9 @@ Currently `meow-cheatsheet-layout-qwerty', `meow-cheatsheet-layout-dvorak',
           (forward-line 1)
           (forward-char x)
           (delete-char -9)
-          (insert (propertize (meow--short-command-name lower-cmd) 'face 'meow-cheatsheet-highlight)))))))
+          (insert (propertize (eerie--short-command-name lower-cmd) 'face 'eerie-cheatsheet-highlight)))))))
 
-(defun meow--cheatsheet-render-char-thing-table (&optional key-face)
+(defun eerie--cheatsheet-render-char-thing-table (&optional key-face)
   (let* ((ww (frame-width))
          (w 16)
          (col (min 5 (/ ww w))))
@@ -110,31 +110,31 @@ Currently `meow-cheatsheet-layout-qwerty', `meow-cheatsheet-layout-dvorak',
                    (if (= (1- col) (mod idx col))
                        "\n"
                      " "))))
-       meow-char-thing-table)
+       eerie-char-thing-table)
       (string-join)
       (string-trim-right))))
 
-(defun meow-cheatsheet ()
+(defun eerie-cheatsheet ()
   (interactive)
   (cond
-   ((not meow-cheatsheet-physical-layout)
-    (message "`meow-cheatsheet-physical-layout' is not specified"))
-   ((not meow-cheatsheet-layout)
-    (message "`meow-cheatsheet-layout' is not specified"))
+   ((not eerie-cheatsheet-physical-layout)
+    (message "`eerie-cheatsheet-physical-layout' is not specified"))
+   ((not eerie-cheatsheet-layout)
+    (message "`eerie-cheatsheet-layout' is not specified"))
    (t
-    (let ((buf (get-buffer-create (format "*Meow Cheatsheet*"))))
+    (let ((buf (get-buffer-create (format "*Eerie Cheatsheet*"))))
     (with-current-buffer buf
       (text-mode)
       (setq buffer-read-only nil)
       (erase-buffer)
       (apply #'insert (make-list 63 " "))
-      (insert "Meow Cheatsheet\n")
-      (insert meow-cheatsheet-physical-layout)
-      (meow--cheatsheet-replace-keysyms)
+      (insert "Eerie Cheatsheet\n")
+      (insert eerie-cheatsheet-physical-layout)
+      (eerie--cheatsheet-replace-keysyms)
       (goto-char (point-max))
-      (insert meow--cheatsheet-note)
-      (insert (meow--render-cheatsheet-thing-table))
-      (add-face-text-property (point-min) (point-max) 'meow-cheatsheet-command)
+      (insert eerie--cheatsheet-note)
+      (insert (eerie--render-cheatsheet-thing-table))
+      (add-face-text-property (point-min) (point-max) 'eerie-cheatsheet-command)
       (setq buffer-read-only t))
     (switch-to-buffer buf)))))
 

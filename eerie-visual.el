@@ -1,4 +1,4 @@
-;;; eerie-visual.el --- Visual effect in Meow  -*- lexical-binding: t; -*-
+;;; eerie-visual.el --- Visual effect in Eerie  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -19,7 +19,7 @@
 
 
 ;;; Commentary:
-;; Implementation for all commands in Meow.
+;; Implementation for all commands in Eerie.
 
 ;;; Code:
 
@@ -32,83 +32,83 @@
 
 (declare-function hl-line-highlight "hl-line")
 
-(defvar meow--expand-overlays nil
+(defvar eerie--expand-overlays nil
   "Overlays used to highlight expand hints in buffer.")
 
-(defvar meow--match-overlays nil
+(defvar eerie--match-overlays nil
   "Overlays used to highlight matches in buffer.")
 
-(defvar meow--search-indicator-overlay nil
+(defvar eerie--search-indicator-overlay nil
   "Overlays used to display search indicator in current line.")
 
-(defvar-local meow--search-indicator-state nil
+(defvar-local eerie--search-indicator-state nil
   "The state for search indicator.
 
 Value is a list of (last-regexp last-pos idx cnt).")
 
-(defvar meow--dont-remove-overlay nil
+(defvar eerie--dont-remove-overlay nil
   "Indicate we should prevent removing overlay for once.")
 
-(defvar meow--highlight-timer nil
+(defvar eerie--highlight-timer nil
   "Timer for highlight cleaner.")
 
-(defun meow--remove-expand-highlights ()
-  (mapc #'delete-overlay meow--expand-overlays)
-  (setq meow--expand-overlays nil))
+(defun eerie--remove-expand-highlights ()
+  (mapc #'delete-overlay eerie--expand-overlays)
+  (setq eerie--expand-overlays nil))
 
-(defun meow--remove-match-highlights ()
-  (mapc #'delete-overlay meow--match-overlays)
-  (setq meow--match-overlays nil))
+(defun eerie--remove-match-highlights ()
+  (mapc #'delete-overlay eerie--match-overlays)
+  (setq eerie--match-overlays nil))
 
-(defun meow--remove-search-highlight ()
-  (when meow--search-indicator-overlay
-    (delete-overlay meow--search-indicator-overlay)))
+(defun eerie--remove-search-highlight ()
+  (when eerie--search-indicator-overlay
+    (delete-overlay eerie--search-indicator-overlay)))
 
-(defun meow--clean-search-indicator-state ()
-  (setq meow--search-indicator-overlay nil
-        meow--search-indicator-state nil))
+(defun eerie--clean-search-indicator-state ()
+  (setq eerie--search-indicator-overlay nil
+        eerie--search-indicator-state nil))
 
-(defun meow--remove-search-indicator ()
-  (meow--remove-search-highlight)
-  (meow--clean-search-indicator-state))
+(defun eerie--remove-search-indicator ()
+  (eerie--remove-search-highlight)
+  (eerie--clean-search-indicator-state))
 
-(defun meow--show-indicator (pos idx cnt)
+(defun eerie--show-indicator (pos idx cnt)
   (goto-char pos)
   (goto-char (line-end-position))
   (if (= (point) (point-max))
       (let ((ov (make-overlay (point) (point))))
-        (overlay-put ov 'after-string (propertize (format " [%d/%d]" idx cnt) 'face 'meow-search-indicator))
-        (setq meow--search-indicator-overlay ov))
+        (overlay-put ov 'after-string (propertize (format " [%d/%d]" idx cnt) 'face 'eerie-search-indicator))
+        (setq eerie--search-indicator-overlay ov))
     (let ((ov (make-overlay (point) (1+ (point)))))
-      (overlay-put ov 'display (propertize (format " [%d/%d] \n" idx cnt) 'face 'meow-search-indicator))
-      (setq meow--search-indicator-overlay ov))))
+      (overlay-put ov 'display (propertize (format " [%d/%d] \n" idx cnt) 'face 'eerie-search-indicator))
+      (setq eerie--search-indicator-overlay ov))))
 
-(defun meow--highlight-match ()
+(defun eerie--highlight-match ()
   (let ((beg (match-beginning 0))
         (end (match-end 0)))
     (unless (cl-find-if (lambda (it)
-                          (overlay-get it 'meow))
+                          (overlay-get it 'eerie))
                         (overlays-at beg))
       (let ((ov (make-overlay beg end)))
-        (overlay-put ov 'face 'meow-search-highlight)
+        (overlay-put ov 'face 'eerie-search-highlight)
         (overlay-put ov 'priority 0)
-        (overlay-put ov 'meow t)
-        (push ov meow--match-overlays)))))
+        (overlay-put ov 'eerie t)
+        (push ov eerie--match-overlays)))))
 
-(defun meow--highlight-regexp-in-buffer (regexp)
+(defun eerie--highlight-regexp-in-buffer (regexp)
   "Highlight all regexp in this buffer."
-  (when (and (meow-normal-mode-p)
+  (when (and (eerie-normal-mode-p)
              (region-active-p))
-    (meow--remove-expand-highlights)
+    (eerie--remove-expand-highlights)
     (let* ((cnt 0)
            (idx 0)
            (pos (region-end))
            (hl-start (max (point-min) (- (point) 3000)))
            (hl-end (min (point-max) (+ (point) 3000))))
-      (setq meow--expand-nav-function nil)
-      (setq meow--visual-command this-command)
+      (setq eerie--expand-nav-function nil)
+      (setq eerie--visual-command this-command)
       (save-mark-and-excursion
-        (meow--remove-search-indicator)
+        (eerie--remove-search-indicator)
         (let ((case-fold-search nil))
           (goto-char (point-min))
           (while (re-search-forward regexp (point-max) t)
@@ -116,13 +116,13 @@ Value is a list of (last-regexp last-pos idx cnt).")
             (when (<= (match-beginning 0) pos (match-end 0))
               (setq idx cnt))
             (when (<= hl-start (point) hl-end)
-              (meow--highlight-match)))
-          (meow--show-indicator pos idx cnt))))))
+              (eerie--highlight-match)))
+          (eerie--show-indicator pos idx cnt))))))
 
-(defun meow--format-full-width-number (n)
-  (alist-get n meow-full-width-number-position-chars))
+(defun eerie--format-full-width-number (n)
+  (alist-get n eerie-full-width-number-position-chars))
 
-(defun meow--highlight-num-positions-1 (nav-function faces bound)
+(defun eerie--highlight-num-positions-1 (nav-function faces bound)
   (save-mark-and-excursion
     (let ((pos (point))
           (i 1))
@@ -149,63 +149,63 @@ Value is a list of (last-regexp last-pos idx cnt).")
                               (before-tab
                                (overlay-put ov 'display (concat (propertize (format "%s" n) 'face face) "\t")))
                               (before-full-width-char
-                               (overlay-put ov 'display (propertize (format "%s" (meow--format-full-width-number n)) 'face face)))
+                               (overlay-put ov 'display (propertize (format "%s" (eerie--format-full-width-number n)) 'face face)))
                               (t
                                (overlay-put ov 'display (propertize (format "%s" n) 'face face))))
-                             (push ov meow--expand-overlays)
+                             (push ov eerie--expand-overlays)
                              (cl-incf i))))
                      (cl-return))
                  (cl-return))))))
 
-(defun meow--highlight-num-positions (num)
-  (setq meow--visual-command this-command)
-  (meow--remove-expand-highlights)
-  (meow--remove-match-highlights)
-  (meow--remove-search-indicator)
+(defun eerie--highlight-num-positions (num)
+  (setq eerie--visual-command this-command)
+  (eerie--remove-expand-highlights)
+  (eerie--remove-match-highlights)
+  (eerie--remove-search-indicator)
   (let ((bound (cons (window-start) (window-end)))
         (faces (seq-take
-                (if (meow--direction-backward-p)
+                (if (eerie--direction-backward-p)
                     (seq-concatenate
                      'list
-                     (make-list 10 'meow-position-highlight-reverse-number-1)
-                     (make-list 10 'meow-position-highlight-reverse-number-2)
-                     (make-list 10 'meow-position-highlight-reverse-number-3))
+                     (make-list 10 'eerie-position-highlight-reverse-number-1)
+                     (make-list 10 'eerie-position-highlight-reverse-number-2)
+                     (make-list 10 'eerie-position-highlight-reverse-number-3))
                   (seq-concatenate
                    'list
-                   (make-list 10 'meow-position-highlight-number-1)
-                   (make-list 10 'meow-position-highlight-number-2)
-                   (make-list 10 'meow-position-highlight-number-3)))
+                   (make-list 10 'eerie-position-highlight-number-1)
+                   (make-list 10 'eerie-position-highlight-number-2)
+                   (make-list 10 'eerie-position-highlight-number-3)))
                 num))
-        (nav-function (if (meow--direction-backward-p)
-                          (car meow--expand-nav-function)
-                        (cdr meow--expand-nav-function))))
-    (meow--highlight-num-positions-1 nav-function faces bound)
-    (when meow--highlight-timer
-      (cancel-timer meow--highlight-timer)
-      (setq meow--highlight-timer nil))
-    (setq meow--highlight-timer
+        (nav-function (if (eerie--direction-backward-p)
+                          (car eerie--expand-nav-function)
+                        (cdr eerie--expand-nav-function))))
+    (eerie--highlight-num-positions-1 nav-function faces bound)
+    (when eerie--highlight-timer
+      (cancel-timer eerie--highlight-timer)
+      (setq eerie--highlight-timer nil))
+    (setq eerie--highlight-timer
           (run-at-time
            (time-add (current-time)
-                     (seconds-to-time meow-expand-hint-remove-delay))
+                     (seconds-to-time eerie-expand-hint-remove-delay))
            nil
-           #'meow--remove-expand-highlights))))
+           #'eerie--remove-expand-highlights))))
 
-(defun meow--select-expandable-p ()
-  (when (meow-normal-mode-p)
-    (when-let* ((sel (meow--selection-type)))
+(defun eerie--select-expandable-p ()
+  (when (eerie-normal-mode-p)
+    (when-let* ((sel (eerie--selection-type)))
       (let ((type (cdr sel)))
         (member type '(word symbol line block find till))))))
 
-(defun meow--maybe-highlight-num-positions (&optional nav-functions)
-  (when (and (meow-normal-mode-p)
-             (meow--select-expandable-p))
-    (setq meow--expand-nav-function (or nav-functions meow--expand-nav-function))
-    (when (and (not (member major-mode meow-expand-exclude-mode-list))
-               meow--expand-nav-function)
+(defun eerie--maybe-highlight-num-positions (&optional nav-functions)
+  (when (and (eerie-normal-mode-p)
+             (eerie--select-expandable-p))
+    (setq eerie--expand-nav-function (or nav-functions eerie--expand-nav-function))
+    (when (and (not (member major-mode eerie-expand-exclude-mode-list))
+               eerie--expand-nav-function)
       (let ((num (or
-                  (alist-get (cdr (meow--selection-type)) meow-expand-hint-counts)
+                  (alist-get (cdr (eerie--selection-type)) eerie-expand-hint-counts)
                   0)))
-        (meow--highlight-num-positions num)))))
+        (eerie--highlight-num-positions num)))))
 
 (provide 'eerie-visual)
 ;;; eerie-visual.el ends here

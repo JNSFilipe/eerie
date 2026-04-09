@@ -1,4 +1,4 @@
-;;; eerie-var.el --- Meow variables  -*- lexical-binding: t; -*-
+;;; eerie-var.el --- Eerie variables  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -22,52 +22,52 @@
 
 ;;; Code:
 
-(defgroup meow nil
-  "Custom group for meow."
-  :group 'meow-module)
+(defgroup eerie nil
+  "Custom group for eerie."
+  :group 'eerie-module)
 
 ;; Behaviors
 
-(defcustom meow-use-cursor-position-hack t
+(defcustom eerie-use-cursor-position-hack t
   "Whether to use cursor position hack."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-use-enhanced-selection-effect nil
+(defcustom eerie-use-enhanced-selection-effect nil
   "Whether to use enhanced cursor effect.
 
 This will affect how selection is displayed."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-expand-exclude-mode-list
+(defcustom eerie-expand-exclude-mode-list
   '(markdown-mode org-mode)
   "A list of major modes where after command expand should be disabled."
-  :group 'meow
+  :group 'eerie
   :type '(repeat sexp))
 
-(defcustom meow-keypad-execute-on-beacons nil
+(defcustom eerie-keypad-execute-on-beacons nil
   "Execute keypad command directly on beacons when using it directly from
 beacon state.
 
 This doesn't affect how keypad works on recording or executing a kmacro."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-selection-command-fallback
-  '((meow-change . meow-change-char)
-    (meow-kill . meow-C-k)
-    (meow-save . kill-ring-save)
-    (meow-cancel-selection . keyboard-quit)
-    (meow-pop-selection . meow-pop-grab)
-    (meow-beacon-change . meow-beacon-change-char)
-    (meow-expand . meow-digit-argument))
+(defcustom eerie-selection-command-fallback
+  '((eerie-change . eerie-change-char)
+    (eerie-kill . eerie-C-k)
+    (eerie-save . kill-ring-save)
+    (eerie-cancel-selection . keyboard-quit)
+    (eerie-pop-selection . eerie-pop-grab)
+    (eerie-beacon-change . eerie-beacon-change-char)
+    (eerie-expand . eerie-digit-argument))
   "Fallback commands for selection commands when there is no available selection."
-  :group 'meow
+  :group 'eerie
   :type '(alist :key-type (function :tag "Command")
                 :value-type (function :tag "Fallback")))
 
-(defcustom meow-replace-state-name-list
+(defcustom eerie-replace-state-name-list
   '((normal . "NORMAL")
     (visual . "VISUAL")
     (motion . "MOTION")
@@ -77,54 +77,54 @@ This doesn't affect how keypad works on recording or executing a kmacro."
     (multicursor-visual . "MULTI-V")
     (beacon . "BEACON"))
   "A list of mappings for how to display state in indicator."
-  :group 'meow
-  :type '(alist :key-type (symbol :tag "Meow state")
+  :group 'eerie
+  :type '(alist :key-type (symbol :tag "Eerie state")
                 :value-type (string :tag "Indicator")))
 
-(defvar meow-indicator-face-alist
-  '((normal . meow-normal-indicator)
-    (visual . meow-visual-indicator)
-    (motion . meow-motion-indicator)
-    (keypad . meow-keypad-indicator)
-    (insert . meow-insert-indicator)
-    (multicursor . meow-beacon-indicator)
-    (multicursor-visual . meow-beacon-indicator)
-    (beacon . meow-beacon-indicator))
-  "Alist of meow states -> faces")
+(defvar eerie-indicator-face-alist
+  '((normal . eerie-normal-indicator)
+    (visual . eerie-visual-indicator)
+    (motion . eerie-motion-indicator)
+    (keypad . eerie-keypad-indicator)
+    (insert . eerie-insert-indicator)
+    (multicursor . eerie-beacon-indicator)
+    (multicursor-visual . eerie-beacon-indicator)
+    (beacon . eerie-beacon-indicator))
+  "Alist of eerie states -> faces")
 
-(defcustom meow-select-on-change nil
+(defcustom eerie-select-on-change nil
   "Whether to activate region when exiting INSERT mode
- after `meow-change', `meow-change-char' and `meow-change-save'."
-  :group 'meow
+ after `eerie-change', `eerie-change-char' and `eerie-change-save'."
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-select-on-append nil
-  "Whether to activate region when exiting INSERT mode after `meow-append'."
-  :group 'meow
+(defcustom eerie-select-on-append nil
+  "Whether to activate region when exiting INSERT mode after `eerie-append'."
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-select-on-insert nil
-  "Whether to activate region when exiting INSERT mode after `meow-insert'."
-  :group 'meow
+(defcustom eerie-select-on-insert nil
+  "Whether to activate region when exiting INSERT mode after `eerie-insert'."
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-expand-hint-remove-delay 1.0
+(defcustom eerie-expand-hint-remove-delay 1.0
   "The delay before the position hint disappears."
-  :group 'meow
+  :group 'eerie
   :type 'number)
 
-(defcustom meow-next-thing-include-syntax
+(defcustom eerie-next-thing-include-syntax
   '((word " _w" " _w")
     (symbol " _w" " _w"))
-  "The syntax to include selecting with meow-next-THING.
+  "The syntax to include selecting with eerie-next-THING.
 
 Each item is a (THING FORWARD_SYNTAX_TO_INCLUDE BACKWARD-SYNTAX_TO_INCLUDE)."
-  :group 'meow
+  :group 'eerie
   :type '(repeat (list (symbol :tag "Thing")
                        (string :tag "Forward Syntax")
                        (string :tag "Backward Syntax"))))
 
-(defcustom meow-expand-hint-counts
+(defcustom eerie-expand-hint-counts
   '((word . 30)
     (line . 30)
     (block . 30)
@@ -132,16 +132,16 @@ Each item is a (THING FORWARD_SYNTAX_TO_INCLUDE BACKWARD-SYNTAX_TO_INCLUDE)."
     (till . 30)
     (symbol . 30))
   "The maximum numbers for expand hints of each type."
-  :group 'meow
+  :group 'eerie
   :type '(alist :key-type (symbol :tag "Hint type")
                 :value-type (integer :tag "Value")))
 
-(defcustom meow-keypad-message t
+(defcustom eerie-keypad-message t
   "Whether to log keypad messages in minibuffer."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-char-thing-table
+(defcustom eerie-char-thing-table
   '((?r . round)
     (?s . square)
     (?c . curly)
@@ -155,21 +155,21 @@ Each item is a (THING FORWARD_SYNTAX_TO_INCLUDE BACKWARD-SYNTAX_TO_INCLUDE)."
     (?d . defun)
     (?. . sentence))
   "Mapping from char to thing."
-  :group 'meow
+  :group 'eerie
   :type '(alist :key-type (character :tag "Char")
                 :value-type (symbol :tag "Thing")))
 
-(defcustom meow-thing-selection-directions
+(defcustom eerie-thing-selection-directions
   '((inner . forward)
     (bounds . backward)
     (beginning . backward)
     (end . forward))
   "Selection directions for each thing command."
-  :group 'meow
+  :group 'eerie
   :type '(alist :key-type (symbol :tag "Command")
                 :value-type (symbol :tag "Direction")))
 
-(defvar meow-word-thing 'word
+(defvar eerie-word-thing 'word
   "The \\='thing\\=' used for marking and movement by words.
 
 The values is a \\='thing\\=' as understood by `thingatpt' - a symbol that will
@@ -183,7 +183,7 @@ direction depending on the sign of N. Examples of such functions include
 `forward-word', `forward-symbol' and `forward-sexp', which `thingatpt' uses for
 the `word', `symbol' and `sexp' things, respectively.")
 
-(defvar meow-symbol-thing 'symbol
+(defvar eerie-symbol-thing 'symbol
   "The \\='thing\\=' used for marking and movement by symbols.
 
 The values is a \\='thing\\=' as understood by `thingatpt' - a symbol that will
@@ -197,60 +197,60 @@ direction depending on the sign of N. Examples of such functions include
 `forward-word', `forward-symbol' and `forward-sexp', which `thingatpt' uses for
 the `word', `symbol' and `sexp' things, respectively.")
 
-(defcustom meow-display-thing-help t
-  "Whether to display the help prompt for meow-inner/bounds/begin/end-of-thing."
-  :group 'meow
+(defcustom eerie-display-thing-help t
+  "Whether to display the help prompt for eerie-inner/bounds/begin/end-of-thing."
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-pop-or-unpop-to-mark-repeat-unpop nil
-  "Non-nil means that calling `meow-pop-or-unpop-to-mark'
+(defcustom eerie-pop-or-unpop-to-mark-repeat-unpop nil
+  "Non-nil means that calling `eerie-pop-or-unpop-to-mark'
 after calling it with a negative argument unpops the mark again.
 
 This variable is meant to be similar to `set-mark-command-repeat-pop'."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
 
-(defcustom meow-keypad-describe-delay
+(defcustom eerie-keypad-describe-delay
   0.5
   "The delay in seconds before popup keybinding descriptions appear."
-  :group 'meow
+  :group 'eerie
   :type 'number)
 
-(defcustom meow-grab-fill-commands
-  '(meow-query-replace meow-query-replace-regexp)
-  "A list of commands that meow will auto fill with grabbed content."
-  :group 'meow
+(defcustom eerie-grab-fill-commands
+  '(eerie-query-replace eerie-query-replace-regexp)
+  "A list of commands that eerie will auto fill with grabbed content."
+  :group 'eerie
   :type '(repeat function))
 
-(defcustom meow-visit-collect-min-length 1
-  "Minimal length when collecting symbols for `meow-visit'."
-  :group 'meow
+(defcustom eerie-visit-collect-min-length 1
+  "Minimal length when collecting symbols for `eerie-visit'."
+  :group 'eerie
   :type 'integer)
 
-(defcustom meow-visit-sanitize-completion t
-  "Whether let `meow-visit' display symbol regexps in a sanitized format."
-  :group 'meow
+(defcustom eerie-visit-sanitize-completion t
+  "Whether let `eerie-visit' display symbol regexps in a sanitized format."
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-use-clipboard nil
+(defcustom eerie-use-clipboard nil
   "Whether to use system clipboard."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-use-keypad-when-execute-kbd t
+(defcustom eerie-use-keypad-when-execute-kbd t
   "Whether to use KEYPAD when the result of executing kbd string is a keymap."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-use-dynamic-face-color t
+(defcustom eerie-use-dynamic-face-color t
   "Whether to use dynamic calculated face color.
 
 This option will affect the color of position hint and fake region cursor."
-  :group 'meow
+  :group 'eerie
   :type 'boolean)
 
-(defcustom meow-mode-state-list
+(defcustom eerie-mode-state-list
   '((conf-mode . normal)
     (fundamental-mode . normal)
     (help-mode . motion)
@@ -259,11 +259,11 @@ This option will affect the color of position hint and fake region cursor."
   "A list of rules, each is (major-mode . init-state).
 
 The init-state can be any state, including custom ones."
-  :group 'meow
+  :group 'eerie
   :type '(alist :key-type (sexp :tag "Major-mode")
                 :value-type (symbol :tag "Initial state")))
 
-(defcustom meow-update-display-in-macro 'except-last-macro
+(defcustom eerie-update-display-in-macro 'except-last-macro
   "Whether update cursor and mode-line when executing kbd macro.
 
 Set to `nil' for no update in macro,
@@ -274,133 +274,133 @@ for no update only when executing last macro.
 
 Set to `t' to always update.
 "
-  :group 'meow
+  :group 'eerie
   :type '(choice boolean
                  (const except-last-macro)))
 
-(defcustom meow-expand-selection-type 'select
+(defcustom eerie-expand-selection-type 'select
   "Whether to create transient selection for expand commands."
-  :group 'meow
+  :group 'eerie
   :type '(choice (const select)
                  (const expand)))
 
-(defcustom meow-keypad-leader-transparent 'motion
+(defcustom eerie-keypad-leader-transparent 'motion
   "Use transparent behaivor when a bound command is not found in leader dispatch.
 
 Value `t' stands for always be transparent.
 Value `motion' stands for only be transparent in MOTION state.
 Value `normal' stands for only be transparent in NORMAL state.
 Value `nil' stands for never be transparent."
-  :group 'meow
+  :group 'eerie
   :type '(choice (const t :tag "Always be transparent")
                  (const motion :tag "Transparent only in MOTION state")
                  (const normal :tag "Transparent only in NORMAL state")
                  (const nil :tag "Never be transparent")))
 
-(defcustom meow-keypad-leader-dispatch nil
+(defcustom eerie-keypad-leader-dispatch nil
   "The fallback dispatching in KEYPAD when there's no translation.
 
 The value can be either a string or a keymap:
 A keymap stands for a base keymap used for further translation.
 A string stands for finding the keymap at a specified key binding.
-Nil stands for taking leader keymap from `meow-keymap-alist'."
-  :group 'meow
+Nil stands for taking leader keymap from `eerie-keymap-alist'."
+  :group 'eerie
   :type '(choice (string :tag "Keys")
                  (variable :tag "Keymap")
                  (const nil)))
 
-(defcustom meow-keypad-meta-prefix ?m
+(defcustom eerie-keypad-meta-prefix ?m
   "The prefix represent M- in KEYPAD state."
-  :group 'meow
+  :group 'eerie
   :type 'character)
 
-(defcustom meow-keypad-ctrl-meta-prefix ?g
+(defcustom eerie-keypad-ctrl-meta-prefix ?g
   "The prefix represent C-M- in KEYPAD state."
-  :group 'meow
+  :group 'eerie
   :type 'character)
 
-(defcustom meow-keypad-literal-prefix 32
+(defcustom eerie-keypad-literal-prefix 32
   "The prefix represent no modifier in KEYPAD state."
-  :group 'meow
+  :group 'eerie
   :type 'character)
 
-(defcustom meow-keypad-start-keys
+(defcustom eerie-keypad-start-keys
   '((?c . ?c)
     (?h . ?h)
     (?x . ?x))
   "Alist of keys to begin keypad translation. When a key char is pressed,
 it's corresponding value is appended to C- and the user is
 prompted to finish the command."
-  :group 'meow
+  :group 'eerie
   :type '(alist :key-type (character :tag "From")
                 :value-type (character :tag "To")))
 
-(defcustom meow-goto-line-function nil
-  "Function to use in `meow-goto-line'.
+(defcustom eerie-goto-line-function nil
+  "Function to use in `eerie-goto-line'.
 
 Nil means find the command by key binding."
-  :group 'meow
+  :group 'eerie
   :type '(choice function (const nil)))
 
-(defvar meow-state-mode-alist
-  '((normal . meow-normal-mode)
-    (visual . meow-visual-mode)
-    (insert . meow-insert-mode)
-    (keypad . meow-keypad-mode)
-    (motion . meow-motion-mode)
-    (multicursor . meow-multicursor-mode)
-    (multicursor-visual . meow-multicursor-visual-mode)
-    (beacon . meow-beacon-mode))
-  "Alist of meow states -> modes")
+(defvar eerie-state-mode-alist
+  '((normal . eerie-normal-mode)
+    (visual . eerie-visual-mode)
+    (insert . eerie-insert-mode)
+    (keypad . eerie-keypad-mode)
+    (motion . eerie-motion-mode)
+    (multicursor . eerie-multicursor-mode)
+    (multicursor-visual . eerie-multicursor-visual-mode)
+    (beacon . eerie-beacon-mode))
+  "Alist of eerie states -> modes")
 
-(defvar meow-update-cursor-functions-alist
-  '((meow--cursor-null-p . meow--update-cursor-default)
-    (minibufferp         . meow--update-cursor-default)
-    (meow-insert-mode-p  . meow--update-cursor-insert)
-    (meow-visual-mode-p  . meow--update-cursor-visual)
-    (meow-normal-mode-p  . meow--update-cursor-normal)
-    (meow-motion-mode-p  . meow--update-cursor-motion)
-    (meow-keypad-mode-p  . meow--update-cursor-motion)
-    (meow-multicursor-mode-p . meow--update-cursor-beacon)
-    (meow-multicursor-visual-mode-p . meow--update-cursor-beacon)
-    (meow-beacon-mode-p  . meow--update-cursor-beacon)
-    ((lambda () t)       . meow--update-cursor-default))
+(defvar eerie-update-cursor-functions-alist
+  '((eerie--cursor-null-p . eerie--update-cursor-default)
+    (minibufferp         . eerie--update-cursor-default)
+    (eerie-insert-mode-p  . eerie--update-cursor-insert)
+    (eerie-visual-mode-p  . eerie--update-cursor-visual)
+    (eerie-normal-mode-p  . eerie--update-cursor-normal)
+    (eerie-motion-mode-p  . eerie--update-cursor-motion)
+    (eerie-keypad-mode-p  . eerie--update-cursor-motion)
+    (eerie-multicursor-mode-p . eerie--update-cursor-beacon)
+    (eerie-multicursor-visual-mode-p . eerie--update-cursor-beacon)
+    (eerie-beacon-mode-p  . eerie--update-cursor-beacon)
+    ((lambda () t)       . eerie--update-cursor-default))
   "Alist of predicates to functions that set cursor type and color.")
 
-(defvar meow-keypad-describe-keymap-function 'meow-describe-keymap
+(defvar eerie-keypad-describe-keymap-function 'eerie-describe-keymap
   "The function used to describe (KEYMAP) during keypad execution.
 
 To integrate WhichKey-like features with keypad.
 Currently, keypad is not working well with which-key,
-so Meow ships a default `meow-describe-keymap'.
-Use (setq meow-keypad-describe-keymap-function \\='nil) to disable popup.")
+so Eerie ships a default `eerie-describe-keymap'.
+Use (setq eerie-keypad-describe-keymap-function \\='nil) to disable popup.")
 
-(defvar meow-keypad-clear-describe-keymap-function nil
-  "The function used to clear the effect of `meow-keypad-describe-keymap-function'.")
+(defvar eerie-keypad-clear-describe-keymap-function nil
+  "The function used to clear the effect of `eerie-keypad-describe-keymap-function'.")
 
-(defvar meow-keypad-get-title-function 'meow-keypad-get-title
+(defvar eerie-keypad-get-title-function 'eerie-keypad-get-title
   "The function used to get the title of a keymap or command.")
 
 ;; Cursor types
 
-(defvar meow-cursor-type-default 'box)
-(defvar meow-cursor-type-normal 'box)
-(defvar meow-cursor-type-visual 'box)
-(defvar meow-cursor-type-motion 'box)
-(defvar meow-cursor-type-beacon 'box)
-(defvar meow-cursor-type-region-cursor '(bar . 2))
-(defvar meow-cursor-type-insert '(bar . 2))
-(defvar meow-cursor-type-keypad 'hollow)
+(defvar eerie-cursor-type-default 'box)
+(defvar eerie-cursor-type-normal 'box)
+(defvar eerie-cursor-type-visual 'box)
+(defvar eerie-cursor-type-motion 'box)
+(defvar eerie-cursor-type-beacon 'box)
+(defvar eerie-cursor-type-region-cursor '(bar . 2))
+(defvar eerie-cursor-type-insert '(bar . 2))
+(defvar eerie-cursor-type-keypad 'hollow)
 
 ;; Keypad states
 
-(defvar meow--keypad-keys nil)
-(defvar meow--keypad-previous-state nil)
+(defvar eerie--keypad-keys nil)
+(defvar eerie--keypad-previous-state nil)
 
-(defvar meow--prefix-arg nil)
-(defvar meow--use-literal nil)
-(defvar meow--use-meta nil)
-(defvar meow--use-both nil)
+(defvar eerie--prefix-arg nil)
+(defvar eerie--use-literal nil)
+(defvar eerie--use-meta nil)
+(defvar eerie--use-both nil)
 
 ;;; KBD Macros
 ;; We use kbd macro instead of direct command/function invocation,
@@ -408,289 +408,289 @@ Use (setq meow-keypad-describe-keymap-function \\='nil) to disable popup.")
 ;;
 ;; The benefit is an out-of-box integration support for other plugins, like: paredit.
 ;;
-;; NOTE: meow assumes that the user does not modify vanilla Emacs keybindings, otherwise extra complexity will be introduced.
+;; NOTE: eerie assumes that the user does not modify vanilla Emacs keybindings, otherwise extra complexity will be introduced.
 
-(defvar meow--kbd-undo "C-/"
+(defvar eerie--kbd-undo "C-/"
   "KBD macro for command `undo'.")
 
-(defvar meow--kbd-backward-char "C-b"
+(defvar eerie--kbd-backward-char "C-b"
   "KBD macro for command `backward-char'.")
 
-(defvar meow--kbd-forward-char "C-f"
+(defvar eerie--kbd-forward-char "C-f"
   "KBD macro for command `forward-char'.")
 
-(defvar meow--kbd-keyboard-quit "C-g"
+(defvar eerie--kbd-keyboard-quit "C-g"
   "KBD macro for command `keyboard-quit'.")
 
-(defvar meow--kbd-find-ref "M-."
+(defvar eerie--kbd-find-ref "M-."
   "KBD macro for command `xref-find-definitions'.")
 
-(defvar meow--kbd-pop-marker "M-,"
+(defvar eerie--kbd-pop-marker "M-,"
   "KBD macro for command `xref-pop-marker-stack'.")
 
-(defvar meow--kbd-comment "M-;"
+(defvar eerie--kbd-comment "M-;"
   "KBD macro for comment command.")
 
-(defvar meow--kbd-kill-line "C-k"
+(defvar eerie--kbd-kill-line "C-k"
   "KBD macro for command `kill-line'.")
 
-(defvar meow--kbd-kill-whole-line "<C-S-backspace>"
+(defvar eerie--kbd-kill-whole-line "<C-S-backspace>"
   "KBD macro for command `kill-whole-line'.")
 
-(defvar meow--kbd-delete-char "C-d"
+(defvar eerie--kbd-delete-char "C-d"
   "KBD macro for command `delete-char'.")
 
-(defvar meow--kbd-yank "C-y"
+(defvar eerie--kbd-yank "C-y"
   "KBD macro for command `yank'.")
 
-(defvar meow--kbd-yank-pop "M-y"
+(defvar eerie--kbd-yank-pop "M-y"
   "KBD macro for command `yank-pop'.")
 
-(defvar meow--kbd-kill-ring-save "M-w"
+(defvar eerie--kbd-kill-ring-save "M-w"
   "KBD macro for command `kill-ring-save'.")
 
-(defvar meow--kbd-kill-region "C-w"
+(defvar eerie--kbd-kill-region "C-w"
   "KBD macro for command `kill-region'.")
 
-(defvar meow--kbd-exchange-point-and-mark "C-x C-x"
+(defvar eerie--kbd-exchange-point-and-mark "C-x C-x"
   "KBD macro for command `exchange-point-and-mark'.")
 
-(defvar meow--kbd-back-to-indentation "M-m"
+(defvar eerie--kbd-back-to-indentation "M-m"
   "KBD macro for command `back-to-indentation'.")
 
-(defvar meow--kbd-indent-region "C-M-\\"
+(defvar eerie--kbd-indent-region "C-M-\\"
   "KBD macro for command `indent-region'.")
 
-(defvar meow--kbd-delete-indentation "M-^"
+(defvar eerie--kbd-delete-indentation "M-^"
   "KBD macro for command `delete-indentation'.")
 
-(defvar meow--kbd-forward-slurp "C-)"
+(defvar eerie--kbd-forward-slurp "C-)"
   "KBD macro for command forward slurp.")
 
-(defvar meow--kbd-backward-slurp "C-("
+(defvar eerie--kbd-backward-slurp "C-("
   "KBD macro for command backward slurp.")
 
-(defvar meow--kbd-forward-barf "C-}"
+(defvar eerie--kbd-forward-barf "C-}"
   "KBD macro for command forward barf.")
 
-(defvar meow--kbd-backward-barf "C-{"
+(defvar eerie--kbd-backward-barf "C-{"
   "KBD macro for command backward barf.")
 
-(defvar meow--kbd-scoll-up "C-v"
+(defvar eerie--kbd-scoll-up "C-v"
   "KBD macro for command `scroll-up'.")
 
-(defvar meow--kbd-scoll-down "M-v"
+(defvar eerie--kbd-scoll-down "M-v"
   "KBD macro for command `scroll-down'.")
 
-(defvar meow--kbd-just-one-space "M-SPC"
+(defvar eerie--kbd-just-one-space "M-SPC"
   "KBD macro for command `just-one-space.")
 
-(defvar meow--kbd-wrap-round "M-("
+(defvar eerie--kbd-wrap-round "M-("
   "KBD macro for command wrap round.")
 
-(defvar meow--kbd-wrap-square "M-["
+(defvar eerie--kbd-wrap-square "M-["
   "KBD macro for command wrap square.")
 
-(defvar meow--kbd-wrap-curly "M-{"
+(defvar eerie--kbd-wrap-curly "M-{"
   "KBD macro for command wrap curly.")
 
-(defvar meow--kbd-wrap-string "M-\""
+(defvar eerie--kbd-wrap-string "M-\""
   "KBD macro for command wrap string.")
 
-(defvar meow--kbd-excute-extended-command "M-x"
+(defvar eerie--kbd-excute-extended-command "M-x"
   "KBD macro for command `execute-extended-command'.")
 
-(defvar meow--kbd-transpose-sexp "C-M-t"
+(defvar eerie--kbd-transpose-sexp "C-M-t"
   "KBD macro for command transpose sexp.")
 
-(defvar meow--kbd-split-sexp "M-S"
+(defvar eerie--kbd-split-sexp "M-S"
   "KBD macro for command split sexp.")
 
-(defvar meow--kbd-splice-sexp "M-s"
+(defvar eerie--kbd-splice-sexp "M-s"
   "KBD macro for command splice sexp.")
 
-(defvar meow--kbd-raise-sexp "M-r"
+(defvar eerie--kbd-raise-sexp "M-r"
   "KBD macro for command raise sexp.")
 
-(defvar meow--kbd-join-sexp "M-J"
+(defvar eerie--kbd-join-sexp "M-J"
   "KBD macro for command join sexp.")
 
-(defvar meow--kbd-eval-last-exp "C-x C-e"
+(defvar eerie--kbd-eval-last-exp "C-x C-e"
   "KBD macro for command eval last exp.")
 
-(defvar meow--kbd-query-replace-regexp "C-M-%"
+(defvar eerie--kbd-query-replace-regexp "C-M-%"
   "KBD macro for command `query-replace-regexp'.")
 
-(defvar meow--kbd-query-replace "M-%"
+(defvar eerie--kbd-query-replace "M-%"
   "KBD macro for command `query-replace'.")
 
-(defvar meow--kbd-forward-line "C-n"
+(defvar eerie--kbd-forward-line "C-n"
   "KBD macro for command `forward-line'.")
 
-(defvar meow--kbd-backward-line "C-p"
+(defvar eerie--kbd-backward-line "C-p"
   "KBD macro for command `backward-line'.")
 
-(defvar meow--kbd-search-forward-regexp "C-M-s"
+(defvar eerie--kbd-search-forward-regexp "C-M-s"
   "KBD macro for command `search-forward-regexp'.")
 
-(defvar meow--kbd-search-backward-regexp "C-M-r"
+(defvar eerie--kbd-search-backward-regexp "C-M-r"
   "KBD macro for command `search-backward-regexp'.")
 
-(defvar meow--kbd-goto-line "M-g g"
+(defvar eerie--kbd-goto-line "M-g g"
   "KBD macro for command `goto-line'.")
 
-(defvar meow--delete-region-function #'delete-region
+(defvar eerie--delete-region-function #'delete-region
   "The function used to delete the selection.
 
 Allows support of modes that define their own equivalent of
 `delete-region'.")
 
-(defvar meow--insert-function #'insert
+(defvar eerie--insert-function #'insert
   "The function used to insert text in Normal state.
 
 Allows support of modes that define their own equivalent of `insert'.")
 
-(defvar-local meow--indicator nil
+(defvar-local eerie--indicator nil
   "Indicator for current buffer.")
 
-(defvar-local meow--selection nil
+(defvar-local eerie--selection nil
   "Current selection.
 
 Has a structure of (sel-type point mark).")
 
-(defvar meow--kbd-pop-global-mark "C-x C-@"
+(defvar eerie--kbd-pop-global-mark "C-x C-@"
   "KBD macro for command `pop-global-mark'.")
 
 ;;; Hooks
 
-(defvar meow-switch-state-hook nil
+(defvar eerie-switch-state-hook nil
   "Hooks run when switching state.")
 
-(defvar meow-insert-enter-hook nil
+(defvar eerie-insert-enter-hook nil
   "Hooks run when enter insert state.")
 
-(defvar meow-insert-exit-hook nil
+(defvar eerie-insert-exit-hook nil
   "Hooks run when exit insert state.")
 
 ;;; Internal variables
 
-(defvar-local meow--current-state 'normal
+(defvar-local eerie--current-state 'normal
   "A symbol represent current state.")
 
-(defvar-local meow--visual-type nil
+(defvar-local eerie--visual-type nil
   "Current visual selection flavor.
 
 The value is nil, `char', `line', or `block'.")
 
-(defvar-local meow--end-kmacro-on-exit nil
+(defvar-local eerie--end-kmacro-on-exit nil
   "Whether we end kmacro recording when exit insert state.")
 
-(defvar-local meow--temp-normal nil
+(defvar-local eerie--temp-normal nil
   "Whether we are in temporary normal state. ")
 
-(defvar meow--selection-history nil
+(defvar eerie--selection-history nil
   "The history of selections.")
 
-(defvar meow--expand-nav-function nil
+(defvar eerie--expand-nav-function nil
   "Current expand nav function.")
 
-(defvar meow--last-find nil
+(defvar eerie--last-find nil
   "The char for last find command.")
 
-(defvar meow--last-till nil
+(defvar eerie--last-till nil
   "The char for last till command.")
 
-(defvar meow--visual-command nil
+(defvar eerie--visual-command nil
   "Current command to highlight.")
 
-(defvar meow--keypad-this-command nil
+(defvar eerie--keypad-this-command nil
   "Command name for current keypad execution.")
 
-(defvar meow--expanding-p nil
+(defvar eerie--expanding-p nil
   "Whether we are expanding.")
 
-(defvar meow--keypad-keymap-description-activated nil
+(defvar eerie--keypad-keymap-description-activated nil
   "Whether KEYPAD keymap description is already activated.")
 
-(defvar meow--keypad-help nil
+(defvar eerie--keypad-help nil
   "If keypad in help mode.")
 
-(defvar meow--keypad-base-keymap nil
+(defvar eerie--keypad-base-keymap nil
   "The keymap used to lookup keys in KEYPAD state.
 
 Nil means to lookup in top-level.")
 
-(defvar meow--beacon-backup-hl-line
+(defvar eerie--beacon-backup-hl-line
   nil
   "Whether hl-line is enabled by user.")
 
-(defvar meow--beacon-defining-kbd-macro nil
+(defvar eerie--beacon-defining-kbd-macro nil
   "Whether we are defining kbd macro at BEACON state.
 
 The value can be nil, quick or record.")
 
-(defvar-local meow--insert-pos nil
+(defvar-local eerie--insert-pos nil
   "The position where we enter INSERT state.")
 
-(defvar-local meow--insert-activate-mark nil
+(defvar-local eerie--insert-activate-mark nil
   "Whether we should activate the selection after exiting INSERT state.")
 
-(defvar-local meow--multiedit-seed nil
+(defvar-local eerie--multiedit-seed nil
   "Original text used to grow the current multi-edit session.")
 
-(defvar-local meow--multiedit-direction 'forward
+(defvar-local eerie--multiedit-direction 'forward
   "Direction used by the current multi-edit builder.")
 
-(defvar-local meow--multiedit-targets nil
+(defvar-local eerie--multiedit-targets nil
   "List of selected ranges in the current multi-edit session.")
 
-(defvar-local meow--multiedit-primary nil
+(defvar-local eerie--multiedit-primary nil
   "Currently active range in the current multi-edit session.")
 
-(defvar-local meow--multiedit-search-head nil
+(defvar-local eerie--multiedit-search-head nil
   "Range used as the next search origin in the current multi-edit session.")
 
-(defvar-local meow--multiedit-overlays nil
+(defvar-local eerie--multiedit-overlays nil
   "Overlays used to render secondary multi-edit targets.")
 
-(defvar-local meow--multiedit-backward nil
+(defvar-local eerie--multiedit-backward nil
   "Whether the active multi-edit selection is backward.")
 
-(defvar-local meow--multiedit-replay-markers nil
+(defvar-local eerie--multiedit-replay-markers nil
   "Replay targets for the current multi-edit or block insert session.
 
 Each target is either a marker or a cons cell of the form
 \(MARKER . COLUMN), where COLUMN is the target insertion column on the
 line identified by MARKER.")
 
-(defvar-local meow--multiedit-replay-command nil
+(defvar-local eerie--multiedit-replay-command nil
   "Command symbol used to replay the current multi-edit insert or change.")
 
-(defvar-local meow--multicursor-active nil
-  "Whether a Meow multi-cursor session is active in the current buffer.")
+(defvar-local eerie--multicursor-active nil
+  "Whether a Eerie multi-cursor session is active in the current buffer.")
 
-(defvar-local meow--multicursor-replaying nil
-  "Whether Meow is currently replaying a multi-cursor command.")
+(defvar-local eerie--multicursor-replaying nil
+  "Whether Eerie is currently replaying a multi-cursor command.")
 
-(defvar-local meow--multicursor-last-command nil
+(defvar-local eerie--multicursor-last-command nil
   "Most recent primary command executed in the current multi-cursor session.")
 
-(defvar-local meow--multicursor-command-keys nil
+(defvar-local eerie--multicursor-command-keys nil
   "Top-level key sequence for the current multi-cursor primary command.")
 
-(defvar-local meow--multicursor-read-events nil
+(defvar-local eerie--multicursor-read-events nil
   "Extra events read by the current multi-cursor primary command.")
 
-(defvar-local meow--multicursor-command nil
+(defvar-local eerie--multicursor-command nil
   "Primary command being replayed in the current multi-cursor session.")
 
-(defvar-local meow--multicursor-prefix-arg nil
+(defvar-local eerie--multicursor-prefix-arg nil
   "Primary prefix argument being replayed in the current multi-cursor session.")
 
-(defvar-local meow--multicursor-replay-inputs nil
+(defvar-local eerie--multicursor-replay-inputs nil
   "Remaining interactive inputs for the current replayed multi-cursor command.")
 
-(defvar meow-full-width-number-position-chars
+(defvar eerie-full-width-number-position-chars
   '((0 . "０")
     (1 . "１")
     (2 . "２")
@@ -703,120 +703,120 @@ line identified by MARKER.")
     (9 . "９"))
   "Map number to full-width character.")
 
-(defvar meow-cheatsheet-ellipsis "…"
+(defvar eerie-cheatsheet-ellipsis "…"
   "Ellipsis character used in cheatsheet.")
 
-(defvar meow-command-to-short-name-list
-  '((meow-expand-0 . "ex →0")
-    (meow-expand-1 . "ex →1")
-    (meow-expand-2 . "ex →2")
-    (meow-expand-3 . "ex →3")
-    (meow-expand-4 . "ex →4")
-    (meow-expand-5 . "ex →5")
-    (meow-expand-6 . "ex →6")
-    (meow-expand-7 . "ex →7")
-    (meow-expand-8 . "ex →8")
-    (meow-expand-9 . "ex →9")
+(defvar eerie-command-to-short-name-list
+  '((eerie-expand-0 . "ex →0")
+    (eerie-expand-1 . "ex →1")
+    (eerie-expand-2 . "ex →2")
+    (eerie-expand-3 . "ex →3")
+    (eerie-expand-4 . "ex →4")
+    (eerie-expand-5 . "ex →5")
+    (eerie-expand-6 . "ex →6")
+    (eerie-expand-7 . "ex →7")
+    (eerie-expand-8 . "ex →8")
+    (eerie-expand-9 . "ex →9")
     (digit-argument . "num-arg")
-    (meow-inner-of-thing . "←thing→")
-    (meow-bounds-of-thing . "[thing]")
-    (meow-beginning-of-thing . "←thing")
-    (meow-end-of-thing . "thing→")
-    (meow-reverse . "reverse")
-    (meow-prev . "↑")
-    (meow-prev-expand . "ex ↑")
-    (meow-next . "↓")
-    (meow-next-expand . "ex ↓")
-    (meow-head . "←")
-    (meow-head-expand . "ex ←")
-    (meow-tail . "→")
-    (meow-tail-expand . "ex →")
-    (meow-left . "←")
-    (meow-left-expand . "ex ←")
-    (meow-right . "→")
-    (meow-right-expand . "ex →")
-    (meow-yank . "yank")
-    (meow-find . "find")
-    (meow-find-expand . "ex find")
-    (meow-till . "till")
-    (meow-till-expand . "ex till")
-    (meow-keyboard-quit . "C-g")
-    (meow-cancel-selection . "quit sel")
-    (meow-change . "chg")
-    (meow-change-save . "chg-save")
-    (meow-visual-change . "v-chg")
-    (meow-replace . "rep")
-    (meow-replace-save . "rep-save")
-    (meow-append . "append")
-    (meow-insert . "insert")
-    (meow-visual-start . "visual")
-    (meow-visual-line-start . "visual-ln")
-    (meow-visual-block-start . "visual-blk")
-    (meow-multicursor-start . "mc-start")
-    (meow-multicursor-match-next . "mc+")
-    (meow-multicursor-unmatch-last . "mc-")
-    (meow-multicursor-skip-match . "mc-skip")
-    (meow-multicursor-visual-exit . "mc-ready")
-    (meow-multiedit-match-next . "multi+")
-    (meow-multiedit-unmatch-last . "multi-")
-    (meow-multiedit-skip-match . "multi-skip")
-    (meow-multiedit-reverse-direction . "multi-dir")
-    (meow-multicursor-spawn . "mc-spawn")
-    (meow-multicursor-cancel . "mc-cancel")
-    (meow-multicursor-jump-char . "mc-find")
-    (meow-multicursor-next-space . "mc-W")
-    (meow-block . "block")
-    (meow-to-block "→block")
-    (meow-line . "line")
-    (meow-delete . "del")
-    (meow-search . "search")
-    (meow-search-forward . "/")
-    (meow-search-backward . "?")
-    (meow-search-next . "search->")
-    (meow-search-prev . "<-search")
-    (meow-jump-char . "jump-char")
-    (meow-jump-word-occurrence . "jump-word")
-    (meow-next-space . "W")
-    (meow-undo . "undo")
-    (meow-undo-in-selection . "undo-sel")
-    (meow-pop-search . "popsearch")
+    (eerie-inner-of-thing . "←thing→")
+    (eerie-bounds-of-thing . "[thing]")
+    (eerie-beginning-of-thing . "←thing")
+    (eerie-end-of-thing . "thing→")
+    (eerie-reverse . "reverse")
+    (eerie-prev . "↑")
+    (eerie-prev-expand . "ex ↑")
+    (eerie-next . "↓")
+    (eerie-next-expand . "ex ↓")
+    (eerie-head . "←")
+    (eerie-head-expand . "ex ←")
+    (eerie-tail . "→")
+    (eerie-tail-expand . "ex →")
+    (eerie-left . "←")
+    (eerie-left-expand . "ex ←")
+    (eerie-right . "→")
+    (eerie-right-expand . "ex →")
+    (eerie-yank . "yank")
+    (eerie-find . "find")
+    (eerie-find-expand . "ex find")
+    (eerie-till . "till")
+    (eerie-till-expand . "ex till")
+    (eerie-keyboard-quit . "C-g")
+    (eerie-cancel-selection . "quit sel")
+    (eerie-change . "chg")
+    (eerie-change-save . "chg-save")
+    (eerie-visual-change . "v-chg")
+    (eerie-replace . "rep")
+    (eerie-replace-save . "rep-save")
+    (eerie-append . "append")
+    (eerie-insert . "insert")
+    (eerie-visual-start . "visual")
+    (eerie-visual-line-start . "visual-ln")
+    (eerie-visual-block-start . "visual-blk")
+    (eerie-multicursor-start . "mc-start")
+    (eerie-multicursor-match-next . "mc+")
+    (eerie-multicursor-unmatch-last . "mc-")
+    (eerie-multicursor-skip-match . "mc-skip")
+    (eerie-multicursor-visual-exit . "mc-ready")
+    (eerie-multiedit-match-next . "multi+")
+    (eerie-multiedit-unmatch-last . "multi-")
+    (eerie-multiedit-skip-match . "multi-skip")
+    (eerie-multiedit-reverse-direction . "multi-dir")
+    (eerie-multicursor-spawn . "mc-spawn")
+    (eerie-multicursor-cancel . "mc-cancel")
+    (eerie-multicursor-jump-char . "mc-find")
+    (eerie-multicursor-next-space . "mc-W")
+    (eerie-block . "block")
+    (eerie-to-block "→block")
+    (eerie-line . "line")
+    (eerie-delete . "del")
+    (eerie-search . "search")
+    (eerie-search-forward . "/")
+    (eerie-search-backward . "?")
+    (eerie-search-next . "search->")
+    (eerie-search-prev . "<-search")
+    (eerie-jump-char . "jump-char")
+    (eerie-jump-word-occurrence . "jump-word")
+    (eerie-next-space . "W")
+    (eerie-undo . "undo")
+    (eerie-undo-in-selection . "undo-sel")
+    (eerie-pop-search . "popsearch")
     (negative-argument . "neg-arg")
-    (meow-quit . "quit")
-    (meow-join . "join")
-    (meow-kill . "kill")
-    (meow-save . "save")
-    (meow-next-word . "word→")
-    (meow-next-symbol . "sym→")
-    (meow-back-word . "←word")
-    (meow-back-symbol . "←sym")
-    (meow-pop-all-selection . "pop-sels")
-    (meow-pop-selection . "pop-sel")
-    (meow-mark-word . "←word→")
-    (meow-mark-symbol . "←sym→")
-    (meow-visit . "visit")
-    (meow-kmacro-lines . "macro-ln")
-    (meow-kmacro-matches . "macro-re")
-    (meow-end-or-call-kmacro . "callmacro")
-    (meow-cheatsheet . "help")
-    (meow-keypad-describe-key . "desc-key")
-    (meow-backspace . "backspace")
-    (meow-jump-back . "<-jump")
-    (meow-jump-forward . "jump->")
-    (meow-pop-to-mark . "<-mark")
-    (meow-unpop-to-mark . "mark->"))
+    (eerie-quit . "quit")
+    (eerie-join . "join")
+    (eerie-kill . "kill")
+    (eerie-save . "save")
+    (eerie-next-word . "word→")
+    (eerie-next-symbol . "sym→")
+    (eerie-back-word . "←word")
+    (eerie-back-symbol . "←sym")
+    (eerie-pop-all-selection . "pop-sels")
+    (eerie-pop-selection . "pop-sel")
+    (eerie-mark-word . "←word→")
+    (eerie-mark-symbol . "←sym→")
+    (eerie-visit . "visit")
+    (eerie-kmacro-lines . "macro-ln")
+    (eerie-kmacro-matches . "macro-re")
+    (eerie-end-or-call-kmacro . "callmacro")
+    (eerie-cheatsheet . "help")
+    (eerie-keypad-describe-key . "desc-key")
+    (eerie-backspace . "backspace")
+    (eerie-jump-back . "<-jump")
+    (eerie-jump-forward . "jump->")
+    (eerie-pop-to-mark . "<-mark")
+    (eerie-unpop-to-mark . "mark->"))
   "A list of (command . short-name)")
 
-(defvar meow--jump-back-stack nil
+(defvar eerie--jump-back-stack nil
   "Fallback stack of markers for backward jump history.
 
 Active jump stacks are stored per window.")
 
-(defvar meow--jump-forward-stack nil
+(defvar eerie--jump-forward-stack nil
   "Fallback stack of markers for forward jump history.
 
 Active jump stacks are stored per window.")
 
-(defcustom meow-jump-auto-record-commands
+(defcustom eerie-jump-auto-record-commands
   '(beginning-of-buffer
     end-of-buffer
     goto-line
@@ -839,38 +839,38 @@ Active jump stacks are stored per window.")
     consult-mark
     consult-ripgrep)
   "Commands that should create jumplist entries when they relocate point."
-  :group 'meow
+  :group 'eerie
   :type '(repeat symbol))
 
-(defvar meow--last-search-direction 'forward
-  "Direction used by the most recent Vim-style Meow search.")
+(defvar eerie--last-search-direction 'forward
+  "Direction used by the most recent Vim-style Eerie search.")
 
-(defvar meow--jump-tracking-refcount 0
-  "Number of live Meow buffers that require jump tracking hooks.")
+(defvar eerie--jump-tracking-refcount 0
+  "Number of live Eerie buffers that require jump tracking hooks.")
 
-(defvar-local meow--visual-line-anchor nil
+(defvar-local eerie--visual-line-anchor nil
   "Anchor range for the current linewise VISUAL selection.")
 
-(defcustom meow-replace-pop-command-start-indexes
-  '((meow-replace . 1)
-    (meow-replace-char . 1)
-    (meow-replace-save . 2))
-  "Alist of commands and their starting indices for use by `meow-replace-pop'.
+(defcustom eerie-replace-pop-command-start-indexes
+  '((eerie-replace . 1)
+    (eerie-replace-char . 1)
+    (eerie-replace-save . 2))
+  "Alist of commands and their starting indices for use by `eerie-replace-pop'.
 
-If `meow-replace-pop' is run and the previous command is not
-`meow-replace-pop' or a command which is present in this alist,
-`meow-replace-pop' signals an error."
+If `eerie-replace-pop' is run and the previous command is not
+`eerie-replace-pop' or a command which is present in this alist,
+`eerie-replace-pop' signals an error."
   :type '(alist :key-type function :value-type natnum))
 
-(defcustom meow-keypad-message-prefix "Keypad: "
+(defcustom eerie-keypad-message-prefix "Keypad: "
   "The prefix string for keypad messages."
   :type 'string)
 
-(defvar meow--replace-pop-index nil
+(defvar eerie--replace-pop-index nil
   "The index of the previous replacement in the `kill-ring'.
-See also the command `meow-replace-pop'.")
+See also the command `eerie-replace-pop'.")
 
-(defvar meow--replace-start-marker (make-marker)
+(defvar eerie--replace-start-marker (make-marker)
   "The beginning of the replaced text.
 
 This marker stays before any text inserted at the location, to
@@ -879,18 +879,18 @@ the replacement text.")
 
 ;;; Backup variables
 
-(defvar meow--backup-var-delete-activae-region nil
+(defvar eerie--backup-var-delete-activae-region nil
   "The backup for `delete-active-region'.
 
-It is used to restore its value when disable `meow'.")
+It is used to restore its value when disable `eerie'.")
 
-(defvar meow--backup-redisplay-highlight-region-function
+(defvar eerie--backup-redisplay-highlight-region-function
   redisplay-highlight-region-function)
 
-(defvar meow--backup-redisplay-unhighlight-region-function
+(defvar eerie--backup-redisplay-unhighlight-region-function
   redisplay-unhighlight-region-function)
 
-(defvar meow--backup-var-delete-activate-region
+(defvar eerie--backup-var-delete-activate-region
   delete-active-region)
 
 (provide 'eerie-var)

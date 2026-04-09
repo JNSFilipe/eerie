@@ -66,7 +66,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: 50
+- Active stage: 51
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
@@ -136,6 +136,16 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - switched the entry-point commentary to `eerie-global-mode`
 - Verification:
   - `emacs -Q --batch -L . -l eerie.el` passes
+
+## Stage 50 Summary
+- Goal: rename the full Lisp symbol surface to `eerie-*` and restore the renamed ERT suite to green.
+- Implemented scope:
+  - mechanically renamed the shipped `meow-*` commands, variables, modes, faces, helpers, and internal state to `eerie-*`
+  - updated the renamed ERT suite and the interactive demo to use only the `eerie-*` surface
+  - removed stale `meow` symbols from the shipped code and renamed tests
+- Verification:
+  - focused renamed regressions pass
+  - `emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:
