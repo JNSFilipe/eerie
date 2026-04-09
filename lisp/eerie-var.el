@@ -46,14 +46,6 @@ This will affect how selection is displayed."
   :group 'eerie
   :type '(repeat sexp))
 
-(defcustom eerie-keypad-execute-on-beacons nil
-  "Execute keypad command directly on beacons when using it directly from
-beacon state.
-
-This doesn't affect how keypad works on recording or executing a kmacro."
-  :group 'eerie
-  :type 'boolean)
-
 (defcustom eerie-selection-command-fallback
   '((eerie-change . eerie-change-char)
     (eerie-kill . eerie-C-k)
@@ -71,7 +63,6 @@ This doesn't affect how keypad works on recording or executing a kmacro."
   '((normal . "NORMAL")
     (visual . "VISUAL")
     (motion . "MOTION")
-    (keypad . "KEYPAD")
     (insert . "INSERT")
     (multicursor . "MULTI")
     (multicursor-visual . "MULTI-V")
@@ -85,7 +76,6 @@ This doesn't affect how keypad works on recording or executing a kmacro."
   '((normal . eerie-normal-indicator)
     (visual . eerie-visual-indicator)
     (motion . eerie-motion-indicator)
-    (keypad . eerie-keypad-indicator)
     (insert . eerie-insert-indicator)
     (multicursor . eerie-beacon-indicator)
     (multicursor-visual . eerie-beacon-indicator)
@@ -135,11 +125,6 @@ Each item is a (THING FORWARD_SYNTAX_TO_INCLUDE BACKWARD-SYNTAX_TO_INCLUDE)."
   :group 'eerie
   :type '(alist :key-type (symbol :tag "Hint type")
                 :value-type (integer :tag "Value")))
-
-(defcustom eerie-keypad-message t
-  "Whether to log keypad messages in minibuffer."
-  :group 'eerie
-  :type 'boolean)
 
 (defcustom eerie-char-thing-table
   '((?r . round)
@@ -211,12 +196,6 @@ This variable is meant to be similar to `set-mark-command-repeat-pop'."
   :type 'boolean)
 
 
-(defcustom eerie-keypad-describe-delay
-  0.5
-  "The delay in seconds before popup keybinding descriptions appear."
-  :group 'eerie
-  :type 'number)
-
 (defcustom eerie-grab-fill-commands
   '(eerie-query-replace eerie-query-replace-regexp)
   "A list of commands that eerie will auto fill with grabbed content."
@@ -235,11 +214,6 @@ This variable is meant to be similar to `set-mark-command-repeat-pop'."
 
 (defcustom eerie-use-clipboard nil
   "Whether to use system clipboard."
-  :group 'eerie
-  :type 'boolean)
-
-(defcustom eerie-use-keypad-when-execute-kbd t
-  "Whether to use KEYPAD when the result of executing kbd string is a keymap."
   :group 'eerie
   :type 'boolean)
 
@@ -284,57 +258,6 @@ Set to `t' to always update.
   :type '(choice (const select)
                  (const expand)))
 
-(defcustom eerie-keypad-leader-transparent 'motion
-  "Use transparent behaivor when a bound command is not found in leader dispatch.
-
-Value `t' stands for always be transparent.
-Value `motion' stands for only be transparent in MOTION state.
-Value `normal' stands for only be transparent in NORMAL state.
-Value `nil' stands for never be transparent."
-  :group 'eerie
-  :type '(choice (const t :tag "Always be transparent")
-                 (const motion :tag "Transparent only in MOTION state")
-                 (const normal :tag "Transparent only in NORMAL state")
-                 (const nil :tag "Never be transparent")))
-
-(defcustom eerie-keypad-leader-dispatch nil
-  "The fallback dispatching in KEYPAD when there's no translation.
-
-The value can be either a string or a keymap:
-A keymap stands for a base keymap used for further translation.
-A string stands for finding the keymap at a specified key binding.
-Nil stands for taking leader keymap from `eerie-keymap-alist'."
-  :group 'eerie
-  :type '(choice (string :tag "Keys")
-                 (variable :tag "Keymap")
-                 (const nil)))
-
-(defcustom eerie-keypad-meta-prefix ?m
-  "The prefix represent M- in KEYPAD state."
-  :group 'eerie
-  :type 'character)
-
-(defcustom eerie-keypad-ctrl-meta-prefix ?g
-  "The prefix represent C-M- in KEYPAD state."
-  :group 'eerie
-  :type 'character)
-
-(defcustom eerie-keypad-literal-prefix 32
-  "The prefix represent no modifier in KEYPAD state."
-  :group 'eerie
-  :type 'character)
-
-(defcustom eerie-keypad-start-keys
-  '((?c . ?c)
-    (?h . ?h)
-    (?x . ?x))
-  "Alist of keys to begin keypad translation. When a key char is pressed,
-it's corresponding value is appended to C- and the user is
-prompted to finish the command."
-  :group 'eerie
-  :type '(alist :key-type (character :tag "From")
-                :value-type (character :tag "To")))
-
 (defcustom eerie-goto-line-function nil
   "Function to use in `eerie-goto-line'.
 
@@ -346,7 +269,6 @@ Nil means find the command by key binding."
   '((normal . eerie-normal-mode)
     (visual . eerie-visual-mode)
     (insert . eerie-insert-mode)
-    (keypad . eerie-keypad-mode)
     (motion . eerie-motion-mode)
     (multicursor . eerie-multicursor-mode)
     (multicursor-visual . eerie-multicursor-visual-mode)
@@ -360,26 +282,11 @@ Nil means find the command by key binding."
     (eerie-visual-mode-p  . eerie--update-cursor-visual)
     (eerie-normal-mode-p  . eerie--update-cursor-normal)
     (eerie-motion-mode-p  . eerie--update-cursor-motion)
-    (eerie-keypad-mode-p  . eerie--update-cursor-motion)
     (eerie-multicursor-mode-p . eerie--update-cursor-beacon)
     (eerie-multicursor-visual-mode-p . eerie--update-cursor-beacon)
     (eerie-beacon-mode-p  . eerie--update-cursor-beacon)
     ((lambda () t)       . eerie--update-cursor-default))
   "Alist of predicates to functions that set cursor type and color.")
-
-(defvar eerie-keypad-describe-keymap-function 'eerie-describe-keymap
-  "The function used to describe (KEYMAP) during keypad execution.
-
-To integrate WhichKey-like features with keypad.
-Currently, keypad is not working well with which-key,
-so Eerie ships a default `eerie-describe-keymap'.
-Use (setq eerie-keypad-describe-keymap-function \\='nil) to disable popup.")
-
-(defvar eerie-keypad-clear-describe-keymap-function nil
-  "The function used to clear the effect of `eerie-keypad-describe-keymap-function'.")
-
-(defvar eerie-keypad-get-title-function 'eerie-keypad-get-title
-  "The function used to get the title of a keymap or command.")
 
 ;; Cursor types
 
@@ -390,17 +297,8 @@ Use (setq eerie-keypad-describe-keymap-function \\='nil) to disable popup.")
 (defvar eerie-cursor-type-beacon 'box)
 (defvar eerie-cursor-type-region-cursor '(bar . 2))
 (defvar eerie-cursor-type-insert '(bar . 2))
-(defvar eerie-cursor-type-keypad 'hollow)
-
-;; Keypad states
-
-(defvar eerie--keypad-keys nil)
-(defvar eerie--keypad-previous-state nil)
 
 (defvar eerie--prefix-arg nil)
-(defvar eerie--use-literal nil)
-(defvar eerie--use-meta nil)
-(defvar eerie--use-both nil)
 
 ;;; KBD Macros
 ;; We use kbd macro instead of direct command/function invocation,
@@ -603,22 +501,8 @@ The value is nil, `char', `line', or `block'.")
 (defvar eerie--visual-command nil
   "Current command to highlight.")
 
-(defvar eerie--keypad-this-command nil
-  "Command name for current keypad execution.")
-
 (defvar eerie--expanding-p nil
   "Whether we are expanding.")
-
-(defvar eerie--keypad-keymap-description-activated nil
-  "Whether KEYPAD keymap description is already activated.")
-
-(defvar eerie--keypad-help nil
-  "If keypad in help mode.")
-
-(defvar eerie--keypad-base-keymap nil
-  "The keymap used to lookup keys in KEYPAD state.
-
-Nil means to lookup in top-level.")
 
 (defvar eerie--beacon-backup-hl-line
   nil
@@ -798,7 +682,7 @@ line identified by MARKER.")
     (eerie-kmacro-matches . "macro-re")
     (eerie-end-or-call-kmacro . "callmacro")
     (eerie-cheatsheet . "help")
-    (eerie-keypad-describe-key . "desc-key")
+    (eerie-describe-key . "desc-key")
     (eerie-backspace . "backspace")
     (eerie-jump-back . "<-jump")
     (eerie-jump-forward . "jump->")
@@ -848,6 +732,9 @@ Active jump stacks are stored per window.")
 (defvar eerie--jump-tracking-refcount 0
   "Number of live Eerie buffers that require jump tracking hooks.")
 
+(defvar eerie--which-key-enabled-by-eerie nil
+  "Whether Eerie enabled `which-key-mode' for the current global session.")
+
 (defvar-local eerie--visual-line-anchor nil
   "Anchor range for the current linewise VISUAL selection.")
 
@@ -861,10 +748,6 @@ If `eerie-replace-pop' is run and the previous command is not
 `eerie-replace-pop' or a command which is present in this alist,
 `eerie-replace-pop' signals an error."
   :type '(alist :key-type function :value-type natnum))
-
-(defcustom eerie-keypad-message-prefix "Keypad: "
-  "The prefix string for keypad messages."
-  :type 'string)
 
 (defvar eerie--replace-pop-index nil
   "The index of the previous replacement in the `kill-ring'.

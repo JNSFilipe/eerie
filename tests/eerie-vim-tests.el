@@ -300,25 +300,61 @@
     (should-not (eq (lookup-key mode-specific-map (kbd "?"))
                     'eerie-cheatsheet))))
 
+(ert-deftest eerie-space-is-direct-leader-prefix-and-keypad-is-removed ()
+  (let ((leader-map (alist-get 'leader eerie-keymap-alist)))
+    (should (keymapp leader-map))
+    (should (eq (lookup-key eerie-normal-state-keymap (kbd "SPC")) leader-map))
+    (should (eq (lookup-key eerie-visual-state-keymap (kbd "SPC")) leader-map))
+    (should (eq (lookup-key eerie-motion-state-keymap (kbd "SPC")) leader-map))
+    (should-not (alist-get 'keypad eerie-keymap-alist))
+    (should-not (alist-get 'keypad eerie-state-mode-alist))
+    (should-not (fboundp 'eerie-keypad))
+    (should-not (fboundp 'eerie-keypad-mode))
+    (should-not (featurep 'eerie-keypad))))
+
+(ert-deftest eerie-global-mode-enables-native-which-key ()
+  (require 'which-key)
+  (let ((was-global eerie-global-mode)
+        (was-local eerie-mode)
+        (was-which-key which-key-mode))
+    (unwind-protect
+        (progn
+          (when eerie-global-mode
+            (eerie-global-mode -1))
+          (when which-key-mode
+            (which-key-mode -1))
+          (eerie-global-mode 1)
+          (should which-key-mode))
+      (eerie-global-mode -1)
+      (when was-global
+        (eerie-global-mode 1))
+      (unless was-local
+        (when (bound-and-true-p eerie-mode)
+          (eerie-mode -1)))
+      (unless was-which-key
+        (when (bound-and-true-p which-key-mode)
+          (which-key-mode -1))))))
+
 (ert-deftest eerie-multicursor-start-enters-session-and-displays-menu ()
   (eerie-test-with-buffer "foo bar baz\n"
-    (let (described-keymaps)
-      (let ((eerie-keypad-describe-keymap-function
-             (lambda (keymap)
-               (push keymap described-keymaps))))
+    (let (shown-keymaps)
+      (cl-letf (((symbol-function 'eerie--which-key-show-keymap)
+                 (lambda (_title keymap)
+                   (push keymap shown-keymaps))))
         (call-interactively #'eerie-multicursor-start))
       (should (eerie-multicursor-mode-p))
       (should eerie--multicursor-active)
       (should-not (region-active-p))
-      (should described-keymaps))))
+      (should shown-keymaps))))
 
 (ert-deftest eerie-multicursor-start-escape-cancels-session-and-clears-menu ()
   (eerie-test-with-buffer "foo bar baz\n"
     (let ((clear-calls 0))
-      (let ((eerie-keypad-describe-keymap-function (lambda (&rest _)))
-            (eerie-keypad-clear-describe-keymap-function
-             (lambda ()
-               (setq clear-calls (1+ clear-calls)))))
+      (cl-letf (((symbol-function 'eerie--which-key-show-keymap)
+                 (lambda (&rest _)))
+                ((symbol-function 'eerie--which-key-hide-popup)
+                 (lambda ()
+                   (setq clear-calls (1+ clear-calls)))))
         (call-interactively #'eerie-multicursor-start)
         (execute-kbd-macro (kbd "<escape>")))
       (should (eerie-normal-mode-p))

@@ -25,10 +25,10 @@
 
 (require 'cl-lib)
 (require 'subr-x)
+(require 'which-key)
 
 (require 'eerie-util)
 (require 'eerie-command)
-(require 'eerie-keypad)
 (require 'eerie-var)
 (require 'eerie-esc)
 (require 'eerie-shims)
@@ -94,18 +94,6 @@
       (rectangle-mark-mode -1))
     (when (region-active-p)
       (eerie--cancel-selection))))
-
-(eerie-define-state keypad
-  "Eerie KEYPAD state minor mode."
-  :lighter " [K]"
-  :face eerie-keypad-cursor
-  (when eerie-keypad-mode
-    (setq eerie--prefix-arg current-prefix-arg
-          eerie--keypad-keymap-description-activated nil
-          eerie--keypad-base-keymap nil
-          eerie--use-literal nil
-          eerie--use-meta nil
-          eerie--use-both nil)))
 
 (eerie-define-state beacon
   "Eerie BEACON state minor mode."
@@ -188,6 +176,10 @@ there's no chance for eerie to call an init function."
 (defun eerie--global-enable ()
   "Enable eerie globally."
   (setq-default eerie-normal-mode t)
+  (if (bound-and-true-p which-key-mode)
+      (setq eerie--which-key-enabled-by-eerie nil)
+    (setq eerie--which-key-enabled-by-eerie t)
+    (which-key-mode 1))
   (eerie--init-buffers)
   (add-hook 'window-state-change-functions #'eerie--on-window-state-change)
   (add-hook 'minibuffer-setup-hook #'eerie--minibuffer-setup)
@@ -223,6 +215,9 @@ there's no chance for eerie to call an init function."
 (defun eerie--global-disable ()
   "Disable Eerie globally."
   (setq-default eerie-normal-mode nil)
+  (when eerie--which-key-enabled-by-eerie
+    (setq eerie--which-key-enabled-by-eerie nil)
+    (which-key-mode -1))
   (remove-hook 'window-state-change-functions #'eerie--on-window-state-change)
   (remove-hook 'minibuffer-setup-hook #'eerie--minibuffer-setup)
   (remove-hook 'pre-command-hook 'eerie--highlight-pre-command)

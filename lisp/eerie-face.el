@@ -50,14 +50,6 @@
   "Cursor state indicator."
   :group 'eerie)
 
-(defface eerie-keypad-indicator
-  '((((class color) (background dark))
-     ())
-    (((class color) (background light))
-     ()))
-  "Keypad state indicator."
-  :group 'eerie)
-
 (defface eerie-insert-indicator
   '((((class color) (background dark))
      ())
@@ -104,22 +96,6 @@
     (((class color) (background light))
      (:inherit cursor)))
   "Motion state cursor."
-  :group 'eerie)
-
-(defface eerie-keypad-cursor
-  '((((class color) (background dark))
-     (:inherit cursor))
-    (((class color) (background light))
-     (:inherit cursor)))
-  "Keypad state cursor."
-  :group 'eerie)
-
-(defface eerie-keypad-cannot-display
-  '((((class color) (background dark))
-     (:foreground "grey90"))
-    (((class color) (background light))
-     (:foreground "grey10")))
-  "Face for Eerie keypad message when cannot display popup."
   :group 'eerie)
 
 (defface eerie-beacon-cursor

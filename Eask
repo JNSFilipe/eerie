@@ -15,7 +15,7 @@
 (source 'gnu)
 (source 'melpa)
 
-(depends-on "emacs" "27.1")
+(depends-on "emacs" "30.1")
 
 (development
  (depends-on "macrostep")
@@ -30,7 +30,6 @@
  (depends-on "cider")
  (depends-on "sly")
  (depends-on "realgud")
- (depends-on "which-key")
  (depends-on "undo-tree")
  (depends-on "diff-hl")
  (depends-on "skk")

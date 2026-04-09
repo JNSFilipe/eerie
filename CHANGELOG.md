@@ -6,15 +6,16 @@
 
 * Hard rename: the shipped package, file graph, and Lisp surface now use
   `eerie` / `eerie-*` with no compatibility layer.
-* replace motion remapping with transparent keypad leader.
+* Removed the legacy Eerie keypad state/module; `SPC` now dispatches
+  directly through the dedicated leader map, and native which-key
+  handles leader and multicursor help discovery.
 
 Historical entries below are mechanically rewritten to the current
 `eerie-*` package surface for consistency with this fork.
 
-The `eerie-motion-overwrite-define-key` has been changed to `eerie-motion-define-key`. and now it
-works just like other key binding helpers.  Users don't have to bind a key to remapped the
-keybinding. Now the keypad leader is transparent when a key is not bound in motion state.  So that
-users can still access the original command with `SPC <original-key>`.
+The `eerie-motion-overwrite-define-key` has been changed to
+`eerie-motion-define-key`, and now works like the other key binding
+helpers.
 
 ## 1.5.0 (2024-10-20)
 

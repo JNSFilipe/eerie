@@ -13,7 +13,7 @@ multicursor cheat sheet visible while that mode is active.
 - [x] Bind normal `m` to enter the canonical multicursor session
 - [x] Keep seed creation inside the new mode using the existing
   selection grammar
-- [x] Add a persistent keypad-style multicursor cheat sheet and clear it
+- [x] Add a persistent multicursor cheat sheet and clear it
   on mode exit
 - [x] Make `ESC` cancel the whole session and return to normal
 - [x] Add failing and then passing ERT coverage for normal `m` entry,

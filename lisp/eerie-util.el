@@ -43,15 +43,10 @@
 (declare-function eerie-normal-mode "eerie-core")
 (declare-function eerie-visual-mode "eerie-core")
 (declare-function eerie-multicursor-visual-mode "eerie-core")
-(declare-function eerie-keypad-mode "eerie-core")
 (declare-function eerie-beacon-mode "eerie-core")
 (declare-function eerie-mode "eerie-core")
-(declare-function eerie--keypad-format-keys "eerie-keypad")
-(declare-function eerie--keypad-format-prefix "eerie-keypad")
 (declare-function eerie-minibuffer-quit "eerie-command")
 (declare-function eerie--enable "eerie-core")
-(declare-function eerie--beacon-apply-command "eerie-beacon")
-(declare-function eerie-keypad-start-with "eerie-keypad")
 
 (defun eerie--execute-kbd-macro (kbd-macro-or-defun)
   "Execute the function bound to `KBD-MACRO-OR-DEFUN'. If `KBD-MACRO-OR-DEFUN' is a string,
@@ -64,11 +59,8 @@ instead execute the keyboard macro it corresponds to."
       (setq this-command ret)
       (call-interactively ret))
 
-     ((and (not eerie-use-keypad-when-execute-kbd) (keymapp ret))
-      (set-transient-map ret nil nil))
-
-     ((and eerie-use-keypad-when-execute-kbd (keymapp ret))
-      (eerie-keypad-start-with kbd-macro-or-defun)))))
+     ((keymapp ret)
+      (set-transient-map ret nil nil)))))
 
 (defun eerie-insert-mode-p ()
   "Whether insert mode is enabled."
@@ -86,12 +78,8 @@ instead execute the keyboard macro it corresponds to."
   "Whether visual mode is enabled."
   (bound-and-true-p eerie-visual-mode))
 
-(defun eerie-keypad-mode-p ()
-  "Whether keypad mode is enabled."
-  (bound-and-true-p eerie-keypad-mode))
-
 (defun eerie-beacon-mode-p ()
-  "Whether keypad mode is enabled."
+  "Whether beacon mode is enabled."
   (bound-and-true-p eerie-beacon-mode))
 
 (defun eerie--disable-current-state ()
@@ -232,17 +220,6 @@ Looks up the state in eerie-replace-state-name-list"
       (funcall mode 1))
     (unless (bound-and-true-p no-hook)
       (run-hook-with-args 'eerie-switch-state-hook state))))
-
-(defvar eerie--beacon-apply-command "eerie-beacon")
-
-(defun eerie--exit-keypad-state ()
-  "Exit keypad state."
-  (eerie-keypad-mode -1)
-  (when (and (eq 'beacon eerie--keypad-previous-state)
-             eerie--current-state)
-    (eerie--beacon-apply-command eerie--keypad-this-command))
-  (when eerie--keypad-previous-state
-    (eerie--switch-state eerie--keypad-previous-state)))
 
 (defun eerie--direction-forward ()
   "Make the selection towards forward."
@@ -454,27 +431,9 @@ Looks up the state in eerie-replace-state-name-list"
 (defun eerie--minibuffer-setup ()
   (local-set-key (kbd "<escape>") #'eerie-minibuffer-quit)
   (setq-local eerie-normal-mode nil)
-  (when (or (member this-command eerie-grab-fill-commands)
-            (member eerie--keypad-this-command eerie-grab-fill-commands))
+  (when (member this-command eerie-grab-fill-commands)
     (when-let* ((s (eerie--second-sel-get-string)))
       (eerie--insert s))))
-
-(defun eerie--parse-string-to-keypad-keys (str)
-  (let ((strs (split-string str " ")))
-    (thread-last
-      strs
-      (mapcar
-       (lambda (str)
-         (cond
-          ((string-prefix-p "C-M-" str)
-           (cons 'both (substring str 4)))
-          ((string-prefix-p "C-" str)
-           (cons 'control (substring str 2)))
-          ((string-prefix-p "M-" str)
-           (cons 'meta (substring str 2)))
-          (t
-           (cons 'literal str)))))
-      (reverse))))
 
 (defun eerie--parse-input-event (e)
   (cond
@@ -725,12 +684,7 @@ that bound to DEF. Otherwise, return DEF."
         (eerie--enable)))))
 
 (defun eerie--get-leader-keymap ()
-  (cond
-   ((keymapp eerie-keypad-leader-dispatch)
-    eerie-keypad-leader-dispatch)
-
-   ((null eerie-keypad-leader-dispatch)
-    (alist-get 'leader eerie-keymap-alist))))
+  (alist-get 'leader eerie-keymap-alist))
 
 (provide 'eerie-util)
 ;;; eerie-util.el ends here

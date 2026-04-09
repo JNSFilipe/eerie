@@ -28,6 +28,9 @@ built-in ~:vc~ support:
 #+end_src
 
 No setup function is required for the default layout.
+~eerie-global-mode~ enables native ~which-key-mode~ when it is not
+already active, so prefix maps such as ~SPC~ and the multicursor help
+map are described by Emacs's built-in which-key UI.
 
 * Implemented Defaults
 
@@ -69,8 +72,9 @@ No setup function is required for the default layout.
 - ~p~ pastes
 - ~i~, ~I~, ~a~, and ~A~ enter insert mode at Vim-like positions
 - ~C-x~ and ~C-c~ expose the regular Emacs prefix maps in normal mode
-- ~SPC~ opens Eerie's own leader/keypad map; it no longer piggybacks on
-  Emacs's ~C-c~ prefix map
+- ~SPC~ opens Eerie's dedicated leader map directly; it no longer
+  piggybacks on Emacs's ~C-c~ prefix map, and native which-key shows
+  the available leader entries
 - ~C-o~ and ~C-i~ move backward and forward through the fork's
   window-local jumplist
 
@@ -109,7 +113,7 @@ No setup function is required for the default layout.
 ** Multi-cursor mode
 
 - Normal ~m~ starts the canonical multicursor session and shows a
-  persistent keypad-style cheat sheet while the session is active
+  persistent native which-key help popup while the session is active
 - Visual ~m~ starts that same canonical multicursor session from the
   current charwise visual selection instead of making you restart from
   normal mode
@@ -224,6 +228,9 @@ No setup function is required for the default layout.
 - ~W~ now also skips the immediate separator when point comes from a
   ~w~-style end-of-word boundary, so ~w -> m -> n -> W~ visibly
   advances instead of looking inert.
+- Native which-key is used for the ~SPC~ leader prefix and the
+  persistent multicursor help popup; the old Eerie keypad state is no
+  longer shipped.
 - ~V~ reuses the same visible-jump loop for lines, so digits jump the
   active linewise selection to visible lines, ~;~ reverses direction,
   and ~ESC~ exits the selection.

@@ -31,8 +31,8 @@
 (require 'eerie-visual)
 (require 'eerie-thing)
 (require 'eerie-beacon)
-(require 'eerie-keypad)
 (require 'array)
+(require 'which-key)
 
 (defun eerie--selection-fallback ()
   "Run selection fallback commands."
@@ -691,8 +691,6 @@ With argument ARG, do this that many times."
   "Switch to NORMAL state."
   (interactive)
   (cond
-   ((eerie-keypad-mode-p)
-    (eerie--exit-keypad-state))
    ((and (eerie-insert-mode-p)
          eerie--multiedit-replay-command)
     (eerie--multiedit-apply-replay))
@@ -1408,15 +1406,27 @@ numeric, repeat times.
                   (cdr binding)))
     keymap))
 
+(defun eerie--which-key-show-keymap (title keymap)
+  "Show KEYMAP with TITLE through native `which-key'."
+  (when (and (featurep 'which-key)
+             (fboundp 'which-key--show-keymap)
+             (keymapp keymap)
+             (not noninteractive))
+    (which-key--show-keymap title keymap nil nil t)))
+
+(defun eerie--which-key-hide-popup ()
+  "Hide the native `which-key' popup."
+  (when (and (featurep 'which-key)
+             (fboundp 'which-key--hide-popup)
+             (not noninteractive))
+    (which-key--hide-popup)))
+
 (defun eerie--multicursor-display-menu ()
   "Refresh the persistent multicursor help popup."
-  (when (and eerie--multicursor-active
-             eerie-keypad-describe-keymap-function
-             (or (not noninteractive)
-                 (not (eq eerie-keypad-describe-keymap-function
-                          'eerie-describe-keymap))))
-    (funcall eerie-keypad-describe-keymap-function
-             (eerie--multicursor-help-keymap))))
+  (when eerie--multicursor-active
+    (eerie--which-key-show-keymap
+     "Eerie multicursor"
+     (eerie--multicursor-help-keymap))))
 
 (defun eerie--multicursor-activate ()
   "Activate multicursor replay plumbing in the current buffer."
@@ -2106,7 +2116,7 @@ COMMAND is either `insert' or `append'."
               eerie--multicursor-prefix-arg nil
               eerie--multicursor-replay-inputs nil)
   (when was-active
-    (eerie--keypad-clear-message))
+    (eerie--which-key-hide-popup))
   (mapc (lambda (ov)
           (when (overlayp ov)
             (eerie--multicursor-release-snapshot
@@ -3927,8 +3937,6 @@ Argument ARG if not nil, switching in a new window."
     (if (fboundp 'minibuffer-keyboard-quit)
         (call-interactively #'minibuffer-keyboard-quit)
       (call-interactively #'abort-recursive-edit)))
-   ;; ((eerie-keypad-mode-p)
-   ;;  (eerie--exit-keypad-state))
    ((eerie-insert-mode-p)
     (eerie--switch-state 'normal))
    (t
@@ -4050,8 +4058,6 @@ Use negative argument for backward application."
 This command is a replacement for built-in `kmacro-end-or-call-macro'."
   (interactive)
   (cond
-   ((and eerie--keypad-this-command defining-kbd-macro)
-    (message "Can't end kmacro with KEYPAD command"))
    ((eq eerie--beacon-defining-kbd-macro 'record)
     (setq eerie--beacon-defining-kbd-macro nil)
     (eerie-beacon-end-and-apply-kmacro))

@@ -339,10 +339,8 @@ try to switch back to the previous state when leaving it."
   (if (eerie--macrostep-inside-overlay-p)
       ;; The overlay is not editable, so the `macrostep-mode' commands are
       ;; likely more important than the Beacon-state commands and possibly more
-      ;; important than any custom-state commands.  It is less important than
-      ;; Keypad state.
-      (unless (eq eerie--current-state 'keypad)
-        (eerie--switch-to-motion))
+      ;; important than any custom-state commands.
+      (eerie--switch-to-motion)
     (eerie--switch-state eerie--macrostep-setup-previous-state)))
 
 (defun eerie--macrostep-record-outside-state (state)
@@ -352,15 +350,14 @@ This function receives the STATE to which one switches via `eerie--switch-state'
 inside `eerie-switch-state-hook'.
 
 Record the state if:
-- We are outside the overlay and not in Keypad state.
-- We are inside the overlay and not in Keypad or Motion state."
+- We are outside the overlay.
+- We are inside the overlay and not in Motion state."
   ;; We assume that the user will not try to switch to Motion state for the
   ;; entire buffer while we are already in Motion state while inside an overlay.
-  (unless (eq state 'keypad)
-    (if (not (eerie--macrostep-inside-overlay-p))
-        (setq-local eerie--macrostep-setup-previous-state state)
-      (unless (eq state 'motion)
-        (setq-local eerie--macrostep-setup-previous-state state)))))
+  (if (not (eerie--macrostep-inside-overlay-p))
+      (setq-local eerie--macrostep-setup-previous-state state)
+    (unless (eq state 'motion)
+      (setq-local eerie--macrostep-setup-previous-state state))))
 
 (defun eerie--macrostep-hook-function ()
   "Switch Eerie state when entering/leaving `macrostep-mode' or its overlays."
@@ -404,37 +401,6 @@ Argument ENABLE non-nil means turn on."
   (if enable
       (add-hook 'realgud-short-key-mode-hook 'eerie--realgud-debug-hook-function)
     (remove-hook 'realgud-short-key-mode-hook 'eerie--realgud-debug-hook-function)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; which-key
-
-(defvar which-key-mode)
-(declare-function which-key--create-buffer-and-show "which-key"
-                  (&optional prefix-keys from-keymap filter prefix-title))
-
-(defvar eerie--which-key-setup nil)
-
-(defun eerie--which-key-describe-keymap ()
-  "Use which-key for keypad popup."
-  (if which-key-mode
-      (setq
-       which-key-use-C-h-commands nil
-       eerie-keypad-describe-keymap-function
-	(lambda (keymap)
-	  (which-key--create-buffer-and-show nil keymap nil (concat eerie-keypad-message-prefix (eerie--keypad-format-keys))))
-        eerie-keypad-clear-describe-keymap-function 'which-key--hide-popup)
-
-    (setq eerie-keypad-describe-keymap-function 'eerie-describe-keymap
-          eerie-keypad-clear-describe-keymap-function nil
-          which-key-use-C-h-commands t)))
-
-(defun eerie--setup-which-key (enable)
-  "Setup which-key.
-Argument ENABLE non-nil means turn on."
-  (setq eerie--which-key-setup enable)
-  (if enable
-      (add-hook 'which-key-mode-hook 'eerie--which-key-describe-keymap)
-    (remove-hook 'which-key-mode-hook 'eerie--which-key-describe-keymap)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; input methods
@@ -498,7 +464,6 @@ Argument ENABLE non-nil means turn on."
                  eerie--current-state
                  eerie-normal-mode
                  eerie-insert-mode
-                 eerie-keypad-mode
                  eerie-beacon-mode
                  eerie-motion-mode))
       ;; These vars allow us the select through the polymode chunk
@@ -574,7 +539,6 @@ Argument ENABLE, non-nil means turn on."
   (eval-after-load "cider" (lambda () (eerie--setup-cider t)))
   (eval-after-load "sly" (lambda () (eerie--setup-sly t)))
   (eval-after-load "realgud" (lambda () (eerie--setup-realgud t)))
-  (eval-after-load "which-key" (lambda () (eerie--setup-which-key t)))
   (eval-after-load "undo-tree" (lambda () (eerie--setup-undo-tree t)))
   (eval-after-load "diff-hl" (lambda () (eerie--setup-diff-hl t)))
   (eval-after-load "quail" (lambda () (eerie--setup-input-method t)))
@@ -597,7 +561,6 @@ Argument ENABLE, non-nil means turn on."
   (when eerie--grep-edit-setup (eerie--setup-grep-edit nil))
   (when eerie--polymode-setup (eerie--setup-polymode nil))
   (when eerie--cider-setup (eerie--setup-cider nil))
-  (when eerie--which-key-setup (eerie--setup-which-key nil))
   (when eerie--diff-hl-setup (eerie--setup-diff-hl nil))
   (when eerie--input-method-setup (eerie--setup-input-method nil))
   (when eerie--ddskk-setup (eerie--setup-ddskk nil))

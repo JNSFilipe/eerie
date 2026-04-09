@@ -65,6 +65,7 @@ Turn this fork into a Vim-first modal editing package with:
 55. Canonical README conversion to Org format
 56. README Org logo rendering fix
 57. Emacs-style normal-mode navigation aliases and control prefixes
+58. Native which-key leader and multicursor help
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.org`, and `AGENTS.md` in sync with the current implementation.
@@ -74,6 +75,7 @@ Turn this fork into a Vim-first modal editing package with:
 ## Current Status
 - Active stage: None
 - Verification:
+  - focused Stage 58 ERT regression set passes
   - package load smoke test passes
   - ERT suite in `tests/eerie-vim-tests.el` passes
 - Deferred items:
@@ -293,12 +295,25 @@ Turn this fork into a Vim-first modal editing package with:
 - Verification:
   - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+
+## Stage 58 Summary
+- Goal: remove the legacy Eerie keypad state and rely on native Emacs 30+ which-key for prefix/menu discoverability.
+- Implemented scope:
+  - deleted the old `eerie-keypad.el` module and removed the `keypad` state from the state machine, faces, variables, shims, and keymap registry
+  - bound `SPC` directly to Eerie's dedicated leader map in normal, visual, and motion states
+  - enabled native `which-key-mode` from `eerie-global-mode` only when the user has not already enabled it, and disabled it again only when Eerie enabled it
+  - moved the persistent multicursor help popup to a small native which-key wrapper
+  - raised the package baseline to Emacs 30.1+
+- Verification:
+  - focused Stage 58 ERT regression set passes
+  - package load smoke test passes
+  - full ERT suite passes
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:
   - bound normal `m` to `eerie-multicursor-start`
   - reused the existing multicursor normal and visual states as the canonical user-facing mode
-  - added a persistent keypad-style multicursor help popup that refreshes while the session is active and clears on exit
+  - added a persistent multicursor help popup that refreshes while the session is active and clears on exit
   - kept `ESC` as a full session cancel back to normal
 - Verification:
   - batch load smoke test passes

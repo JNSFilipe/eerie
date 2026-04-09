@@ -25,6 +25,7 @@
 ## Current Scope Notes
 
 - Default bindings are active on `eerie-global-mode` without a setup function.
+- `eerie-global-mode` enables native `which-key-mode` when the user has not already enabled it, and disables it again only if Eerie enabled it.
 - Normal mode currently supports `gg`, `G`, `$`, `gd`, `f`, `w`, `/`, `?`, `n`, `N`, `u`, `x`, `yy`, `dd`, `cc`, `p`, `i`, `I`, `a`, `A`, `C-o`, `C-i`, `C-x`, `C-c`, and `SPC`.
 - Normal mode currently also supports `C-n`, `C-p`, `C-b`, and `C-f` as Emacs-style next-line, previous-line, backward-char, and forward-char movement aliases.
 - Normal `j`, `k`, `C-n`, and `C-p` should follow wrapped screen lines when
@@ -37,9 +38,10 @@
 - Normal `C-x` and `C-c` should expose the regular Emacs prefix maps without leaving normal mode.
 - `SPC` should use Eerie's dedicated leader map so those normal-mode `C-c`
   bindings stay vanilla Emacs prefixes instead of being repurposed as
-  Eerie leader entries.
+  Eerie leader entries; native which-key handles prefix discovery.
+- The old Eerie keypad state/module is no longer shipped; do not reintroduce it for prefix menus.
 - Normal `w` should leave an active charwise VISUAL selection behind with point at the end of the selected word, never assign a numbered hint to the currently selected occurrence, and still let movement keys extend it, visual `d` / `c` / `y` work on it, and `ESC` exit it cleanly.
-- Normal `m` now enters the canonical multicursor session and keeps a persistent keypad-style multicursor cheat sheet visible while that session is active.
+- Normal `m` now enters the canonical multicursor session and keeps a persistent native which-key multicursor help popup visible while that session is active.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.
 - Visual mode currently supports charwise, anchor-based linewise, and block selection, plus `d`, `c`, `y`, `i`, `a`, and `$`.
 - Block visual `C-v` should immediately select the current character column as a one-character-wide rectangle, so flows like `C-v j d` delete a real column block instead of a zero-width no-op.
