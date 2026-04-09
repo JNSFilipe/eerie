@@ -22,8 +22,8 @@ auditing the shipped surface for stale pre-rename references.
 - Added a changelog note for the hard rename and clarified that the
   historical changelog entries are mechanically rewritten to the
   current surface.
-- Renamed `meow.svg` to `eerie.svg`, updated the local `README.org`
-  reference, and aligned `Eask` package metadata with the renamed
-  package identity.
+- Aligned `Eask` package metadata with the renamed package identity and
+  removed the last stale pre-rename asset/reference pair from the
+  shipped surface.
 - Verified the shipped-surface audit is clean and re-ran the final
   smoke test plus the full renamed ERT suite.

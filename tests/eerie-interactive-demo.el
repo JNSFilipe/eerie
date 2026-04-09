@@ -1,7 +1,7 @@
 ;;; eerie-interactive-demo.el --- Manual smoke buffer for Eerie Vim fork -*- lexical-binding: t; -*-
 
 ;; Open this file with:
-;;   emacs -Q -L . tests/eerie-interactive-demo.el --eval "(require 'eerie)" --eval "(eerie-global-mode 1)"
+;;   emacs -Q -L lisp tests/eerie-interactive-demo.el --eval "(require 'eerie)" --eval "(eerie-global-mode 1)"
 ;;
 ;; Suggested checks:
 ;; - `u`: delete or change text below, then undo it.

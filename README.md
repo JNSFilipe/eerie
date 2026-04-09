@@ -141,6 +141,5 @@ No setup function is required for the default layout.
 - Registered command capture ships with a default list for built-in jumps like `beginning-of-buffer`, `end-of-buffer`, `goto-line`, `imenu`, and `xref`, plus common third-party commands such as `consult-*` when those symbols are present.
 - Counts like `2dw`, search-repeat operator targets, and word text-object aliases like `iw` / `aw` are still deferred.
 - Block `c` still uses Emacs rectangle deletion and then enters insert mode at point; it is not full Vim-style block-change semantics yet.
-- The `.org` documentation from upstream is still present as legacy reference material and does not yet fully describe this fork.
 - The living implementation tracker is in `.plan/PLAN.md`.
 - `tests/eerie-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and the normal-`m` multicursor flow.

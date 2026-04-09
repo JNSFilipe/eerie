@@ -18,8 +18,8 @@
 ## Verification Expectations
 
 - Add or update ERT coverage for behavior changes.
-- Run `emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` before closing a stage.
-- Run a package load smoke test with `emacs -Q --batch -L . -l eerie.el`.
+- Run `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` before closing a stage.
+- Run a package load smoke test with `emacs -Q --batch -L lisp -l lisp/eerie.el`.
 - Keep stage files honest about what is done, in progress, or deferred.
 
 ## Current Scope Notes

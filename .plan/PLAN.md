@@ -69,7 +69,7 @@ Turn this fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: 54
+- Active stage: None
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/eerie-vim-tests.el` passes
@@ -79,7 +79,6 @@ Turn this fork into a Vim-first modal editing package with:
   - linewise and blockwise multicursor match seeds
   - broader arbitrary interactive multicursor flows beyond the mirrored normal/visual command set
   - full Vim-style block `c` semantics
-  - rewriting the legacy upstream `.org` docs
   - operator counts and additional Vim motions beyond the Stage 7 scope
   - search motions as operator targets
   - full Vim search options such as `*`, `#`, and search offset syntax
@@ -104,7 +103,7 @@ Turn this fork into a Vim-first modal editing package with:
   - rename the shipped module graph and entry point to `eerie*.el`
   - update module headers, `require`, `provide`, and `declare-function` references to `eerie-*`
   - update `Eask` metadata and test script to the renamed entry point and test harness
-  - verify `emacs -Q --batch -L . -l eerie.el` passes
+  - verify `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
 
 ## Stage 50 Plan
 - Goal: rename the full Lisp symbol surface to `eerie-*` and restore the renamed ERT suite to green.
@@ -138,7 +137,7 @@ Turn this fork into a Vim-first modal editing package with:
   - updated `Eask` package metadata, file globs, and test script to the renamed entry point and test harness
   - switched the entry-point commentary to `eerie-global-mode`
 - Verification:
-  - `emacs -Q --batch -L . -l eerie.el` passes
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
 
 ## Stage 50 Summary
 - Goal: rename the full Lisp symbol surface to `eerie-*` and restore the renamed ERT suite to green.
@@ -148,7 +147,7 @@ Turn this fork into a Vim-first modal editing package with:
   - removed stale pre-rename symbols from the shipped code and renamed tests
 - Verification:
   - focused renamed regressions pass
-  - `emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 
 ## Stage 51 Summary
 - Goal: finish the hard rename by updating the canonical docs and packaging metadata, then auditing the shipped surface for stale pre-rename references.
@@ -158,10 +157,10 @@ Turn this fork into a Vim-first modal editing package with:
   - aligned package metadata such as `website-url` with the new `eerie` identity
   - verified the shipped surface audit is clean for code, tests, canonical docs, and tracked package files
 - Verification:
-  - `rg -n "\\bmeow\\b|meow-" eerie.el eerie-*.el Eask README.md AGENTS.md CHANGELOG.md tests/eerie-vim-tests.el tests/eerie-interactive-demo.el .plan` returns no matches
+  - `rg -n "\\bmeow\\b|meow-" lisp/eerie.el lisp/eerie-*.el Eask README.md AGENTS.md CHANGELOG.md tests/eerie-vim-tests.el tests/eerie-interactive-demo.el .plan` returns no matches
   - `rg --files | rg '(^|/)meow'` returns no matches
-  - `emacs -Q --batch -L . -l eerie.el` passes
-  - `emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 
 ## Stage 52 Plan
 - Goal: bootstrap the repository layout reorganization by adding honest stage trackers and proving the future `lisp/` load path is red before the source move.
@@ -204,6 +203,19 @@ Turn this fork into a Vim-first modal editing package with:
 - Verification:
   - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el --eval "(ert-run-tests-batch-and-exit 'eerie-default-normal-keymap-is-vim-like)"` passes
+
+## Stage 54 Summary
+- Goal: finish the layout reorganization by updating canonical commands and docs, deleting stale legacy files, and closing the final audit.
+- Implemented scope:
+  - updated canonical verification and launch commands to use the `lisp/` source layout
+  - deleted the stale legacy root `.org` docs and removed tracked editor backup clutter from the tree
+  - verified the canonical docs, tracker files, and packaging metadata no longer point at the pre-`lisp/` root layout
+  - re-ran the final smoke test and full ERT suite from `lisp/`
+- Verification:
+  - `rg -n -- "-L \\.| -l eerie\\.el|package-file \"eerie\\.el\"|files \"eerie-\\*\\.el\" \"eerie\\.el\"|README\\.org|COMMANDS\\.org|CUSTOMIZATIONS\\.org|EXPLANATION\\.org|FAQ\\.org|GET_STARTED\\.org|KEYBINDING_|TUTORIAL\\.org|VIM_COMPARISON\\.org" README.md AGENTS.md Eask tests .github` returns no matches
+  - `.plan/*` is updated to the `lisp/` layout and no longer points at the removed legacy root docs
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:

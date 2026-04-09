@@ -13,7 +13,7 @@ the renamed package loads again.
   references to `eerie-*`
 - [x] Update `Eask` package metadata, file globs, and test script to the
   renamed package
-- [x] Run `emacs -Q --batch -L . -l eerie.el`
+- [x] Run `emacs -Q --batch -L lisp -l lisp/eerie.el`
 - [x] Commit the renamed module graph
 
 ## Completed
@@ -21,6 +21,6 @@ the renamed package loads again.
 - Renamed the original entry point and module graph to `eerie*.el`.
 - Updated the file headers plus `require`, `provide`, and module-string
   references needed for the renamed feature graph to load.
-- Updated `Eask` to package `eerie`, load `eerie.el`, glob `eerie-*.el`,
-  and run `tests/eerie-vim-tests.el`.
-- Verified `emacs -Q --batch -L . -l eerie.el` passes.
+- Updated `Eask` to package `eerie`, load `lisp/eerie.el`, glob
+  `lisp/eerie*.el`, and run `tests/eerie-vim-tests.el`.
+- Verified `emacs -Q --batch -L lisp -l lisp/eerie.el` passes.
