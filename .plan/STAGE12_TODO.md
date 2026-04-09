@@ -3,7 +3,7 @@
 ## Goal
 
 Make visual-mode navigation keys extend the active selection reliably
-and stop doubled line operators from showing Meow's numeric expand
+and stop doubled line operators from showing Eerie's numeric expand
 overlays.
 
 ## Scope
@@ -21,6 +21,6 @@ overlays.
 - [x] Add ERT coverage for visual `gg` / `G` in charwise, linewise, and
   blockwise visual modes
 - [x] Add ERT coverage for visual search extension
-- [x] Add ERT coverage that `dd` and `yy` leave `meow--expand-overlays`
+- [x] Add ERT coverage that `dd` and `yy` leave `eerie--expand-overlays`
   empty
 - [x] Re-run the full existing ERT suite and batch load smoke test

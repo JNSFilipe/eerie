@@ -7,12 +7,12 @@ state.
 
 ## Scope
 
-- [x] Add a dedicated Meow multi-cursor state with its own keymap and
+- [x] Add a dedicated Eerie multi-cursor state with its own keymap and
   `ESC` cancellation path
 - [x] Make visual `n` promote an active multi-edit target set into that
   multi-cursor state while still falling back to visual search repeat
   when multi-edit is inactive
-- [x] Render secondary cursors with Meow fake-cursor overlays instead of
+- [x] Render secondary cursors with Eerie fake-cursor overlays instead of
   keeping the original visual multi-edit overlays
 - [x] Replay deterministic normal-mode key sequences across the
   secondary cursors from the primary cursor

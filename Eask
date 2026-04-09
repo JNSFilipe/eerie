@@ -4,7 +4,7 @@
          "1.5.0"
          "Yet Another modal editing")
 
-(website-url "https://www.github.com/DogLooksGood/meow")
+(website-url "https://www.github.com/DogLooksGood/eerie")
 (keywords "convenience" "modal-editing")
 
 (package-file "eerie.el")

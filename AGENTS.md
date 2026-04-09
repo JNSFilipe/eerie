@@ -6,30 +6,30 @@
 - Treat `README.md` as the canonical user-facing overview for this fork.
 - Treat `.plan/*` as the canonical implementation tracker.
 - Record deferred work explicitly in `.plan/*`; do not leave it undocumented.
-- Keep `tests/meow-vim-tests.el` aligned with the shipped behavior.
+- Keep `tests/eerie-vim-tests.el` aligned with the shipped behavior.
 
 ## Product Direction
 
-- This is a hard fork of Meow with Vim-style defaults.
-- Keep `meow-*` file names and Lisp symbols for now unless a later task says otherwise.
+- This is the Vim-style hard fork of the upstream modal editing framework, shipped as `eerie`.
+- The shipped package surface is `eerie-*`; do not reintroduce pre-rename compatibility without an explicit task.
 - Prefer Emacs-native commands and data structures where they can support the Vim-like behavior cleanly.
 - Preserve non-colliding Emacs bindings, especially in insert mode and for modified keys in normal/visual mode.
 
 ## Verification Expectations
 
 - Add or update ERT coverage for behavior changes.
-- Run `emacs -Q --batch -L . -L tests -l tests/meow-vim-tests.el -f ert-run-tests-batch-and-exit` before closing a stage.
-- Run a package load smoke test with `emacs -Q --batch -L . -l meow.el`.
+- Run `emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` before closing a stage.
+- Run a package load smoke test with `emacs -Q --batch -L . -l eerie.el`.
 - Keep stage files honest about what is done, in progress, or deferred.
 
 ## Current Scope Notes
 
-- Default bindings are active on `meow-global-mode` without a setup function.
+- Default bindings are active on `eerie-global-mode` without a setup function.
 - Normal mode currently supports `gg`, `G`, `$`, `gd`, `f`, `w`, `/`, `?`, `n`, `N`, `u`, `x`, `yy`, `dd`, `cc`, `p`, `i`, `I`, `a`, `A`, `C-o`, `C-i`, and `SPC`.
 - Normal mode currently also supports `W` for moving to the next space on the current line, or to line end when no later space remains.
 - Normal mode currently also supports `%` for matching-delimiter jumps.
-- Normal `f` and `w` use a Meow-native visible-jump loop with digits `1` through `9`, and `;` reverses direction while the loop is active.
-- Normal `f` should participate in the Meow jumplist so `C-o` / `C-i` round-trip through it.
+- Normal `f` and `w` use an Eerie-native visible-jump loop with digits `1` through `9`, and `;` reverses direction while the loop is active.
+- Normal `f` should participate in the Eerie jumplist so `C-o` / `C-i` round-trip through it.
 - Normal `w` should leave an active charwise VISUAL selection behind with point at the end of the selected word, never assign a numbered hint to the currently selected occurrence, and still let movement keys extend it, visual `d` / `c` / `y` work on it, and `ESC` exit it cleanly.
 - Normal `m` now enters the canonical multicursor session and keeps a persistent keypad-style multicursor cheat sheet visible while that session is active.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.
@@ -69,15 +69,15 @@
 - Visual mode currently also supports `%` to extend the active selection to the matching delimiter.
 - Visual `gg`, `G`, `/`, `?`, `n`, and `N` currently extend the active selection instead of dropping out of visual behavior.
 - Horizontal `h` / `l` movement should clamp at line boundaries in normal and visual mode instead of wrapping across lines.
-- Jump history is currently window-local and records explicit relocations such as `gg`, `G`, `gd`, `meow-goto-line`, `/?nN`, Meow's mark/global-mark jump helpers, and registered third-party navigation commands.
-- Third-party jump capture ships with a default tracked-command list for built-in jumps and common `consult-*` commands, and can be extended through `meow-register-jump-command`.
+- Jump history is currently window-local and records explicit relocations such as `gg`, `G`, `gd`, `eerie-goto-line`, `/?nN`, Eerie's mark/global-mark jump helpers, and registered third-party navigation commands.
+- Third-party jump capture ships with a default tracked-command list for built-in jumps and common `consult-*` commands, and can be extended through `eerie-register-jump-command`.
 - Doubled linewise operators such as `dd`, `yy`, and `cc` should not leave numeric expand overlays behind.
 - Yank operators such as `yy` should preserve the original cursor position after copying.
 - `%` should work for nested delimiters and when point is just after a closing delimiter at end of line or end of buffer.
-- The interactive manual smoke buffer lives at `tests/meow-interactive-demo.el` and includes visible-jump targets for `f` and `w`.
+- The interactive manual smoke buffer lives at `tests/eerie-interactive-demo.el` and includes visible-jump targets for `f` and `w`.
 - Cleanup stages 43 through 46 are complete; the dead
-  `meow-visual-search-next-or-multicursor` dispatcher and the
-  unreachable `meow-open-above` / `meow-open-below` command family are
-  gone, while `meow-multiedit-*` and `meow-multicursor-spawn` remain as
+  `eerie-visual-search-next-or-multicursor` dispatcher and the
+  unreachable `eerie-open-above` / `eerie-open-below` command family are
+  gone, while `eerie-multiedit-*` and `eerie-multicursor-spawn` remain as
   internal bridge helpers for the shipped multicursor flow.
 - Counts, search-repeat motion targets inside operators, word text-object aliases like `iw` / `aw`, fuller Vim search syntax, bulk multi-edit builders, full multi-target yank, multi-edit text-object retargeting under a dedicated binding, linewise/blockwise multicursor match seeds, broader arbitrary interactive multi-cursor flows beyond the current mirrored normal/visual replay coverage, and full Vim-style block `c` semantics remain deferred until they exist.

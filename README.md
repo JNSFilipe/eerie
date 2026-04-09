@@ -1,13 +1,14 @@
-# Meow Vim Fork
+# Eerie Vim Fork
 
-This repository is a hard fork of Meow that ships a Vim-style modal
-experience by default while keeping the existing `meow-*` Lisp surface for now.
+This repository is a hard fork of the upstream modal editing framework
+and now ships a Vim-style modal experience by default under the
+`eerie-*` Lisp surface.
 
 ## Quick Start
 
 ```emacs-lisp
-(require 'meow)
-(meow-global-mode 1)
+(require 'eerie)
+(eerie-global-mode 1)
 ```
 
 No setup function is required for the default layout.
@@ -84,19 +85,19 @@ No setup function is required for the default layout.
 
 ## Customization Helpers
 
-- `meow-normal-define-key`
-- `meow-visual-define-key`
-- `meow-leader-define-key`
-- `meow-register-jump-command`
+- `eerie-normal-define-key`
+- `eerie-visual-define-key`
+- `eerie-leader-define-key`
+- `eerie-register-jump-command`
 
 ## Notes
 
 - Operator-pending currently covers doubled linewise operators, motion targets `w`/`W`/`b`/`B`/`h`/`l`/`0`/`$`/`f`/`t`, and the requested `i`/`a` text objects.
-- Doubled linewise operators like `dd`, `yy`, and `cc` do not trigger Meow's numeric expand hints.
+- Doubled linewise operators like `dd`, `yy`, and `cc` do not trigger Eerie's numeric expand hints.
 - Vim-style yank operators restore the original cursor position after copying.
 - `%` handles nested delimiters and still works when point is sitting after a closing delimiter at end of line or end of buffer.
-- `f` and `w` use a Meow-native visible-jump loop with digits `1` through `9`; no external `avy.el` runtime dependency is required.
-- `w` now promotes its target into Meow's actual visual state, keeps point at the end of the selected word, never numbers the current occurrence as a jump target, and lets `ESC` and visual movement/action keys keep working normally.
+- `f` and `w` use an Eerie-native visible-jump loop with digits `1` through `9`; no external `avy.el` runtime dependency is required.
+- `w` now promotes its target into Eerie's actual visual state, keeps point at the end of the selected word, never numbers the current occurrence as a jump target, and lets `ESC` and visual movement/action keys keep working normally.
 - Because `w` ends in real visual state, visual `f` can keep extending that selection instead of replacing it.
 - Charwise selections created inside multicursor mode, including selections created by `w`, become exact, case-sensitive, current-buffer match seeds for the multicursor builder.
 - Multicursor visual `.` / `,` / `-` replace the old visual `m` / `;` / `s` builder flow.
@@ -119,10 +120,10 @@ No setup function is required for the default layout.
 - Block visual `I` and `A` replay the primary insert session to every selected line at the rectangle's left or right edge.
 - Reverse visual `f` skips the character currently under the visual cursor, so `f<char> ; 1` goes to the previous match instead of staying on the current one.
 - Reverse visual `f` also refreshes its numbered candidates after each jump inside the same hint loop, so the overlay labels and numeric choices stay in sync after `;`.
-- Jump history is window-local and records explicit relocations such as `gg`, `G`, `gd`, `meow-goto-line`, `/?nN`, Meow's mark/global-mark jump helpers, and registered third-party navigation commands.
+- Jump history is window-local and records explicit relocations such as `gg`, `G`, `gd`, `eerie-goto-line`, `/?nN`, Eerie's mark/global-mark jump helpers, and registered third-party navigation commands.
 - Registered command capture ships with a default list for built-in jumps like `beginning-of-buffer`, `end-of-buffer`, `goto-line`, `imenu`, and `xref`, plus common third-party commands such as `consult-*` when those symbols are present.
 - Counts like `2dw`, search-repeat operator targets, and word text-object aliases like `iw` / `aw` are still deferred.
 - Block `c` still uses Emacs rectangle deletion and then enters insert mode at point; it is not full Vim-style block-change semantics yet.
 - The `.org` documentation from upstream is still present as legacy reference material and does not yet fully describe this fork.
 - The living implementation tracker is in `.plan/PLAN.md`.
-- `tests/meow-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and the normal-`m` multicursor flow.
+- `tests/eerie-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and the normal-`m` multicursor flow.

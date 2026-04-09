@@ -2,13 +2,13 @@
 
 ## Goal
 
-Rename the package entry point and module graph from `meow` to `eerie`
-so the renamed package loads again.
+Rename the original package entry point and module graph to `eerie` so
+the renamed package loads again.
 
 ## Tasks
 
-- [x] Rename `meow.el` to `eerie.el`
-- [x] Rename every shipped `meow-*.el` module to `eerie-*.el`
+- [x] Rename the entry point to `eerie.el`
+- [x] Rename every shipped module to `eerie-*.el`
 - [x] Update file headers, `require`, `provide`, and `declare-function`
   references to `eerie-*`
 - [x] Update `Eask` package metadata, file globs, and test script to the
@@ -18,8 +18,7 @@ so the renamed package loads again.
 
 ## Completed
 
-- Renamed the shipped entry point and module graph from `meow*.el` to
-  `eerie*.el`.
+- Renamed the original entry point and module graph to `eerie*.el`.
 - Updated the file headers plus `require`, `provide`, and module-string
   references needed for the renamed feature graph to load.
 - Updated `Eask` to package `eerie`, load `eerie.el`, glob `eerie-*.el`,

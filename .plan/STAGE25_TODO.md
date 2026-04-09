@@ -9,7 +9,7 @@ with the current visual workflow.
 
 - [x] Add buffer-local session state for the immutable seed text,
   direction, primary target, secondary targets, and search head
-- [x] Render secondary targets with Meow overlays instead of live cursors
+- [x] Render secondary targets with Eerie overlays instead of live cursors
 - [x] Restrict v1 session startup to active charwise visual selections
 - [x] Clear the full session on `ESC`, including overlays and active
   selection state

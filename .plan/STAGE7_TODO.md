@@ -19,7 +19,7 @@ text objects.
 ## Design Constraints
 
 - [x] Do not reuse the current visual-mode command path for operators; operator-pending builds a target selection directly
-- [x] Use existing Meow movement/selection primitives where they produce correct Vim-like target bounds
+- [x] Use existing Eerie movement/selection primitives where they produce correct Vim-like target bounds
 - [x] Add a small normalization layer for inclusive vs exclusive motion endpoints so `dw`, `d$`, `df<char>`, and `dt<char>` behave predictably
 - [x] Keep Stage 7 free of count parsing and advanced motion grammar
 

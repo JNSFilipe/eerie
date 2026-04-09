@@ -10,8 +10,8 @@ package itself exists.
 
 - [x] Add Stage 48 through Stage 51 entries to `.plan/PLAN.md`
 - [x] Create `STAGE48_TODO.md` through `STAGE51_TODO.md`
-- [x] Rename `tests/meow-vim-tests.el` to `tests/eerie-vim-tests.el`
-- [x] Rename `tests/meow-interactive-demo.el` to
+- [x] Rename the ERT suite to `tests/eerie-vim-tests.el`
+- [x] Rename the interactive demo to
   `tests/eerie-interactive-demo.el`
 - [x] Change the renamed ERT suite to `(require 'eerie)` and start
   renaming canonical test names to `eerie-*`

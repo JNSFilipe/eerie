@@ -12,10 +12,10 @@ the jumplist small and predictable.
   commands that intentionally relocate point
 - [x] Preserve the current back-stack and forward-stack model, including
   duplicate suppression and dead-marker pruning
-- [x] Extend jump recording to `meow-goto-line`, `meow-goto-buffer-start`,
-  `meow-goto-buffer-end`, and `meow-goto-definition`
-- [x] Extend jump recording to Meow's mark-based jump helpers
-  `meow-pop-to-mark`, `meow-unpop-to-mark`, and `meow-pop-to-global-mark`
+- [x] Extend jump recording to `eerie-goto-line`, `eerie-goto-buffer-start`,
+  `eerie-goto-buffer-end`, and `eerie-goto-definition`
+- [x] Extend jump recording to Eerie's mark-based jump helpers
+  `eerie-pop-to-mark`, `eerie-unpop-to-mark`, and `eerie-pop-to-global-mark`
 - [x] Keep ordinary movement commands and operator motions out of jump
   history
 
@@ -25,7 +25,7 @@ the jumplist small and predictable.
   revisit with `C-o` and `C-i`
 - [x] Recording a fresh jump clears forward history, but moving backward or
   forward through the jumplist does not
-- [x] Keep the implementation local to Meow-owned commands instead of
+- [x] Keep the implementation local to Eerie-owned commands instead of
   globally advising every point-moving command
 - [x] Support cross-buffer round trips without depending on buffer-local
   state
@@ -34,7 +34,7 @@ the jumplist small and predictable.
 
 - [x] Add ERT coverage for repeated-location dedupe when a jump command is
   invoked twice at the same point
-- [x] Add ERT coverage for `meow-goto-line` recording the pre-jump location
+- [x] Add ERT coverage for `eerie-goto-line` recording the pre-jump location
 - [x] Add ERT coverage for cross-buffer jump back/forward round trips
 - [x] Add ERT coverage that a new jump after `C-o` clears the forward stack
 - [x] Add ERT coverage for mark-based jump helpers participating in the

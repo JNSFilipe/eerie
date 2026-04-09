@@ -8,9 +8,9 @@ ERT suite pass.
 ## Tasks
 
 - [x] Run the renamed suite once and confirm it fails on stale
-  `meow-*` surface references
+  pre-rename surface references
 - [x] Rename shipped commands, variables, modes, faces, helpers, and
-  internal state from `meow-*` to `eerie-*`
+  internal state to `eerie-*`
 - [x] Update `tests/eerie-vim-tests.el` and
   `tests/eerie-interactive-demo.el` to the new surface
 - [x] Run the focused renamed regressions
@@ -20,7 +20,7 @@ ERT suite pass.
 ## Completed
 
 - Confirmed the renamed suite fails red before the symbol rename, with
-  unresolved `eerie-*` symbols and stale `meow-*` state references.
+  unresolved `eerie-*` symbols and stale pre-rename state references.
 - Renamed the shipped Lisp symbol surface to `eerie-*`.
 - Updated the renamed ERT suite and the interactive demo to use the
   `eerie-*` entry point and symbol surface.

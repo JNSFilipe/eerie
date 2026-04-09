@@ -7,8 +7,8 @@ feature work and add a manual smoke-test buffer.
 
 ## Scope
 
-- [x] Bind normal-mode `u` to `meow-undo`
-- [x] Switch `meow-undo` and `meow-undo-in-selection` to Emacs-native
+- [x] Bind normal-mode `u` to `eerie-undo`
+- [x] Switch `eerie-undo` and `eerie-undo-in-selection` to Emacs-native
   undo commands
 - [x] Fix linewise visual startup so `V` selects the current line at
   buffer edges

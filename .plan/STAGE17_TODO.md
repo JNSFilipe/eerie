@@ -8,7 +8,7 @@ the jumplist.
 
 ## Scope
 
-- [x] Promote `w` selections into Meow's charwise VISUAL state
+- [x] Promote `w` selections into Eerie's charwise VISUAL state
 - [x] Keep `w` compatible with visual movement extension
 - [x] Keep `w` compatible with visual `d` / `c` / `y` actions
 - [x] Make `ESC` exit the `w` selection cleanly
