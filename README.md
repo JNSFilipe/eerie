@@ -1,5 +1,9 @@
 # Eerie
 
+<p align="center">
+  <img src="eerie.png" alt="Eerie logo" width="420">
+</p>
+
 Eerie is a hard fork of [Meow](https://github.com/meow-edit/meow) and
 ships a Vim-style modal experience by default under the `eerie-*` Lisp
 surface.
@@ -11,14 +15,11 @@ built-in `:vc` support:
 
 ```emacs-lisp
 (use-package eerie
-  :vc (:url "https://github.com/JNSFilipe/meow"
+  :vc (:url "https://github.com/JNSFilipe/eerie.git"
        :rev :newest)
   :config
   (eerie-global-mode 1))
 ```
-
-The repository URL still uses the old GitHub path, but the installed
-package surface is `eerie`.
 
 ## Quick Start
 
