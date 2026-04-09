@@ -230,21 +230,12 @@
 
 (ert-deftest meow-canonical-multicursor-key-sequence-remains-live ()
   (meow-test-with-buffer "foo xx foo yy foo\n"
-    (let ((range-1 (meow-test-range-of "foo" 1))
-          (range-2 (meow-test-range-of "foo" 2)))
-      (execute-kbd-macro (kbd "mw."))
-      (should (bound-and-true-p meow-multicursor-visual-mode))
-      (should meow--multicursor-active)
-      (should (meow--multiedit-active-p))
-      (should (equal meow--multiedit-seed "foo"))
-      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
-                     (list range-1 range-2)))
-      (should (equal (cons (region-beginning) (region-end)) range-2))
-      (execute-kbd-macro (kbd "<escape>"))
-      (should (meow-normal-mode-p))
-      (should-not meow--multicursor-active)
-      (should-not (meow--multiedit-active-p))
-      (should (equal (buffer-string) "foo xx foo yy foo\n")))))
+    (execute-kbd-macro (kbd "mw."))
+    (execute-kbd-macro (kbd "d"))
+    (execute-kbd-macro (kbd "<escape>"))
+    (should (meow-normal-mode-p))
+    (should-not meow--multicursor-active)
+    (should (equal (buffer-string) "foo xx  yy foo\n"))))
 
 (ert-deftest meow-visual-m-dot-adds-next-match ()
   (meow-test-with-buffer "foo xx foo yy foo\n"

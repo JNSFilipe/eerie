@@ -7,9 +7,13 @@ no longer serve the shipped workflow.
 
 ## Tasks
 
-- [ ] Delete dead compatibility entry points confirmed by Stage 43
-- [ ] Replace internal-helper tests with canonical key-sequence tests
-- [ ] Remove dead keymap declarations or compatibility allowlist entries
-- [ ] Re-run focused multicursor and multiedit regressions
+- [ ] Delete the compatibility surface Stage 43 marked dead, starting
+  with `meow-visual-search-next-or-multicursor`
+- [ ] Replace the remaining helper-style multicursor tests with real
+  key-sequence regressions for `m`, `.`, `,`, `-`, and `ESC`
+- [ ] Remove any dead keymap declarations or allowlist entries that only
+  exist to preserve removed multiedit entry points
+- [ ] Re-run the focused multicursor and multiedit regressions after
+  each cleanup slice
 - [ ] Re-run the batch load smoke test
 - [ ] Re-run the full ERT suite
