@@ -79,8 +79,9 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - old internal compatibility helpers such as `meow-multiedit-*`,
     `meow-multicursor-spawn`, and `meow-visual-search-next-or-multicursor`
     still exist, but normal `m` plus multicursor `.` / `,` / `-` is now the canonical user-facing flow
-  - cleanup stages 43 through 46 are planned to audit, delete, and
-    consolidate that leftover surface without redesigning the workflow
+  - cleanup stages 44 through 46 remain planned to delete and
+    consolidate the leftover surface without redesigning the workflow;
+    Stage 43 is complete and Stage 44 is active
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:

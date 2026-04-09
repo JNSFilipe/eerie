@@ -218,15 +218,9 @@
   (meow-test-with-buffer "foo xx foo yy foo\n"
     (let ((range-1 (meow-test-range-of "foo" 1)))
       (meow-test-start-charwise-visual range-1)
-      (execute-kbd-macro (kbd "m"))
-      (should (bound-and-true-p meow-multicursor-visual-mode))
-      (should meow--multicursor-active)
-      (should (meow--multiedit-active-p))
-      (should (equal meow--multiedit-seed "foo"))
-      (should (equal meow--multiedit-primary range-1))
-      (should (equal meow--multiedit-targets (list range-1)))
-      (should (region-active-p))
-      (should (equal (cons (region-beginning) (region-end)) range-1)))))
+      (execute-kbd-macro (kbd "md"))
+      (should (meow-normal-mode-p))
+      (should (equal (buffer-string) " xx foo yy foo\n")))))
 
 (ert-deftest meow-canonical-multicursor-key-sequence-remains-live ()
   (meow-test-with-buffer "foo xx foo yy foo\n"
