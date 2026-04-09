@@ -35,9 +35,15 @@ No setup function is required for the default layout.
 
 - ~h j k l~ move
 - ~h~ and ~l~ stay on the current line instead of wrapping across lines
+- ~j~, ~k~, ~C-n~, and ~C-p~ follow wrapped screen lines when a line is
+  visually wrapped, and keep the original buffer column when they move
+  to a different logical line
 - ~g g~ jumps to the start of the buffer
 - ~G~ jumps to the end of the buffer
 - ~$~ jumps to the end of the current line
+- ~C-n~, ~C-p~, ~C-b~, and ~C-f~ mirror Emacs-style next-line,
+  previous-line, backward-char, and forward-char movement in normal
+  mode
 - ~g d~ uses ~xref~ to jump to definition
 - ~%~ jumps to the matching delimiter for ~()~, ~[]~, ~{}~, ~"~, and ~'~
 - ~x~ deletes the current character
@@ -62,9 +68,11 @@ No setup function is required for the default layout.
   ~y a ...~ work for ~(~ ~[~ ~{~ ~"~ and ~'~
 - ~p~ pastes
 - ~i~, ~I~, ~a~, and ~A~ enter insert mode at Vim-like positions
+- ~C-x~ and ~C-c~ expose the regular Emacs prefix maps in normal mode
+- ~SPC~ opens Eerie's own leader/keypad map; it no longer piggybacks on
+  Emacs's ~C-c~ prefix map
 - ~C-o~ and ~C-i~ move backward and forward through the fork's
   window-local jumplist
-- ~SPC~ opens the leader/keypad menu
 
 ** Visual mode
 

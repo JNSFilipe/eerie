@@ -91,11 +91,7 @@ Check `eerie-normal-define-key' for usages."
 (defun eerie-leader-define-key (&rest keybinds)
   "Define key in leader keymap with KEYBINDS.
 
-Eerie use `mode-specific-map' as leader keymap.
-Usually, the command on C-c <key> can be called in Eerie via SPC <key>.
-
-Thus, users should not add a dispatching keybinding like (\"<key>\" . \"C-c <key>\")
-with this helper, it will result in recursive calls.
+Eerie uses a dedicated leader keymap behind `SPC'.
 
 Check `eerie-normal-define-key' for usages."
   (apply #'eerie-define-keys 'leader keybinds))

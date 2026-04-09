@@ -25,11 +25,19 @@
 ## Current Scope Notes
 
 - Default bindings are active on `eerie-global-mode` without a setup function.
-- Normal mode currently supports `gg`, `G`, `$`, `gd`, `f`, `w`, `/`, `?`, `n`, `N`, `u`, `x`, `yy`, `dd`, `cc`, `p`, `i`, `I`, `a`, `A`, `C-o`, `C-i`, and `SPC`.
+- Normal mode currently supports `gg`, `G`, `$`, `gd`, `f`, `w`, `/`, `?`, `n`, `N`, `u`, `x`, `yy`, `dd`, `cc`, `p`, `i`, `I`, `a`, `A`, `C-o`, `C-i`, `C-x`, `C-c`, and `SPC`.
+- Normal mode currently also supports `C-n`, `C-p`, `C-b`, and `C-f` as Emacs-style next-line, previous-line, backward-char, and forward-char movement aliases.
+- Normal `j`, `k`, `C-n`, and `C-p` should follow wrapped screen lines when
+  a line is visually wrapped, while still preserving the original buffer
+  column when they move to a different logical line.
 - Normal mode currently also supports `W` for moving to the next space on the current line, or to line end when no later space remains.
 - Normal mode currently also supports `%` for matching-delimiter jumps.
 - Normal `f` and `w` use an Eerie-native visible-jump loop with digits `1` through `9`, and `;` reverses direction while the loop is active.
 - Normal `f` should participate in the Eerie jumplist so `C-o` / `C-i` round-trip through it.
+- Normal `C-x` and `C-c` should expose the regular Emacs prefix maps without leaving normal mode.
+- `SPC` should use Eerie's dedicated leader map so those normal-mode `C-c`
+  bindings stay vanilla Emacs prefixes instead of being repurposed as
+  Eerie leader entries.
 - Normal `w` should leave an active charwise VISUAL selection behind with point at the end of the selected word, never assign a numbered hint to the currently selected occurrence, and still let movement keys extend it, visual `d` / `c` / `y` work on it, and `ESC` exit it cleanly.
 - Normal `m` now enters the canonical multicursor session and keeps a persistent keypad-style multicursor cheat sheet visible while that session is active.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.

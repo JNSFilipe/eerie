@@ -934,6 +934,20 @@ Will cancel all other selection, except char selection. "
   (eerie--cancel-selection)
   (goto-char (line-end-position)))
 
+(defun eerie--move-lines (count)
+  "Move COUNT wrapped screen lines without routing back through key bindings."
+  (let ((origin-screen-column
+         (- (current-column)
+            (save-excursion
+              (beginning-of-visual-line)
+              (current-column)))))
+    (vertical-motion count)
+    (move-to-column
+     (+ origin-screen-column
+        (save-excursion
+          (beginning-of-visual-line)
+          (current-column))))))
+
 (defun eerie-prev (arg)
   "Move to the previous line.
 
@@ -948,8 +962,7 @@ Use with numeric argument to move multiple lines at once."
    ((eerie--with-universal-argument-p arg)
     (goto-char (point-min)))
    (t
-    (setq this-command #'previous-line)
-    (eerie--execute-kbd-macro eerie--kbd-backward-line))))
+    (eerie--move-lines (- (prefix-numeric-value arg))))))
 
 (defun eerie-next (arg)
   "Move to the next line.
@@ -965,8 +978,7 @@ Use with numeric argument to move multiple lines at once."
    ((eerie--with-universal-argument-p arg)
     (goto-char (point-max)))
    (t
-    (setq this-command #'next-line)
-    (eerie--execute-kbd-macro eerie--kbd-forward-line))))
+    (eerie--move-lines (prefix-numeric-value arg)))))
 
 (defun eerie-prev-expand (arg)
   "Activate char selection, then move to the previous line.
@@ -984,8 +996,7 @@ See `eerie-prev-line' for how prefix arguments work."
    ((eerie--with-universal-argument-p arg)
     (goto-char (point-min)))
    (t
-    (setq this-command #'previous-line)
-    (eerie--execute-kbd-macro eerie--kbd-backward-line))))
+    (eerie--move-lines (- (prefix-numeric-value arg))))))
 
 (defun eerie-next-expand (arg)
   "Activate char selection, then move to the next line.
@@ -1003,8 +1014,7 @@ See `eerie-next-line' for how prefix arguments work."
    ((eerie--with-universal-argument-p arg)
     (goto-char (point-max)))
    (t
-    (setq this-command #'next-line)
-    (eerie--execute-kbd-macro eerie--kbd-forward-line))))
+    (eerie--move-lines (prefix-numeric-value arg)))))
 
 (defun eerie-mark-thing (thing type &optional backward regexp-format)
   "Make expandable selection of THING, with TYPE and forward/BACKWARD direction.

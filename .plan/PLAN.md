@@ -64,6 +64,7 @@ Turn this fork into a Vim-first modal editing package with:
 54. Canonical command updates, stale-doc deletion, and final layout audit
 55. Canonical README conversion to Org format
 56. README Org logo rendering fix
+57. Emacs-style normal-mode navigation aliases and control prefixes
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.org`, and `AGENTS.md` in sync with the current implementation.
@@ -90,6 +91,27 @@ Turn this fork into a Vim-first modal editing package with:
     multicursor workflow routes through them internally, even though
     normal `m` plus multicursor `.` / `,` / `-` remains the only
     shipped builder flow
+
+## Stage 57 Summary
+- Goal: add Emacs-style control-key navigation aliases to normal mode
+  and keep vanilla `C-x` / `C-c` prefixes available there without
+  regressing the shipped Vim-style plain keys.
+- Implemented scope:
+  - bound normal and multicursor-normal `C-n`, `C-p`, `C-b`, and `C-f`
+    as Emacs-style movement aliases while keeping plain `f`, `n`, and
+    `p` on their shipped Eerie behaviors
+  - kept `h j k l` working by replacing the old macro-based vertical
+    movement path with direct logical line movement
+  - refined that shared vertical movement path so `j`, `k`, `C-n`, and
+    `C-p` follow wrapped screen lines again without losing their
+    original buffer column when they cross into another logical line
+  - moved the `SPC` leader bindings onto a dedicated Eerie leader map
+    so `C-c` remains the regular Emacs prefix map in normal mode
+  - added key-sequence regressions for `h j k l`, `C-n C-p C-b C-f`,
+    preserved major-mode `C-c` bindings, and the leader-map split
+- Verification:
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 
 ## Stage 55 Plan
 - Goal: replace the canonical Markdown README with an Org README and update the repository tracker to point at the new canonical file.
@@ -251,6 +273,24 @@ Turn this fork into a Vim-first modal editing package with:
   - recorded the README rendering fix in the canonical tracker
 - Verification:
   - `rg -n --fixed-strings '[[file:eerie.png]]' README.org` returns the logo link
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+
+## Stage 57 Plan
+- Goal: make `C-n`, `C-p`, `C-b`, and `C-f` available as Emacs-style navigation in normal mode, and expose standard `C-x` / `C-c` prefixes there without changing insert mode semantics.
+- Planned scope:
+  - bind normal and multicursor-normal `C-n`, `C-p`, `C-b`, and `C-f` to the existing line/char movement commands
+  - expose `C-x` and `C-c` in normal mode through the regular Emacs prefix maps
+  - update the canonical docs and tests to reflect the new control-key normal-mode bindings while keeping the shipped plain-key defaults intact
+
+## Stage 57 Summary
+- Goal: make `C-n`, `C-p`, `C-b`, and `C-f` available as Emacs-style navigation in normal mode, and expose standard `C-x` / `C-c` prefixes there without changing insert mode semantics.
+- Implemented scope:
+  - bound normal and multicursor-normal `C-n`, `C-p`, `C-b`, and `C-f` to the existing line and char movement commands alongside `h j k l`
+  - exposed `C-x` and `C-c` in normal mode through the regular Emacs prefix maps
+  - kept the shipped plain-key defaults intact: `f` for visible char jump, `p` for paste, and `n` for same-direction search repeat
+  - updated the canonical docs, interactive demo, and ERT keymap contract to match the corrected control-key defaults
+- Verification:
   - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 ## Stage 36 Summary
