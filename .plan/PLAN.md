@@ -63,6 +63,7 @@ Turn this fork into a Vim-first modal editing package with:
 53. Move shipped package sources into `lisp/`
 54. Canonical command updates, stale-doc deletion, and final layout audit
 55. Canonical README conversion to Org format
+56. README Org logo rendering fix
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.org`, and `AGENTS.md` in sync with the current implementation.
@@ -232,6 +233,24 @@ Turn this fork into a Vim-first modal editing package with:
   - updated `AGENTS.md` and the canonical tracker to treat `README.org` as the maintained README
   - preserved the same user-facing content while switching the root README format to Org
 - Verification:
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+
+## Stage 56 Plan
+- Goal: restore the root logo on the GitHub-rendered Org README by replacing the HTML export block with an Org-native image link.
+- Planned scope:
+  - replace the `README.org` logo HTML export block with a direct Org image link to `eerie.png`
+  - keep the rest of the canonical README content unchanged
+  - rerun the standard smoke test and full ERT suite after the README rendering fix
+
+## Stage 56 Summary
+- Goal: restore the root logo on the GitHub-rendered Org README by replacing the HTML export block with an Org-native image link.
+- Implemented scope:
+  - replaced the `README.org` logo HTML export block with a direct Org image link to `eerie.png`
+  - kept the rest of the canonical README content unchanged
+  - recorded the README rendering fix in the canonical tracker
+- Verification:
+  - `rg -n --fixed-strings '[[file:eerie.png]]' README.org` returns the logo link
   - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 ## Stage 36 Summary

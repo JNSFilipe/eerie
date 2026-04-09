@@ -1,10 +1,7 @@
 #+TITLE: Eerie
 
-#+begin_export html
-<p align="center">
-  <img src="eerie.png" alt="Eerie logo" width="420">
-</p>
-#+end_export
+#+attr_html: :alt Eerie logo :width 420
+[[file:eerie.png]]
 
 Eerie is a hard fork of [[https://github.com/meow-edit/meow][Meow]] and
 ships a Vim-style modal experience by default under the ~eerie-*~ Lisp
