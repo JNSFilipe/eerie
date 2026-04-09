@@ -50,6 +50,10 @@ Turn this Meow fork into a Vim-first modal editing package with:
 40. Visual `m` entry into canonical multicursor mode
 41. Block-visual rectangle initialization fix
 42. Block-visual `I` and `A` replay insert/append
+43. Cleanup audit and canonical test safety net
+44. Multiedit and multicursor compatibility-path removal
+45. Upstream dead-surface pruning
+46. Live helper consolidation and polish
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -57,7 +61,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: Complete
+- Active stage: Stage 44
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
@@ -75,6 +79,8 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - old internal compatibility helpers such as `meow-multiedit-*`,
     `meow-multicursor-spawn`, and `meow-visual-search-next-or-multicursor`
     still exist, but normal `m` plus multicursor `.` / `,` / `-` is now the canonical user-facing flow
+  - cleanup stages 43 through 46 are planned to audit, delete, and
+    consolidate that leftover surface without redesigning the workflow
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:
@@ -146,6 +152,17 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - bound visual `I` and `A` and made them dispatch to block-specific replay-backed insert and append commands
   - extended the replay engine so block insert sessions can target a column on each selected line, not just a raw marker position
   - added real `C-v j I ... ESC` and `C-v j A ... ESC` regression coverage
+- Verification:
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 43 Summary
+- Goal: audit the remaining compatibility surface and lock in canonical key-sequence safety nets before deleting anything.
+- Implemented scope:
+  - added real key-sequence regressions for the canonical multicursor `m w .` flow, visual `m` entry, and jump-char jump-history participation
+  - kept the block-visual insert coverage on the shipped `C-v j I ... ESC` path
+  - audited the remaining multiedit and multicursor compatibility helpers into keep / refactor / delete buckets for the next cleanup stages
+  - identified `meow-visual-search-next-or-multicursor` as the only confirmed delete candidate in the current audit slice
 - Verification:
   - batch load smoke test passes
   - full ERT suite passes
