@@ -61,7 +61,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: Stage 44
+- Active stage: None
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
@@ -76,12 +76,11 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - search motions as operator targets
   - full Vim search options such as `*`, `#`, and search offset syntax
   - cross-session persistence of jump history
-  - old internal compatibility helpers such as `meow-multiedit-*`,
-    `meow-multicursor-spawn`, and `meow-visual-search-next-or-multicursor`
-    still exist, but normal `m` plus multicursor `.` / `,` / `-` is now the canonical user-facing flow
-  - cleanup stages 44 through 46 remain planned to delete and
-    consolidate the leftover surface without redesigning the workflow;
-    Stage 43 is complete and Stage 44 is active
+  - internal bridging helpers such as `meow-multiedit-*` and
+    `meow-multicursor-spawn` still exist because the canonical
+    multicursor workflow routes through them internally, even though
+    normal `m` plus multicursor `.` / `,` / `-` remains the only
+    shipped builder flow
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:
@@ -165,6 +164,42 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - audited the remaining multiedit and multicursor compatibility helpers into keep / refactor / delete buckets for the next cleanup stages
   - identified `meow-visual-search-next-or-multicursor` as the only confirmed delete candidate in the current audit slice
 - Verification:
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 44 Summary
+- Goal: remove the confirmed dead compatibility entry points from the multiedit and multicursor flow without changing the shipped builder behavior.
+- Implemented scope:
+  - deleted the legacy `meow-visual-search-next-or-multicursor` dispatcher, which was no longer reachable from the shipped keymaps or state flow
+  - removed the dead `meow-keymap.el` declaration and the stale multiedit post-command allowlist entry that existed only to preserve that dispatcher
+  - replaced the remaining Stage 44 helper-style builder regressions with canonical `mw.,d` and `mw.-.d` key-sequence coverage
+  - added a direct regression that asserts the deleted dispatcher is no longer defined
+- Verification:
+  - focused multicursor and multiedit regressions pass
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 45 Summary
+- Goal: prune the next confirmed-dead upstream command slice without touching the live Vim workflow.
+- Implemented scope:
+  - removed the unreachable `meow-open-above`, `meow-open-above-visual`, `meow-open-below`, and `meow-open-below-visual` commands
+  - removed the dead `meow-select-on-open` custom, the stale `meow-open-above` and `meow-open-below` indicator names, and the stale beacon-state remaps that only referenced those deleted commands
+  - removed the obsolete tutor text that still documented the deleted open-above and open-below commands
+  - added a regression that asserts the deleted commands, their indicator entries, and their beacon remaps stay gone
+- Verification:
+  - focused replay, operator, jump, and cleanup regressions pass
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 46 Summary
+- Goal: consolidate the remaining live visual and teardown helpers without changing the shipped Vim-style behavior.
+- Implemented scope:
+  - added explicit regressions for block-visual exit and multicursor-visual exit without an active builder so teardown behavior is pinned directly
+  - extracted a shared visual cleanup helper and reused it in block replay startup, visual exit, multicursor visual exit, multicursor cancel, and multiedit clear
+  - removed the duplicated rectangle-mark and region-teardown branches from those live exit paths
+  - reviewed `README.md` and `AGENTS.md` and left them unchanged because this stage did not alter user-facing behavior or scope
+- Verification:
+  - focused replay and teardown regressions pass
   - batch load smoke test passes
   - full ERT suite passes
 

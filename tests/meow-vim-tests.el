@@ -288,45 +288,36 @@
     (should-not (region-active-p))
     (should (equal (buffer-string) " foo ()\n bar ()\n"))))
 
-(ert-deftest meow-multicursor-comma-removes-newest-match ()
+(ert-deftest meow-no-legacy-visual-search-multicursor-dispatcher ()
+  (should-not (fboundp 'meow-visual-search-next-or-multicursor)))
+
+(ert-deftest meow-no-legacy-open-above-below-commands ()
+  (dolist (command '(meow-open-above
+                     meow-open-above-visual
+                     meow-open-below
+                     meow-open-below-visual))
+    (should-not (fboundp command))
+    (should-not (assq command meow-command-to-short-name-list)))
+  (should-not (lookup-key meow-beacon-state-keymap [remap meow-open-above]))
+  (should-not (lookup-key meow-beacon-state-keymap [remap meow-open-below])))
+
+(ert-deftest meow-multicursor-comma-removes-newest-match-via-key-sequence ()
   (meow-test-with-buffer "foo xx foo yy foo\n"
-    (let ((range-1 (meow-test-range-of "foo" 1))
-          (range-2 (meow-test-range-of "foo" 2)))
-      (call-interactively #'meow-multicursor-start)
-      (meow-test-start-charwise-multicursor-visual range-1)
-      (call-interactively #'meow-multicursor-match-next)
-      (call-interactively #'meow-multicursor-unmatch-last)
-      (should (equal meow--multiedit-primary range-1))
-      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
-                     (list range-1)))
-      (should (= (length meow--multiedit-overlays) 0)))))
-
-(ert-deftest meow-multicursor-dash-skips-next-match ()
-  (meow-test-with-buffer "foo aa foo bb foo cc foo\n"
-    (let ((range-1 (meow-test-range-of "foo" 1))
-          (range-2 (meow-test-range-of "foo" 2))
-          (range-4 (meow-test-range-of "foo" 4)))
-      (call-interactively #'meow-multicursor-start)
-      (meow-test-start-charwise-multicursor-visual range-1)
-      (call-interactively #'meow-multicursor-match-next)
-      (call-interactively #'meow-multicursor-skip-match)
-      (call-interactively #'meow-multicursor-match-next)
-      (should (equal meow--multiedit-primary range-4))
-      (should (equal (meow-test-sort-ranges meow--multiedit-targets)
-                     (list range-1 range-2 range-4))))))
-
-(ert-deftest meow-multicursor-new-flow-v-promotes-to-normal-multicursor ()
-  (meow-test-with-buffer "foo xx foo\n"
-    (call-interactively #'meow-multicursor-start)
-    (meow-test-start-charwise-multicursor-visual (meow-test-range-of "foo" 1))
-    (call-interactively #'meow-multicursor-match-next)
-    (call-interactively #'meow-multicursor-visual-exit)
-    (should (meow-multicursor-mode-p))
-    (should meow--multicursor-active)
+    (execute-kbd-macro (kbd "mw.,d"))
+    (should (meow-normal-mode-p))
+    (should-not meow--multicursor-active)
+    (should-not (meow--multiedit-active-p))
     (should-not (region-active-p))
-    (should (= (length meow--beacon-overlays) 1))
-    (should (meow--multiedit-active-p))
-    (should (= (length meow--multiedit-overlays) 2))))
+    (should (equal (buffer-string) " xx foo yy foo\n"))))
+
+(ert-deftest meow-multicursor-dash-skips-next-match-via-key-sequence ()
+  (meow-test-with-buffer "foo aa foo bb foo cc foo\n"
+    (execute-kbd-macro (kbd "mw.-.d"))
+    (should (meow-normal-mode-p))
+    (should-not meow--multicursor-active)
+    (should-not (meow--multiedit-active-p))
+    (should-not (region-active-p))
+    (should (equal (buffer-string) " aa  bb foo cc \n"))))
 
 (ert-deftest meow-multicursor-new-flow-normal-delete-consumes-marked-targets ()
   (meow-test-with-buffer "foo xx foo yy foo\n"
@@ -1303,6 +1294,15 @@
     (should (equal (extract-rectangle (region-beginning) (region-end))
                    '("2")))))
 
+(ert-deftest meow-visual-block-exit-clears-rectangle-mode ()
+  (meow-test-with-buffer "012345\nabcdef\n"
+    (forward-char 2)
+    (call-interactively #'meow-visual-block-start)
+    (call-interactively #'meow-visual-exit)
+    (should (meow-normal-mode-p))
+    (should-not (region-active-p))
+    (should-not (bound-and-true-p rectangle-mark-mode))))
+
 (ert-deftest meow-visual-block-movement-preserves-column ()
   (meow-test-with-buffer "012345\nabcdef\nuvwxyz\n"
     (forward-char 3)
@@ -1337,6 +1337,17 @@
     (should (meow-normal-mode-p))
     (should (equal (buffer-string)
                    "012Z345\nabcZdef\nuvwxyz\n"))))
+
+(ert-deftest meow-multicursor-visual-exit-without-builder-keeps-multicursor ()
+  (meow-test-with-buffer "012345\nabcdef\n"
+    (call-interactively #'meow-multicursor-start)
+    (forward-char 2)
+    (call-interactively #'meow-visual-block-start)
+    (call-interactively #'meow-multicursor-visual-exit)
+    (should (meow-multicursor-mode-p))
+    (should meow--multicursor-active)
+    (should-not (region-active-p))
+    (should-not (bound-and-true-p rectangle-mark-mode))))
 
 (ert-deftest meow-jump-back-and-forward-round-trip ()
   (meow-test-with-buffer "alpha\nbeta\ngamma\n"

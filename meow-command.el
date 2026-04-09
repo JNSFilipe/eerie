@@ -766,68 +766,6 @@ With argument ARG, do this that many times."
   (goto-char (line-end-position))
   (meow--enter-insert-state))
 
-(defun meow-open-above ()
-  "Open a newline above and switch to INSERT state."
-  (interactive)
-  (if meow--temp-normal
-      (progn
-        (message "Quit temporary normal mode")
-      (meow--switch-state 'motion))
-    (meow--enter-insert-state)
-    (goto-char (line-beginning-position))
-    (save-mark-and-excursion
-      (newline))
-    ;; (save-mark-and-excursion
-    ;;   (meow--insert "\n"))
-    (indent-according-to-mode)
-    (setq-local meow--insert-pos (point))
-    (when meow-select-on-open
-      (setq-local meow--insert-activate-mark t))))
-
-(defun meow-open-above-visual ()
-  "Open a newline above and switch to INSERT state."
-  (interactive)
-  (if meow--temp-normal
-      (progn
-        (message "Quit temporary normal mode")
-      (meow--switch-state 'motion))
-    (meow--enter-insert-state)
-    (goto-char (meow--visual-line-beginning-position))
-    (save-mark-and-excursion
-      (newline))
-    (indent-according-to-mode)
-    (setq-local meow--insert-pos (point))
-    (when meow-select-on-open
-      (setq-local meow--insert-activate-mark t))))
-
-(defun meow-open-below ()
-  "Open a newline below and switch to INSERT state."
-  (interactive)
-  (if meow--temp-normal
-      (progn
-        (message "Quit temporary normal mode")
-      (meow--switch-state 'motion))
-    (meow--enter-insert-state)
-    (goto-char (line-end-position))
-    (meow--execute-kbd-macro "RET")
-    (setq-local meow--insert-pos (point))
-    (when meow-select-on-open
-      (setq-local meow--insert-activate-mark t))))
-
-(defun meow-open-below-visual ()
-  "Open a newline below and switch to INSERT state."
-  (interactive)
-  (if meow--temp-normal
-      (progn
-        (message "Quit temporary normal mode")
-      (meow--switch-state 'motion))
-    (meow--enter-insert-state)
-    (goto-char (meow--visual-line-end-position))
-    (meow--execute-kbd-macro "RET")
-    (setq-local meow--insert-pos (point))
-    (when meow-select-on-open
-      (setq-local meow--insert-activate-mark t))))
-
 (defun meow-change ()
   "Kill current selection and switch to INSERT state.
 
@@ -1880,16 +1818,25 @@ for the current line and SECONDARY is the list of other line targets."
       (user-error "Block insert target disappeared"))
     (cons primary (nreverse secondary))))
 
+(defun meow--clear-visual-region ()
+  "Clear the active VISUAL region and rectangle state."
+  (when (bound-and-true-p rectangle-mark-mode)
+    (rectangle-mark-mode -1))
+  (when (region-active-p)
+    (meow--cancel-selection)))
+
+(defun meow--finish-visual-exit (state)
+  "Clear the active VISUAL state and switch to STATE."
+  (meow--clear-visual-region)
+  (meow--switch-state state))
+
 (defun meow--visual-block-start-replay (command)
   "Start block VISUAL replay-backed insert for COMMAND.
 
 COMMAND is either `insert' or `append'."
   (pcase-let ((`(,primary . ,secondary)
                (meow--visual-block-replay-targets command)))
-    (when (bound-and-true-p rectangle-mark-mode)
-      (rectangle-mark-mode -1))
-    (when (region-active-p)
-      (meow--cancel-selection))
+    (meow--clear-visual-region)
     (unless (meow--replay-target-goto primary)
       (user-error "Block insert target disappeared"))
     (meow--multiedit-start-replay command secondary)))
@@ -1911,7 +1858,6 @@ COMMAND is either `insert' or `append'."
                       meow-visual-bounds-of-thing
                       meow-multicursor-spawn
                       meow-multicursor-visual-exit
-                      meow-visual-search-next-or-multicursor
                       meow-visual-exit)))
     (meow--multiedit-deactivate)))
 
@@ -2175,9 +2121,7 @@ COMMAND is either `insert' or `append'."
   (interactive)
   (meow--multiedit-reset-state)
   (meow--multicursor-reset-state)
-  (when (region-active-p)
-    (meow--cancel-selection))
-  (meow--switch-state 'normal))
+  (meow--finish-visual-exit 'normal))
 
 (defun meow--multicursor-primary-offset ()
   "Return the current point offset inside the primary multi-edit target."
@@ -2497,20 +2441,13 @@ exists on the current line, move to the end of the line."
   (interactive)
   (if (meow--multiedit-active-p)
       (meow-multicursor-spawn)
-    (progn
-      (when (bound-and-true-p rectangle-mark-mode)
-        (rectangle-mark-mode -1))
-      (when (region-active-p)
-        (meow--cancel-selection))
-      (meow--switch-state 'multicursor))))
+    (meow--finish-visual-exit 'multicursor)))
 
 (defun meow-multiedit-clear ()
   "Clear the current multi-edit session and return to NORMAL."
   (interactive)
   (meow--multiedit-reset-state)
-  (when (region-active-p)
-    (meow--cancel-selection))
-  (meow--switch-state 'normal))
+  (meow--finish-visual-exit 'normal))
 
 (defun meow-multiedit-reverse-direction ()
   "Reverse multi-edit builder direction.
@@ -2557,13 +2494,6 @@ charwise VISUAL selection first."
         (meow--multiedit-apply-target candidate))
     (message "No more %s multi-edit matches" meow--multiedit-direction)))
 
-(defun meow-visual-search-next-or-multicursor ()
-  "Repeat the last visual search, or spawn multi-cursors from multi-edit."
-  (interactive)
-  (if (meow--multiedit-active-p)
-      (meow-multicursor-spawn)
-    (meow-visual-search-next)))
-
 (defun meow-visual-exit ()
   "Leave VISUAL state and return to NORMAL."
   (interactive)
@@ -2571,13 +2501,10 @@ charwise VISUAL selection first."
       (if meow--multicursor-active
           (meow-multicursor-spawn)
         (meow-multiedit-clear))
-    (progn
-      (when (bound-and-true-p rectangle-mark-mode)
-        (rectangle-mark-mode -1))
-      (meow--switch-state
-       (if meow--multicursor-active
-           'multicursor
-         'normal)))))
+    (meow--finish-visual-exit
+     (if meow--multicursor-active
+         'multicursor
+       'normal))))
 
 (defun meow--visual-move-char (command)
   "Run charwise visual COMMAND, starting VISUAL if necessary."

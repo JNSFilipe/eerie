@@ -123,8 +123,6 @@
 
    \\[meow-insert]   - Insert cursor before the selection.
    \\[meow-append]   - Insert cursor after the selection.
-   \\[meow-open-above]   - Insert new line above the current line.
-   \\[meow-open-below]   - Insert new line below the current line.
    \\[meow-join] \\[meow-append] - Insert cursor at the start of the line.
    \\[meow-line] \\[meow-append] - Insert cursor at the end of the line.
 

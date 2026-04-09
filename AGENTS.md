@@ -74,4 +74,9 @@
 - Yank operators such as `yy` should preserve the original cursor position after copying.
 - `%` should work for nested delimiters and when point is just after a closing delimiter at end of line or end of buffer.
 - The interactive manual smoke buffer lives at `tests/meow-interactive-demo.el` and includes visible-jump targets for `f` and `w`.
+- Cleanup stages 43 through 46 are complete; the dead
+  `meow-visual-search-next-or-multicursor` dispatcher and the
+  unreachable `meow-open-above` / `meow-open-below` command family are
+  gone, while `meow-multiedit-*` and `meow-multicursor-spawn` remain as
+  internal bridge helpers for the shipped multicursor flow.
 - Counts, search-repeat motion targets inside operators, word text-object aliases like `iw` / `aw`, fuller Vim search syntax, bulk multi-edit builders, full multi-target yank, multi-edit text-object retargeting under a dedicated binding, linewise/blockwise multicursor match seeds, broader arbitrary interactive multi-cursor flows beyond the current mirrored normal/visual replay coverage, and full Vim-style block `c` semantics remain deferred until they exist.

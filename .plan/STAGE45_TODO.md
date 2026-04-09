@@ -20,14 +20,28 @@ the Stage 43 keep list.
 
 ## Tasks
 
-- [ ] Remove any helpers this pass proves unreachable, excluding
+- [x] Remove any helpers this pass proves unreachable, excluding
   `meow-visual-search-next-or-multicursor`
-- [ ] Remove the matching stale references from `meow-var.el`,
+- [x] Remove the matching stale references from `meow-var.el`,
   `meow-beacon.el`, and `meow-tutor.el` for the helpers actually
   deleted in this stage
-- [ ] Add or adjust tests for any helper that turns out to still be
+- [x] Add or adjust tests for any helper that turns out to still be
   live after the first pruning pass
-- [ ] Re-run the focused replay, operator, and jump regressions after
+- [x] Re-run the focused replay, operator, and jump regressions after
   each prune
-- [ ] Re-run the batch load smoke test
-- [ ] Re-run the full ERT suite
+- [x] Re-run the batch load smoke test
+- [x] Re-run the full ERT suite
+
+## Completed
+
+- Removed the unreachable `meow-open-above`, `meow-open-above-visual`,
+  `meow-open-below`, and `meow-open-below-visual` command family from
+  `meow-command.el`.
+- Removed the dead `meow-select-on-open` custom, the stale
+  `meow-open-above` and `meow-open-below` indicator labels, and the
+  stale beacon-state remaps that only referenced those deleted
+  commands.
+- Removed the obsolete tutor text that still documented the deleted
+  open-above and open-below commands.
+- Added a regression that asserts the deleted commands, their
+  indicator entries, and their beacon remaps stay gone.
