@@ -4,6 +4,22 @@ Eerie is a hard fork of [Meow](https://github.com/meow-edit/meow) and
 ships a Vim-style modal experience by default under the `eerie-*` Lisp
 surface.
 
+## Installation
+
+On Emacs 30+, `use-package` can install Eerie directly through the
+built-in `:vc` support:
+
+```emacs-lisp
+(use-package eerie
+  :vc (:url "https://github.com/JNSFilipe/meow"
+       :rev :newest)
+  :config
+  (eerie-global-mode 1))
+```
+
+The repository URL still uses the old GitHub path, but the installed
+package surface is `eerie`.
+
 ## Quick Start
 
 ```emacs-lisp
