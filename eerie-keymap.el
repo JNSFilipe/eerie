@@ -1,4 +1,4 @@
-;;; meow-keymap.el --- Default keybindings for Meow  -*- lexical-binding: t; -*-
+;;; eerie-keymap.el --- Default keybindings for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -22,30 +22,30 @@
 
 ;;; Code:
 
-(require 'meow-var)
+(require 'eerie-var)
 
-(declare-function meow-describe-key "meow-command")
-(declare-function meow-goto-line-end "meow-command")
-(declare-function meow-jump-char "meow-command")
-(declare-function meow-jump-matching "meow-command")
-(declare-function meow-jump-word-occurrence "meow-command")
-(declare-function meow-next-space "meow-command")
-(declare-function meow-multicursor-start "meow-command")
-(declare-function meow-multicursor-match-next "meow-command")
-(declare-function meow-multicursor-unmatch-last "meow-command")
-(declare-function meow-multicursor-skip-match "meow-command")
-(declare-function meow-visual-enter-multicursor "meow-command")
-(declare-function meow-multicursor-visual-exit "meow-command")
-(declare-function meow-multiedit-match-next "meow-command")
-(declare-function meow-multiedit-unmatch-last "meow-command")
-(declare-function meow-multiedit-reverse-direction "meow-command")
-(declare-function meow-multiedit-skip-match "meow-command")
-(declare-function meow-multicursor-cancel "meow-command")
-(declare-function meow-visual-jump-char "meow-command")
-(declare-function meow-visual-goto-line-end "meow-command")
-(declare-function meow-visual-jump-matching "meow-command")
-(declare-function meow-end-or-call-kmacro "meow-command")
-(declare-function meow-end-kmacro "meow-command")
+(declare-function meow-describe-key "eerie-command")
+(declare-function meow-goto-line-end "eerie-command")
+(declare-function meow-jump-char "eerie-command")
+(declare-function meow-jump-matching "eerie-command")
+(declare-function meow-jump-word-occurrence "eerie-command")
+(declare-function meow-next-space "eerie-command")
+(declare-function meow-multicursor-start "eerie-command")
+(declare-function meow-multicursor-match-next "eerie-command")
+(declare-function meow-multicursor-unmatch-last "eerie-command")
+(declare-function meow-multicursor-skip-match "eerie-command")
+(declare-function meow-visual-enter-multicursor "eerie-command")
+(declare-function meow-multicursor-visual-exit "eerie-command")
+(declare-function meow-multiedit-match-next "eerie-command")
+(declare-function meow-multiedit-unmatch-last "eerie-command")
+(declare-function meow-multiedit-reverse-direction "eerie-command")
+(declare-function meow-multiedit-skip-match "eerie-command")
+(declare-function meow-multicursor-cancel "eerie-command")
+(declare-function meow-visual-jump-char "eerie-command")
+(declare-function meow-visual-goto-line-end "eerie-command")
+(declare-function meow-visual-jump-matching "eerie-command")
+(declare-function meow-end-or-call-kmacro "eerie-command")
+(declare-function meow-end-kmacro "eerie-command")
 
 (defvar meow-normal-g-prefix-keymap
   (let ((keymap (make-sparse-keymap)))
@@ -264,5 +264,5 @@
 (define-key mode-specific-map (kbd "/") 'meow-keypad-describe-key)
 (define-key mode-specific-map (kbd "?") 'meow-cheatsheet)
 
-(provide 'meow-keymap)
-;;; meow-keymap.el ends here
+(provide 'eerie-keymap)
+;;; eerie-keymap.el ends here

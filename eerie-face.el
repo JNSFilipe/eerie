@@ -1,4 +1,4 @@
-;;; meow-face.el --- Faces for Meow  -*- lexical-binding: t; -*-
+;;; eerie-face.el --- Faces for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -22,9 +22,9 @@
 
 ;;; Code:
 
-(require 'meow-var)
+(require 'eerie-var)
 
-(declare-function meow--mix-color "meow-util")
+(declare-function meow--mix-color "eerie-util")
 
 (defface meow-normal-indicator
   '((((class color) (background dark))
@@ -279,5 +279,5 @@ This function will be called after each time the theme changed."
                             :extend nil
                             :background (car (meow--mix-color bc s 1)))))))
 
-(provide 'meow-face)
-;;; meow-face.el ends here
+(provide 'eerie-face)
+;;; eerie-face.el ends here

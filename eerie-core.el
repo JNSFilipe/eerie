@@ -1,4 +1,4 @@
-;;; meow-core.el --- Mode definitions for Meow  -*- lexical-binding: t; -*-
+;;; eerie-core.el --- Mode definitions for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -26,14 +26,14 @@
 (require 'cl-lib)
 (require 'subr-x)
 
-(require 'meow-util)
-(require 'meow-command)
-(require 'meow-keypad)
-(require 'meow-var)
-(require 'meow-esc)
-(require 'meow-shims)
-(require 'meow-beacon)
-(require 'meow-helpers)
+(require 'eerie-util)
+(require 'eerie-command)
+(require 'eerie-keypad)
+(require 'eerie-var)
+(require 'eerie-esc)
+(require 'eerie-shims)
+(require 'eerie-beacon)
+(require 'eerie-helpers)
 
 (meow-define-state insert
   "Meow INSERT state minor mode."
@@ -239,5 +239,5 @@ there's no chance for meow to call an init function."
   (meow-esc-mode -1)
   (advice-remove 'enable-theme 'meow--enable-theme-advice))
 
-(provide 'meow-core)
-;;; meow-core.el ends here
+(provide 'eerie-core)
+;;; eerie-core.el ends here

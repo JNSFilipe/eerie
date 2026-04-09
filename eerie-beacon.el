@@ -1,4 +1,4 @@
-;;; meow-beacons.el --- Batch Macro state in Meow  -*- lexical-binding: t; -*-
+;;; eerie-beacons.el --- Batch Macro state in Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -22,24 +22,24 @@
 
 ;;; Code:
 
-(require 'meow-util)
-(require 'meow-var)
+(require 'eerie-util)
+(require 'eerie-var)
 (require 'kmacro)
 (require 'seq)
 
-(declare-function meow-replace "meow-command")
-(declare-function meow-insert "meow-command")
-(declare-function meow-change "meow-command")
-(declare-function meow-change-char "meow-command")
-(declare-function meow-append "meow-command")
-(declare-function meow-kill "meow-command")
-(declare-function meow--cancel-selection "meow-command")
-(declare-function meow--selection-fallback "meow-command")
-(declare-function meow--make-selection "meow-command")
-(declare-function meow--select "meow-command")
-(declare-function meow-beacon-mode "meow-core")
-(declare-function meow-change-save "meow-command")
-(declare-function meow-escape-or-normal-modal "meow-command")
+(declare-function meow-replace "eerie-command")
+(declare-function meow-insert "eerie-command")
+(declare-function meow-change "eerie-command")
+(declare-function meow-change-char "eerie-command")
+(declare-function meow-append "eerie-command")
+(declare-function meow-kill "eerie-command")
+(declare-function meow--cancel-selection "eerie-command")
+(declare-function meow--selection-fallback "eerie-command")
+(declare-function meow--make-selection "eerie-command")
+(declare-function meow--select "eerie-command")
+(declare-function meow-beacon-mode "eerie-core")
+(declare-function meow-change-save "eerie-command")
+(declare-function meow-escape-or-normal-modal "eerie-command")
 
 (defvar-local meow--beacon-overlays nil)
 (defvar-local meow--beacon-insert-enter-key nil)
@@ -542,5 +542,5 @@ Only the content in real selection will be saved to `kill-ring'."
   "Noop, to disable some keybindings in cursor state."
   (interactive))
 
-(provide 'meow-beacon)
-;;; meow-beacon.el ends here
+(provide 'eerie-beacon)
+;;; eerie-beacon.el ends here

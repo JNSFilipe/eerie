@@ -1,4 +1,4 @@
-;;; meow-cheatsheet.el --- Cheatsheet for Meow  -*- lexical-binding: t; -*-
+;;; eerie-cheatsheet.el --- Cheatsheet for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -22,9 +22,9 @@
 
 ;;; Code:
 
-(require 'meow-var)
-(require 'meow-util)
-(require 'meow-cheatsheet-layout)
+(require 'eerie-var)
+(require 'eerie-util)
+(require 'eerie-cheatsheet-layout)
 
 (defconst meow--cheatsheet-note
   (format "
@@ -138,5 +138,5 @@ Currently `meow-cheatsheet-layout-qwerty', `meow-cheatsheet-layout-dvorak',
       (setq buffer-read-only t))
     (switch-to-buffer buf)))))
 
-(provide 'meow-cheatsheet)
-;;; meow-cheatsheet.el ends here
+(provide 'eerie-cheatsheet)
+;;; eerie-cheatsheet.el ends here

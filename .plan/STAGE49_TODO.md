@@ -7,15 +7,21 @@ so the renamed package loads again.
 
 ## Tasks
 
-- [ ] Rename `meow.el` to `eerie.el`
-- [ ] Rename every shipped `meow-*.el` module to `eerie-*.el`
-- [ ] Update file headers, `require`, `provide`, and `declare-function`
+- [x] Rename `meow.el` to `eerie.el`
+- [x] Rename every shipped `meow-*.el` module to `eerie-*.el`
+- [x] Update file headers, `require`, `provide`, and `declare-function`
   references to `eerie-*`
-- [ ] Update `Eask` package metadata, file globs, and test script to the
+- [x] Update `Eask` package metadata, file globs, and test script to the
   renamed package
-- [ ] Run `emacs -Q --batch -L . -l eerie.el`
-- [ ] Commit the renamed module graph
+- [x] Run `emacs -Q --batch -L . -l eerie.el`
+- [x] Commit the renamed module graph
 
 ## Completed
 
-- None yet.
+- Renamed the shipped entry point and module graph from `meow*.el` to
+  `eerie*.el`.
+- Updated the file headers plus `require`, `provide`, and module-string
+  references needed for the renamed feature graph to load.
+- Updated `Eask` to package `eerie`, load `eerie.el`, glob `eerie-*.el`,
+  and run `tests/eerie-vim-tests.el`.
+- Verified `emacs -Q --batch -L . -l eerie.el` passes.

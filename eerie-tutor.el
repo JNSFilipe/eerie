@@ -1,4 +1,4 @@
-;;; meow-tutor.el --- Tutor for Meow  -*- lexical-binding: t; -*-
+;;; eerie-tutor.el --- Tutor for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -24,7 +24,7 @@
 
 ;;; Code:
 
-(require 'meow-var)
+(require 'eerie-var)
 
 (defconst meow--tutor-content
   "
@@ -646,5 +646,5 @@
       (display-line-numbers-mode))
     (switch-to-buffer buf)))
 
-(provide 'meow-tutor)
-;;; meow-tutor.el ends here
+(provide 'eerie-tutor)
+;;; eerie-tutor.el ends here

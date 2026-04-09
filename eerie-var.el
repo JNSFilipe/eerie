@@ -1,4 +1,4 @@
-;;; meow-var.el --- Meow variables  -*- lexical-binding: t; -*-
+;;; eerie-var.el --- Meow variables  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -893,5 +893,5 @@ It is used to restore its value when disable `meow'.")
 (defvar meow--backup-var-delete-activate-region
   delete-active-region)
 
-(provide 'meow-var)
-;;; meow-var.el ends here
+(provide 'eerie-var)
+;;; eerie-var.el ends here

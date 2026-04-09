@@ -1,4 +1,4 @@
-;;; meow-esc.el --- make ESC works in TUI       -*- lexical-binding: t; -*-
+;;; eerie-esc.el --- make ESC works in TUI       -*- lexical-binding: t; -*-
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -75,5 +75,5 @@
           (start-kbd-macro t t)))
     map))
 
-(provide 'meow-esc)
-;;; meow-esc.el ends here
+(provide 'eerie-esc)
+;;; eerie-esc.el ends here

@@ -1,4 +1,4 @@
-;;; meow.el --- Yet Another modal editing -*- lexical-binding: t; -*-
+;;; eerie.el --- Yet Another modal editing -*- lexical-binding: t; -*-
 
 ;; Author: Shi Tianshu
 ;; Keywords: convenience, modal-editing
@@ -25,22 +25,22 @@
 
 ;;; Commentary:
 
-;; Enable `meow-global-mode' to activate modal editing.
+;; Enable `eerie-global-mode' to activate modal editing.
 
 ;;; Code:
 
 ;;; Modules
 
-(require 'meow-var)
-(require 'meow-face)
-(require 'meow-keymap)
-(require 'meow-helpers)
-(require 'meow-util)
-(require 'meow-keypad)
-(require 'meow-command)
-(require 'meow-core)
-(require 'meow-cheatsheet)
-(require 'meow-tutor)
+(require 'eerie-var)
+(require 'eerie-face)
+(require 'eerie-keymap)
+(require 'eerie-helpers)
+(require 'eerie-util)
+(require 'eerie-keypad)
+(require 'eerie-command)
+(require 'eerie-core)
+(require 'eerie-cheatsheet)
+(require 'eerie-tutor)
 
-(provide 'meow)
-;;; meow.el ends here
+(provide 'eerie)
+;;; eerie.el ends here

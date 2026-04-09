@@ -1,4 +1,4 @@
-;;; meow-util.el --- Utilities for Meow  -*- lexical-binding: t; -*-
+;;; eerie-util.el --- Utilities for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,31 +27,31 @@
 (require 'seq)
 (require 'color)
 
-(require 'meow-var)
-(require 'meow-keymap)
-(require 'meow-face)
+(require 'eerie-var)
+(require 'eerie-keymap)
+(require 'eerie-face)
 
 ;; Modes
 
 (defvar meow-normal-mode)
 
-(declare-function meow--remove-match-highlights "meow-visual")
-(declare-function meow--remove-expand-highlights "meow-visual")
-(declare-function meow--remove-search-highlight "meow-visual")
-(declare-function meow-insert-mode "meow-core")
-(declare-function meow-motion-mode "meow-core")
-(declare-function meow-normal-mode "meow-core")
-(declare-function meow-visual-mode "meow-core")
-(declare-function meow-multicursor-visual-mode "meow-core")
-(declare-function meow-keypad-mode "meow-core")
-(declare-function meow-beacon-mode "meow-core")
-(declare-function meow-mode "meow-core")
-(declare-function meow--keypad-format-keys "meow-keypad")
-(declare-function meow--keypad-format-prefix "meow-keypad")
-(declare-function meow-minibuffer-quit "meow-command")
-(declare-function meow--enable "meow-core")
-(declare-function meow--beacon-apply-command "meow-beacon")
-(declare-function meow-keypad-start-with "meow-keypad")
+(declare-function meow--remove-match-highlights "eerie-visual")
+(declare-function meow--remove-expand-highlights "eerie-visual")
+(declare-function meow--remove-search-highlight "eerie-visual")
+(declare-function meow-insert-mode "eerie-core")
+(declare-function meow-motion-mode "eerie-core")
+(declare-function meow-normal-mode "eerie-core")
+(declare-function meow-visual-mode "eerie-core")
+(declare-function meow-multicursor-visual-mode "eerie-core")
+(declare-function meow-keypad-mode "eerie-core")
+(declare-function meow-beacon-mode "eerie-core")
+(declare-function meow-mode "eerie-core")
+(declare-function meow--keypad-format-keys "eerie-keypad")
+(declare-function meow--keypad-format-prefix "eerie-keypad")
+(declare-function meow-minibuffer-quit "eerie-command")
+(declare-function meow--enable "eerie-core")
+(declare-function meow--beacon-apply-command "eerie-beacon")
+(declare-function meow-keypad-start-with "eerie-keypad")
 
 (defun meow--execute-kbd-macro (kbd-macro-or-defun)
   "Execute the function bound to `KBD-MACRO-OR-DEFUN'. If `KBD-MACRO-OR-DEFUN' is a string,
@@ -233,7 +233,7 @@ Looks up the state in meow-replace-state-name-list"
     (unless (bound-and-true-p no-hook)
       (run-hook-with-args 'meow-switch-state-hook state))))
 
-(defvar meow--beacon-apply-command "meow-beacon")
+(defvar meow--beacon-apply-command "eerie-beacon")
 
 (defun meow--exit-keypad-state ()
   "Exit keypad state."
@@ -732,5 +732,5 @@ that bound to DEF. Otherwise, return DEF."
    ((null meow-keypad-leader-dispatch)
     (alist-get 'leader meow-keymap-alist))))
 
-(provide 'meow-util)
-;;; meow-util.el ends here
+(provide 'eerie-util)
+;;; eerie-util.el ends here

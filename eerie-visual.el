@@ -1,4 +1,4 @@
-;;; meow-visual.el --- Visual effect in Meow  -*- lexical-binding: t; -*-
+;;; eerie-visual.el --- Visual effect in Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,8 +27,8 @@
 (require 'subr-x)
 (require 'pcase)
 
-(require 'meow-var)
-(require 'meow-util)
+(require 'eerie-var)
+(require 'eerie-util)
 
 (declare-function hl-line-highlight "hl-line")
 
@@ -207,5 +207,5 @@ Value is a list of (last-regexp last-pos idx cnt).")
                   0)))
         (meow--highlight-num-positions num)))))
 
-(provide 'meow-visual)
-;;; meow-visual.el ends here
+(provide 'eerie-visual)
+;;; eerie-visual.el ends here

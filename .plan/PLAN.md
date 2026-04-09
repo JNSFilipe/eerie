@@ -66,7 +66,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: 49
+- Active stage: 50
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
@@ -126,6 +126,16 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - verified the focused renamed test fails red because the `eerie` package surface does not exist yet
 - Verification:
   - focused red test fails with `Cannot open load file ... eerie`, confirming the rename bootstrap is wired to the future entry point
+
+## Stage 49 Summary
+- Goal: rename the shipped entry point and module graph from `meow*.el` to `eerie*.el` and make the renamed package loadable again.
+- Implemented scope:
+  - renamed every shipped `meow-*.el` module plus `meow.el` to `eerie*.el`
+  - updated file headers plus `require`, `provide`, and module-string references to the new `eerie-*` feature graph
+  - updated `Eask` package metadata, file globs, and test script to the renamed entry point and test harness
+  - switched the entry-point commentary to `eerie-global-mode`
+- Verification:
+  - `emacs -Q --batch -L . -l eerie.el` passes
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:

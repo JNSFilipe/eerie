@@ -1,4 +1,4 @@
-;;; meow-thing.el --- Calculate bounds of thing in Meow  -*- lexical-binding: t -*-
+;;; eerie-thing.el --- Calculate bounds of thing in Meow  -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -20,11 +20,11 @@
 (require 'cl-lib)
 (require 'subr-x)
 
-(require 'meow-var)
-(require 'meow-util)
+(require 'eerie-var)
+(require 'eerie-util)
 
-(declare-function meow--visual-line-end-position "meow-command")
-(declare-function meow--visual-line-beginning-position "meow-command")
+(declare-function meow--visual-line-end-position "eerie-command")
+(declare-function meow--visual-line-beginning-position "eerie-command")
 
 (defun meow--bounds-of-symbol ()
   (when-let* ((bounds (bounds-of-thing-at-point meow-symbol-thing)))
@@ -367,5 +367,5 @@ PAIR-REGEXP-EXPR contains two regexp lists. The regexp in first
         (funcall (car bounds-fn-pair))
       (funcall (cdr bounds-fn-pair)))))
 
-(provide 'meow-thing)
-;;; meow-thing.el ends here
+(provide 'eerie-thing)
+;;; eerie-thing.el ends here

@@ -1,16 +1,16 @@
 ;; -*- mode: eask; lexical-binding: t -*-
 
-(package "meow"
+(package "eerie"
          "1.5.0"
          "Yet Another modal editing")
 
 (website-url "https://www.github.com/DogLooksGood/meow")
 (keywords "convenience" "modal-editing")
 
-(package-file "meow.el")
-(files "meow-*.el")
+(package-file "eerie.el")
+(files "eerie-*.el" "eerie.el")
 
-(script "test" "emacs -Q --batch -L . -L tests -l tests/meow-vim-tests.el -f ert-run-tests-batch-and-exit")
+(script "test" "emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit")
 
 (source 'gnu)
 (source 'melpa)

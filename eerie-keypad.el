@@ -1,4 +1,4 @@
-;;; meow-keypad.el --- Meow keypad mode -*- lexical-binding: t -*-
+;;; eerie-keypad.el --- Meow keypad mode -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -32,10 +32,10 @@
 
 (require 'cl-lib)
 (require 'subr-x)
-(require 'meow-var)
-(require 'meow-util)
-(require 'meow-helpers)
-(require 'meow-beacon)
+(require 'eerie-var)
+(require 'eerie-util)
+(require 'eerie-helpers)
+(require 'eerie-beacon)
 
 (defun meow--keypad-format-upcase (k)
   "Return S-k for upcase K."
@@ -567,5 +567,5 @@ When INPUT is nil, start without initial keys."
   (setq meow--keypad-help t)
   (meow-keypad))
 
-(provide 'meow-keypad)
-;;; meow-keypad.el ends here
+(provide 'eerie-keypad)
+;;; eerie-keypad.el ends here

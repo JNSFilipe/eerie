@@ -1,4 +1,4 @@
-;;; meow-shims.el --- Make Meow play well with other packages.  -*- lexical-binding: t; -*-
+;;; eerie-shims.el --- Make Meow play well with other packages.  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -23,13 +23,13 @@
 
 ;;; Code:
 
-(require 'meow-var)
-(require 'meow-command)
+(require 'eerie-var)
+(require 'eerie-command)
 (require 'delsel)
 
-(declare-function meow-normal-mode "meow")
-(declare-function meow-motion-mode "meow")
-(declare-function meow-insert-exit "meow-command")
+(declare-function meow-normal-mode "eerie")
+(declare-function meow-motion-mode "eerie")
+(declare-function meow-insert-exit "eerie-command")
 
 (defun meow--switch-to-motion (&rest _ignore)
   "Switch to motion state, used for advice.
@@ -514,7 +514,7 @@ Argument ENABLE non-nil means turn on."
 (declare-function eat-eshell-semi-char-mode "eat")
 (declare-function eat-eshell-char-mode "eat")
 
-(declare-function meow-insert-mode "meow-core")
+(declare-function meow-insert-mode "eerie-core")
 
 (defun meow--eat-eshell-mode-override-enable ()
   (setq-local meow--eat-eshell-mode-override t)
@@ -604,5 +604,5 @@ Argument ENABLE, non-nil means turn on."
   (when meow--eat-eshell-setup (meow--setup-eat-eshell nil))
   (when meow--ediff-setup (meow--setup-ediff nil)))
 
-;;; meow-shims.el ends here
-(provide 'meow-shims)
+;;; eerie-shims.el ends here
+(provide 'eerie-shims)

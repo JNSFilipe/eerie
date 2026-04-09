@@ -1,4 +1,4 @@
-;;; meow-cheatsheet-layout.el --- Cheatsheet layouts for Meow  -*- lexical-binding: t; -*-
+;;; eerie-cheatsheet-layout.el --- Cheatsheet layouts for Meow  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -533,5 +533,5 @@
     (<AB10> "."	">")
     (<BKSL> "\\" "|")))
 
-(provide 'meow-cheatsheet-layout)
-;;; meow-cheatsheet-layout.el ends here
+(provide 'eerie-cheatsheet-layout)
+;;; eerie-cheatsheet-layout.el ends here

@@ -1,4 +1,4 @@
-;;; meow-commands.el --- Commands in Meow -*- lexical-binding: t -*-
+;;; eerie-commands.el --- Commands in Meow -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -26,12 +26,12 @@
 (require 'subr-x)
 (require 'seq)
 
-(require 'meow-var)
-(require 'meow-util)
-(require 'meow-visual)
-(require 'meow-thing)
-(require 'meow-beacon)
-(require 'meow-keypad)
+(require 'eerie-var)
+(require 'eerie-util)
+(require 'eerie-visual)
+(require 'eerie-thing)
+(require 'eerie-beacon)
+(require 'eerie-keypad)
 (require 'array)
 
 (defun meow--selection-fallback ()
@@ -4167,5 +4167,5 @@ This command is a replacement for built-in `kmacro-end-macro'."
 (meow--remove-command meow-tail-expand meow-right-expand)
 (meow--remove-command meow-block-expand meow-to-block)
 
-(provide 'meow-command)
-;;; meow-command.el ends here
+(provide 'eerie-command)
+;;; eerie-command.el ends here

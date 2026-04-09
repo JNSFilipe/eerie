@@ -1,4 +1,4 @@
-;;; meow-helpers.el --- Meow helpers for customization  -*- lexical-binding: t; -*-
+;;; eerie-helpers.el --- Meow helpers for customization  -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -28,16 +28,16 @@
 
 (require 'cl-lib)
 
-(require 'meow-util)
-(require 'meow-var)
-(require 'meow-keymap)
+(require 'eerie-util)
+(require 'eerie-var)
+(require 'eerie-keymap)
 
 (defun meow-intern (name suffix &optional two-dashes prefix)
   "Convert a string into a meow symbol. Macro helper.
 Concat the string PREFIX or \"meow\" if PREFIX is null, either
 one or two hyphens based on TWO-DASHES, the string NAME, and the
 string SUFFIX. Then, convert this string into a symbol."
-  (intern (concat (if prefix prefix "meow") (if two-dashes "--" "-")
+  (intern (concat (if prefix prefix "eerie") (if two-dashes "--" "-")
                   name suffix)))
 
 (defun meow-define-keys (state &rest keybinds)
@@ -266,5 +266,5 @@ MODE is nil."
      (parent-mode (meow--mode-get-state parent-mode))
      (t (meow--mode-guess-state)))))
 
-(provide 'meow-helpers)
-;;; meow-helpers.el ends here
+(provide 'eerie-helpers)
+;;; eerie-helpers.el ends here
