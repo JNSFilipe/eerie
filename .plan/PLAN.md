@@ -55,6 +55,10 @@ Turn this Meow fork into a Vim-first modal editing package with:
 45. Upstream dead-surface pruning
 46. Live helper consolidation and polish
 47. Wrapped-line linewise-visual fix
+48. Rename tracker and test harness bootstrap
+49. Entry point and module graph rename to `eerie`
+50. Lisp symbol surface rename to `eerie-*`
+51. Canonical docs, packaging, and shipped-surface audit
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -62,7 +66,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: None
+- Active stage: 49
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/meow-vim-tests.el` passes
@@ -82,6 +86,46 @@ Turn this Meow fork into a Vim-first modal editing package with:
     multicursor workflow routes through them internally, even though
     normal `m` plus multicursor `.` / `,` / `-` remains the only
     shipped builder flow
+
+## Stage 48 Plan
+- Goal: bootstrap the hard rename by creating honest stage trackers and moving the test harness onto the future `eerie` surface before the package exists.
+- Planned scope:
+  - add Stage 48 through Stage 51 tracker files
+  - rename the ERT suite and interactive demo to `tests/eerie-*`
+  - change the renamed test harness to `(require 'eerie)` and start renaming canonical test names to `eerie-*`
+  - verify the focused renamed test fails red because the package surface does not exist yet
+
+## Stage 49 Plan
+- Goal: rename the shipped entry point and module graph from `meow*.el` to `eerie*.el` and make the renamed package loadable again.
+- Planned scope:
+  - rename every shipped `meow-*.el` module plus `meow.el`
+  - update module headers, `require`, `provide`, and `declare-function` references to `eerie-*`
+  - update `Eask` metadata and test script to the renamed entry point and test harness
+  - verify `emacs -Q --batch -L . -l eerie.el` passes
+
+## Stage 50 Plan
+- Goal: rename the full Lisp symbol surface to `eerie-*` and restore the renamed ERT suite to green.
+- Planned scope:
+  - mechanically rename shipped `meow-*` commands, variables, modes, faces, and helpers to `eerie-*`
+  - update the renamed ERT suite and interactive demo to the new surface
+  - verify focused renamed regressions and the full renamed suite pass
+
+## Stage 51 Plan
+- Goal: finish the hard rename by updating the canonical docs and packaging metadata, then auditing the shipped surface for stale `meow` references.
+- Planned scope:
+  - update `README.md`, `AGENTS.md`, `.plan/*`, and `CHANGELOG.md` to the `eerie` package identity
+  - audit shipped files for stale `meow` names while excluding historical process docs and upstream `.org` references
+  - run final smoke and full ERT verification on the renamed package
+
+## Stage 48 Summary
+- Goal: bootstrap the hard rename by creating honest stage trackers and moving the test harness onto the future `eerie` surface before the package exists.
+- Implemented scope:
+  - added Stage 48 through Stage 51 tracker entries and TODO files for the hard rename
+  - renamed the ERT suite and interactive demo to `tests/eerie-*`
+  - switched the renamed test harness to `(require 'eerie)` and started the canonical test rename with `eerie-default-normal-keymap-is-vim-like`
+  - verified the focused renamed test fails red because the `eerie` package surface does not exist yet
+- Verification:
+  - focused red test fails with `Cannot open load file ... eerie`, confirming the rename bootstrap is wired to the future entry point
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:

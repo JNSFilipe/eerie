@@ -1,8 +1,8 @@
-;;; meow-vim-tests.el --- Tests for Vim-style Meow fork -*- lexical-binding: t; -*-
+;;; eerie-vim-tests.el --- Tests for Vim-style Eerie fork -*- lexical-binding: t; -*-
 
 (require 'cl-lib)
 (require 'ert)
-(require 'meow)
+(require 'eerie)
 
 (defmacro meow-test-with-buffer (content &rest body)
   "Run BODY in a temporary Meow-enabled buffer seeded with CONTENT."
@@ -135,9 +135,9 @@
                       meow--beacon-overlays))
         #'<))
 
-(ert-deftest meow-default-normal-keymap-is-vim-like ()
-  (should (eq (lookup-key meow-normal-state-keymap (kbd "h")) 'meow-left))
-  (should (eq (lookup-key meow-normal-state-keymap (kbd "j")) 'meow-next))
+(ert-deftest eerie-default-normal-keymap-is-vim-like ()
+  (should (eq (lookup-key eerie-normal-state-keymap (kbd "h")) 'eerie-left))
+  (should (eq (lookup-key eerie-normal-state-keymap (kbd "j")) 'eerie-next))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "k")) 'meow-prev))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "l")) 'meow-right))
   (should (eq (lookup-key meow-normal-state-keymap (kbd "m")) 'meow-multicursor-start))
