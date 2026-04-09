@@ -1,8 +1,8 @@
-# Eerie Vim Fork
+# Eerie
 
-This repository is a hard fork of the upstream modal editing framework
-and now ships a Vim-style modal experience by default under the
-`eerie-*` Lisp surface.
+Eerie is a hard fork of [Meow](https://github.com/meow-edit/meow) and
+ships a Vim-style modal experience by default under the `eerie-*` Lisp
+surface.
 
 ## Quick Start
 
