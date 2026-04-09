@@ -7,7 +7,7 @@ docs, deleting stale legacy files, and closing the final audit.
 
 ## Tasks
 
-- [x] Update `README.md`, `AGENTS.md`, `.plan/*`, and the interactive
+- [x] Update `README.org`, `AGENTS.md`, `.plan/*`, and the interactive
   demo header to use `-L lisp`
 - [x] Delete the stale root `.org` docs
 - [x] Delete the tracked editor backup files

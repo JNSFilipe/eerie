@@ -7,7 +7,7 @@ auditing the shipped surface for stale pre-rename references.
 
 ## Tasks
 
-- [x] Update `README.md`, `AGENTS.md`, `.plan/PLAN.md`, and
+- [x] Update `README.org`, `AGENTS.md`, `.plan/PLAN.md`, and
   `.plan/STAGE48_TODO.md` through `.plan/STAGE51_TODO.md` to `eerie`
 - [x] Update `CHANGELOG.md` with a short note about the hard rename
 - [x] Audit the shipped surface for stale pre-rename references

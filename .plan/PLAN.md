@@ -62,9 +62,10 @@ Turn this fork into a Vim-first modal editing package with:
 52. Reorg tracker bootstrap and red `lisp/` load-path test
 53. Move shipped package sources into `lisp/`
 54. Canonical command updates, stale-doc deletion, and final layout audit
+55. Canonical README conversion to Org format
 
 ## Update Policy
-- Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
+- Keep this file, every `.plan/STAGE#_TODO.md`, `README.org`, and `AGENTS.md` in sync with the current implementation.
 - Update the active stage file before starting work on that stage and before closing it.
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
@@ -88,6 +89,13 @@ Turn this fork into a Vim-first modal editing package with:
     multicursor workflow routes through them internally, even though
     normal `m` plus multicursor `.` / `,` / `-` remains the only
     shipped builder flow
+
+## Stage 55 Plan
+- Goal: replace the canonical Markdown README with an Org README and update the repository tracker to point at the new canonical file.
+- Planned scope:
+  - convert the root README content from `README.md` to `README.org`
+  - update `AGENTS.md` and `.plan/*` so `README.org` is the canonical user-facing overview
+  - run the standard smoke test and full ERT suite before closing the stage
 
 ## Stage 48 Plan
 - Goal: bootstrap the hard rename by creating honest stage trackers and moving the test harness onto the future `eerie` surface before the package exists.
@@ -115,7 +123,7 @@ Turn this fork into a Vim-first modal editing package with:
 ## Stage 51 Plan
 - Goal: finish the hard rename by updating the canonical docs and packaging metadata, then auditing the shipped surface for stale pre-rename references.
 - Planned scope:
-  - update `README.md`, `AGENTS.md`, `.plan/*`, and `CHANGELOG.md` to the `eerie` package identity
+  - update `README.org`, `AGENTS.md`, `.plan/*`, and `CHANGELOG.md` to the `eerie` package identity
   - audit shipped files for stale pre-rename names while excluding historical process docs and upstream `.org` references
   - run final smoke and full ERT verification on the renamed package
 
@@ -152,12 +160,12 @@ Turn this fork into a Vim-first modal editing package with:
 ## Stage 51 Summary
 - Goal: finish the hard rename by updating the canonical docs and packaging metadata, then auditing the shipped surface for stale pre-rename references.
 - Implemented scope:
-  - updated `README.md`, `AGENTS.md`, `.plan/*`, and `CHANGELOG.md` to the `eerie` package identity
+  - updated `README.org`, `AGENTS.md`, `.plan/*`, and `CHANGELOG.md` to the `eerie` package identity
   - renamed the legacy-named package asset from `meow.svg` to `eerie.svg` and updated the one remaining local reference
   - aligned package metadata such as `website-url` with the new `eerie` identity
   - verified the shipped surface audit is clean for code, tests, canonical docs, and tracked package files
 - Verification:
-  - `rg -n "\\bmeow\\b|meow-" lisp/eerie.el lisp/eerie-*.el Eask README.md AGENTS.md CHANGELOG.md tests/eerie-vim-tests.el tests/eerie-interactive-demo.el .plan` returns no matches
+  - `rg -n "\\bmeow\\b|meow-" lisp/eerie.el lisp/eerie-*.el Eask README.org AGENTS.md CHANGELOG.md tests/eerie-vim-tests.el tests/eerie-interactive-demo.el .plan` returns no matches
   - `rg --files | rg '(^|/)meow'` returns no matches
   - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
@@ -180,7 +188,7 @@ Turn this fork into a Vim-first modal editing package with:
 ## Stage 54 Plan
 - Goal: finish the layout reorganization by updating canonical commands and docs, deleting stale legacy files, and closing the final audit.
 - Planned scope:
-  - update `README.md`, `AGENTS.md`, `.plan/*`, and the interactive demo header comment to use `-L lisp`
+  - update `README.org`, `AGENTS.md`, `.plan/*`, and the interactive demo header comment to use `-L lisp`
   - delete the stale legacy root `.org` docs and the tracked editor backup files
   - run the final stale-path audit plus the final smoke and full ERT verification under `lisp/`
 
@@ -212,8 +220,18 @@ Turn this fork into a Vim-first modal editing package with:
   - verified the canonical docs, tracker files, and packaging metadata no longer point at the pre-`lisp/` root layout
   - re-ran the final smoke test and full ERT suite from `lisp/`
 - Verification:
-  - `rg -n -- "-L \\.| -l eerie\\.el|package-file \"eerie\\.el\"|files \"eerie-\\*\\.el\" \"eerie\\.el\"|README\\.org|COMMANDS\\.org|CUSTOMIZATIONS\\.org|EXPLANATION\\.org|FAQ\\.org|GET_STARTED\\.org|KEYBINDING_|TUTORIAL\\.org|VIM_COMPARISON\\.org" README.md AGENTS.md Eask tests .github` returns no matches
+  - `rg -n -- "-L \\.| -l eerie\\.el|package-file \"eerie\\.el\"|files \"eerie-\\*\\.el\" \"eerie\\.el\"|README\\.org|COMMANDS\\.org|CUSTOMIZATIONS\\.org|EXPLANATION\\.org|FAQ\\.org|GET_STARTED\\.org|KEYBINDING_|TUTORIAL\\.org|VIM_COMPARISON\\.org" README.org AGENTS.md Eask tests .github` returns no matches
   - `.plan/*` is updated to the `lisp/` layout and no longer points at the removed legacy root docs
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+
+## Stage 55 Summary
+- Goal: replace the canonical Markdown README with an Org README and update the repository tracker to point at the new canonical file.
+- Implemented scope:
+  - converted the root user-facing overview from `README.md` to `README.org`
+  - updated `AGENTS.md` and the canonical tracker to treat `README.org` as the maintained README
+  - preserved the same user-facing content while switching the root README format to Org
+- Verification:
   - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
 ## Stage 36 Summary
@@ -332,7 +350,7 @@ Turn this fork into a Vim-first modal editing package with:
   - added explicit regressions for block-visual exit and multicursor-visual exit without an active builder so teardown behavior is pinned directly
   - extracted a shared visual cleanup helper and reused it in block replay startup, visual exit, multicursor visual exit, multicursor cancel, and multiedit clear
   - removed the duplicated rectangle-mark and region-teardown branches from those live exit paths
-  - reviewed `README.md` and `AGENTS.md` and left them unchanged because this stage did not alter user-facing behavior or scope
+  - reviewed `README.org` and `AGENTS.md` and left them unchanged because this stage did not alter user-facing behavior or scope
 - Verification:
   - focused replay and teardown regressions pass
   - batch load smoke test passes

@@ -16,7 +16,7 @@ and multicursor paths without changing shipped behavior.
   branches only after the shared helpers cover the live flows
 - [x] Re-run the focused replay and teardown regressions after each
   consolidation slice
-- [x] Update `README.md`, `AGENTS.md`, and `.plan` summaries to match
+- [x] Update `README.org`, `AGENTS.md`, and `.plan` summaries to match
   the final code
 - [x] Re-run the batch load smoke test
 - [x] Re-run the full ERT suite
@@ -30,5 +30,5 @@ and multicursor paths without changing shipped behavior.
   block replay startup, visual exit, multicursor visual exit,
   multicursor cancel, and multiedit clear all use the same rectangle
   and region teardown path.
-- Reviewed `README.md` and `AGENTS.md`; no user-facing or scope text
+- Reviewed `README.org` and `AGENTS.md`; no user-facing or scope text
   changed in this stage because the consolidation was internal-only.

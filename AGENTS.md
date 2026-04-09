@@ -2,8 +2,8 @@
 
 ## Working Rules
 
-- Keep `README.md`, `AGENTS.md`, `.plan/PLAN.md`, and every `.plan/STAGE#_TODO.md` updated whenever behavior or stage status changes.
-- Treat `README.md` as the canonical user-facing overview for this fork.
+- Keep `README.org`, `AGENTS.md`, `.plan/PLAN.md`, and every `.plan/STAGE#_TODO.md` updated whenever behavior or stage status changes.
+- Treat `README.org` as the canonical user-facing overview for this fork.
 - Treat `.plan/*` as the canonical implementation tracker.
 - Record deferred work explicitly in `.plan/*`; do not leave it undocumented.
 - Keep `tests/eerie-vim-tests.el` aligned with the shipped behavior.
