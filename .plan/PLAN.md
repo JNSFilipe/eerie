@@ -69,7 +69,7 @@ Turn this fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: 53
+- Active stage: 54
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/eerie-vim-tests.el` passes
@@ -194,6 +194,16 @@ Turn this fork into a Vim-first modal editing package with:
   - verified the focused `-L lisp` ERT command fails red because the `lisp/` source directory does not exist yet
 - Verification:
   - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el --eval "(ert-run-tests-batch-and-exit 'eerie-default-normal-keymap-is-vim-like)"` fails with `Cannot open load file ... eerie`
+
+## Stage 53 Summary
+- Goal: move the shipped `eerie` package into `lisp/` and restore package loading under the new source layout.
+- Implemented scope:
+  - moved `eerie.el` and every shipped `eerie-*.el` module into `lisp/`
+  - updated `Eask` to package and test from the `lisp/` source directory
+  - restored the package load smoke test and the focused ERT smoke test under the new load path
+- Verification:
+  - `emacs -Q --batch -L lisp -l lisp/eerie.el` passes
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el --eval "(ert-run-tests-batch-and-exit 'eerie-default-normal-keymap-is-vim-like)"` passes
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:

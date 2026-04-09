@@ -7,12 +7,16 @@ loading under the new source layout.
 
 ## Tasks
 
-- [ ] Move `eerie.el` and every `eerie-*.el` module into `lisp/`
-- [ ] Update `Eask` to package and test from `lisp/`
-- [ ] Run `emacs -Q --batch -L lisp -l lisp/eerie.el`
-- [ ] Run the focused `-L lisp` ERT smoke test
-- [ ] Commit the `lisp/` source move
+- [x] Move `eerie.el` and every `eerie-*.el` module into `lisp/`
+- [x] Update `Eask` to package and test from `lisp/`
+- [x] Run `emacs -Q --batch -L lisp -l lisp/eerie.el`
+- [x] Run the focused `-L lisp` ERT smoke test
+- [x] Commit the `lisp/` source move
 
 ## Completed
 
-- None yet.
+- Moved the shipped `eerie` package entry point and every shipped
+  module into `lisp/`.
+- Updated `Eask` to package and test from the `lisp/` source layout.
+- Verified the smoke test and focused ERT smoke test pass from
+  `lisp/`.

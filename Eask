@@ -7,10 +7,10 @@
 (website-url "https://www.github.com/DogLooksGood/eerie")
 (keywords "convenience" "modal-editing")
 
-(package-file "eerie.el")
-(files "eerie-*.el" "eerie.el")
+(package-file "lisp/eerie.el")
+(files "lisp/eerie*.el" "lisp/eerie.el")
 
-(script "test" "emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit")
+(script "test" "emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit")
 
 (source 'gnu)
 (source 'melpa)
