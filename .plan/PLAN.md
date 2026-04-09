@@ -48,6 +48,8 @@ Turn this Meow fork into a Vim-first modal editing package with:
 38. Canonical multicursor action flow and mirrored mode execution
 39. Multicursor redesign cleanup and documentation sync
 40. Visual `m` entry into canonical multicursor mode
+41. Block-visual rectangle initialization fix
+42. Block-visual `I` and `A` replay insert/append
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -64,7 +66,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - multi-edit yank across all targets
   - linewise and blockwise multicursor match seeds
   - broader arbitrary interactive multicursor flows beyond the mirrored normal/visual command set
-  - full Vim-style block change/insert behavior
+  - full Vim-style block `c` semantics
   - rewriting the legacy upstream `.org` docs
   - operator counts and additional Vim motions beyond the Stage 7 scope
   - search motions as operator targets
@@ -124,6 +126,26 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - preserved the current charwise visual selection while switching into `multicursor-visual`, then seeded the canonical exact-match builder from that restored selection
   - kept the new visual-entry command alive across the multicursor and multiedit post-command cleanup hooks so the seeded session survives the command boundary
   - added regression coverage for direct visual `m` entry and the real `m.` key sequence from visual mode
+- Verification:
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 41 Summary
+- Goal: make Vim-style block visual mode start with a real one-character-wide rectangle so direct block actions work from `C-v` without a dummy horizontal move.
+- Implemented scope:
+  - changed `meow-visual-block-start` so a fresh `C-v` selection marks the current character column instead of a zero-width rectangle
+  - kept blockwise vertical movement column-stable while updating the initial rectangle width to match the visible cursor column
+  - added regressions for the initial rectangle contents, the shifted mark column, and a real `C-v j d` key sequence that must delete the selected column block
+- Verification:
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 42 Summary
+- Goal: make block visual `I` and `A` work like Vim-style multi-line insert and append instead of being undefined keys.
+- Implemented scope:
+  - bound visual `I` and `A` and made them dispatch to block-specific replay-backed insert and append commands
+  - extended the replay engine so block insert sessions can target a column on each selected line, not just a raw marker position
+  - added real `C-v j I ... ESC` and `C-v j A ... ESC` regression coverage
 - Verification:
   - batch load smoke test passes
   - full ERT suite passes

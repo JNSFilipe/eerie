@@ -146,6 +146,8 @@
     (define-key keymap (kbd "d") 'meow-visual-delete)
     (define-key keymap (kbd "c") 'meow-visual-change)
     (define-key keymap (kbd "y") 'meow-visual-yank)
+    (define-key keymap (kbd "I") 'meow-visual-insert)
+    (define-key keymap (kbd "A") 'meow-visual-append)
     (define-key keymap (kbd "f") 'meow-visual-jump-char)
     (define-key keymap (kbd "/") 'meow-visual-search-forward)
     (define-key keymap (kbd "?") 'meow-visual-search-backward)

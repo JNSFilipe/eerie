@@ -34,6 +34,8 @@
 - Normal `m` now enters the canonical multicursor session and keeps a persistent keypad-style multicursor cheat sheet visible while that session is active.
 - Operator-pending currently supports doubled linewise operators, motion targets `w`, `W`, `b`, `B`, `h`, `l`, `0`, `$`, `f<char>`, and `t<char>`, plus `i`/`a` text objects for `(` `[` `{` `"` and `'`.
 - Visual mode currently supports charwise, anchor-based linewise, and block selection, plus `d`, `c`, `y`, `i`, `a`, and `$`.
+- Block visual `C-v` should immediately select the current character column as a one-character-wide rectangle, so flows like `C-v j d` delete a real column block instead of a zero-width no-op.
+- Block visual `I` should enter INSERT at the left edge of the selected block on every selected line, and block visual `A` should append at the right edge of the selected block on every selected line.
 - Visual `m` should enter the canonical multicursor session from the current charwise visual selection and use that selection as the immutable exact-match seed.
 - Charwise visual selections inside the multicursor session, including selections created by normal `w`, now seed the canonical exact-match builder.
 - Multicursor visual `.` adds the next exact match of the original seed text, multicursor visual `,` removes the newest target, and multicursor visual `-` skips one match without adding it.
@@ -72,4 +74,4 @@
 - Yank operators such as `yy` should preserve the original cursor position after copying.
 - `%` should work for nested delimiters and when point is just after a closing delimiter at end of line or end of buffer.
 - The interactive manual smoke buffer lives at `tests/meow-interactive-demo.el` and includes visible-jump targets for `f` and `w`.
-- Counts, search-repeat motion targets inside operators, word text-object aliases like `iw` / `aw`, fuller Vim search syntax, bulk multi-edit builders, full multi-target yank, multi-edit text-object retargeting under a dedicated binding, linewise/blockwise multicursor match seeds, and broader arbitrary interactive multi-cursor flows beyond the current mirrored normal/visual replay coverage remain deferred until they exist.
+- Counts, search-repeat motion targets inside operators, word text-object aliases like `iw` / `aw`, fuller Vim search syntax, bulk multi-edit builders, full multi-target yank, multi-edit text-object retargeting under a dedicated binding, linewise/blockwise multicursor match seeds, broader arbitrary interactive multi-cursor flows beyond the current mirrored normal/visual replay coverage, and full Vim-style block `c` semantics remain deferred until they exist.

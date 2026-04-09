@@ -1557,7 +1557,7 @@ numeric, repeat times.
   "Enter block VISUAL state using `rectangle-mark-mode'."
   (interactive)
   (unless (region-active-p)
-    (push-mark (point) t t))
+    (push-mark (min (1+ (point)) (point-max)) t t))
   (rectangle-mark-mode 1)
   (setq-local meow--visual-type 'block
               meow--visual-line-anchor nil)
@@ -1695,6 +1695,24 @@ When REVERSE is non-nil, return them in reverse order."
   "Return the insert position for TARGET under multi-edit COMMAND."
   (funcall (if (eq command 'append) #'cdr #'car) target))
 
+(defun meow--replay-target-goto (target)
+  "Move point to replay TARGET.
+
+TARGET is either a marker or a cons cell of the form
+\(MARKER . COLUMN).  Return non-nil when TARGET is valid."
+  (pcase target
+    ((pred markerp)
+     (when (marker-buffer target)
+       (goto-char target)
+       t))
+    (`(,marker . ,column)
+     (when (and (markerp marker)
+                (marker-buffer marker))
+       (goto-char marker)
+       (move-to-column column t)
+       t))
+    (_ nil)))
+
 (defun meow--multiedit-delete-all-targets ()
   "Delete every current multi-edit target."
   (let ((primary-marker (copy-marker (car meow--multiedit-primary)))
@@ -1764,8 +1782,7 @@ When REVERSE is non-nil, return them in reverse order."
       (meow--wrap-collapse-undo
         (save-mark-and-excursion
           (dolist (marker markers)
-            (when (marker-buffer marker)
-              (goto-char marker)
+            (when (meow--replay-target-goto marker)
               (if use-macro
                   (progn
                     (meow--multiedit-enter-insert-state-at-point command)
@@ -1826,6 +1843,56 @@ When DIRECTION is nil, use the current multi-edit direction."
             (unless (meow--multiedit-target-member-p range)
               (throw 'match range))))
         nil))))
+
+(defun meow--visual-block-column-bounds ()
+  "Return the ordered column bounds of the active block selection."
+  (let ((point-column (current-column))
+        (mark-column (save-excursion
+                       (goto-char (mark t))
+                       (current-column))))
+    (cons (min point-column mark-column)
+          (max point-column mark-column))))
+
+(defun meow--visual-block-replay-targets (command)
+  "Return replay targets for the active block selection under COMMAND.
+
+COMMAND is either `insert' or `append'.  The return value is a cons
+cell of the form \(PRIMARY . SECONDARY), where PRIMARY is the target
+for the current line and SECONDARY is the list of other line targets."
+  (let* ((column-bounds (meow--visual-block-column-bounds))
+         (target-column (if (eq command 'append)
+                            (cdr column-bounds)
+                          (car column-bounds)))
+         (primary-line (line-number-at-pos (point)))
+         primary
+         secondary)
+    (save-excursion
+      (apply-on-rectangle
+       (lambda (_startcol _endcol)
+         (let ((target (cons (copy-marker (line-beginning-position))
+                             target-column)))
+           (if (= (line-number-at-pos (point)) primary-line)
+               (setq primary target)
+             (push target secondary))))
+       (region-beginning)
+       (region-end)))
+    (unless primary
+      (user-error "Block insert target disappeared"))
+    (cons primary (nreverse secondary))))
+
+(defun meow--visual-block-start-replay (command)
+  "Start block VISUAL replay-backed insert for COMMAND.
+
+COMMAND is either `insert' or `append'."
+  (pcase-let ((`(,primary . ,secondary)
+               (meow--visual-block-replay-targets command)))
+    (when (bound-and-true-p rectangle-mark-mode)
+      (rectangle-mark-mode -1))
+    (when (region-active-p)
+      (meow--cancel-selection))
+    (unless (meow--replay-target-goto primary)
+      (user-error "Block insert target disappeared"))
+    (meow--multiedit-start-replay command secondary)))
 
 (defun meow--multiedit-post-command ()
   "Deactivate multi-edit after unsupported commands."
@@ -2720,6 +2787,26 @@ argument starts in backward direction."
         (meow--visual-finish-action))
       (meow-save)
       (meow--visual-finish-action))))
+
+(defun meow-visual-insert ()
+  "Enter INSERT from VISUAL.
+
+In block VISUAL, insert at the left edge of the selected rectangle on
+every selected line."
+  (interactive)
+  (if (eq meow--visual-type 'block)
+      (meow--visual-block-start-replay 'insert)
+    (user-error "Visual I is only supported in block VISUAL mode")))
+
+(defun meow-visual-append ()
+  "Enter APPEND from VISUAL.
+
+In block VISUAL, append at the right edge of the selected rectangle on
+every selected line."
+  (interactive)
+  (if (eq meow--visual-type 'block)
+      (meow--visual-block-start-replay 'append)
+    (user-error "Visual A is only supported in block VISUAL mode")))
 
 (defun meow-visual-delete ()
   "Delete the active VISUAL selection."

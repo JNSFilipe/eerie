@@ -664,7 +664,11 @@ The value can be nil, quick or record.")
   "Whether the active multi-edit selection is backward.")
 
 (defvar-local meow--multiedit-replay-markers nil
-  "Markers used to replay the current multi-edit insert or change.")
+  "Replay targets for the current multi-edit or block insert session.
+
+Each target is either a marker or a cons cell of the form
+\(MARKER . COLUMN), where COLUMN is the target insertion column on the
+line identified by MARKER.")
 
 (defvar-local meow--multiedit-replay-command nil
   "Command symbol used to replay the current multi-edit insert or change.")

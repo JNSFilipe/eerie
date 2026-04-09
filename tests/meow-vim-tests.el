@@ -864,7 +864,7 @@
     (should (= (save-excursion
                  (goto-char (mark t))
                  (current-column))
-               3))))
+               4))))
 
 (ert-deftest meow-visual-search-next-extends-selection ()
   (meow-test-with-buffer "alpha target beta target gamma\n"
@@ -1295,6 +1295,13 @@
     (should (eq meow--visual-type 'block))
     (should (bound-and-true-p rectangle-mark-mode))))
 
+(ert-deftest meow-visual-block-start-selects-current-char-column ()
+  (meow-test-with-buffer "012345\nabcdef\n"
+    (forward-char 2)
+    (call-interactively #'meow-visual-block-start)
+    (should (equal (extract-rectangle (region-beginning) (region-end))
+                   '("2")))))
+
 (ert-deftest meow-visual-block-movement-preserves-column ()
   (meow-test-with-buffer "012345\nabcdef\nuvwxyz\n"
     (forward-char 3)
@@ -1304,7 +1311,31 @@
     (should (= (save-excursion
                  (goto-char (mark t))
                  (current-column))
-               3))))
+               4))))
+
+(ert-deftest meow-visual-block-delete-removes-selected-column-via-key-sequence ()
+  (meow-test-with-buffer "012345\nabcdef\nuvwxyz\n"
+    (forward-char 2)
+    (execute-kbd-macro (kbd "C-v j d"))
+    (should (meow-normal-mode-p))
+    (should (equal (buffer-string)
+                   "01345\nabdef\nuvwxyz\n"))))
+
+(ert-deftest meow-visual-block-insert-replays-on-selected-lines-via-key-sequence ()
+  (meow-test-with-buffer "012345\nabcdef\nuvwxyz\n"
+    (forward-char 2)
+    (execute-kbd-macro (kbd "C-v j I Z <escape>"))
+    (should (meow-normal-mode-p))
+    (should (equal (buffer-string)
+                   "01Z2345\nabZcdef\nuvwxyz\n"))))
+
+(ert-deftest meow-visual-block-append-replays-on-selected-lines-via-key-sequence ()
+  (meow-test-with-buffer "012345\nabcdef\nuvwxyz\n"
+    (forward-char 2)
+    (execute-kbd-macro (kbd "C-v j A Z <escape>"))
+    (should (meow-normal-mode-p))
+    (should (equal (buffer-string)
+                   "012Z345\nabcZdef\nuvwxyz\n"))))
 
 (ert-deftest meow-jump-back-and-forward-round-trip ()
   (meow-test-with-buffer "alpha\nbeta\ngamma\n"

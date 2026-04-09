@@ -43,7 +43,8 @@ No setup function is required for the default layout.
 
 - `v` starts charwise visual mode
 - `V` starts linewise visual mode anchored on the current line and shows numbered visible-line hints; `;` reverses direction during the hint loop
-- `C-v` starts block selection with `rectangle-mark-mode`
+- `C-v` starts block selection with `rectangle-mark-mode` and immediately selects the current character column so block actions like `C-v j d` operate on a real rectangle instead of a zero-width region
+- In block visual mode, `I` enters insert at the left edge of the selected block on every selected line, and `A` appends at the right edge of the selected block on every selected line
 - `h` and `l` stay on the current line while extending the selection
 - `f` extends the active visual selection to a visible character with numbered hints; `;` reverses direction during the hint loop
 - `g g`, `G`, `/`, `?`, `n`, and `N` keep extending the active visual selection
@@ -113,12 +114,14 @@ No setup function is required for the default layout.
 - `W` now also skips the immediate separator when point comes from a `w`-style end-of-word boundary, so `w -> m -> n -> W` visibly advances instead of looking inert.
 - `V` reuses the same visible-jump loop for lines, so digits jump the active linewise selection to visible lines, `;` reverses direction, and `ESC` exits the selection.
 - When `V` has fewer than 9 visible line hints in the active direction but the buffer still has more lines there, it recenters the window to expose up to 9 numbered line targets.
+- `C-v` now starts from a one-character-wide rectangle at point, so blockwise `d` and `c` act on the visible column immediately instead of needing an extra horizontal motion first.
+- Block visual `I` and `A` replay the primary insert session to every selected line at the rectangle's left or right edge.
 - Reverse visual `f` skips the character currently under the visual cursor, so `f<char> ; 1` goes to the previous match instead of staying on the current one.
 - Reverse visual `f` also refreshes its numbered candidates after each jump inside the same hint loop, so the overlay labels and numeric choices stay in sync after `;`.
 - Jump history is window-local and records explicit relocations such as `gg`, `G`, `gd`, `meow-goto-line`, `/?nN`, Meow's mark/global-mark jump helpers, and registered third-party navigation commands.
 - Registered command capture ships with a default list for built-in jumps like `beginning-of-buffer`, `end-of-buffer`, `goto-line`, `imenu`, and `xref`, plus common third-party commands such as `consult-*` when those symbols are present.
 - Counts like `2dw`, search-repeat operator targets, and word text-object aliases like `iw` / `aw` are still deferred.
-- Block `c` uses Emacs rectangle deletion and then enters insert mode at point; it is not a full Vim-style block-insert implementation yet.
+- Block `c` still uses Emacs rectangle deletion and then enters insert mode at point; it is not full Vim-style block-change semantics yet.
 - The `.org` documentation from upstream is still present as legacy reference material and does not yet fully describe this fork.
 - The living implementation tracker is in `.plan/PLAN.md`.
 - `tests/meow-interactive-demo.el` is the manual smoke buffer for interactive testing, including `f`, `w`, and the normal-`m` multicursor flow.
