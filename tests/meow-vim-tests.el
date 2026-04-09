@@ -214,7 +214,7 @@
       (should-not meow--beacon-overlays)
       (should (= clear-calls 1)))))
 
-(ert-deftest meow-visual-m-enters-multicursor-from-charwise-selection ()
+(ert-deftest meow-visual-m-deletes-charwise-selection-via-key-sequence ()
   (meow-test-with-buffer "foo xx foo yy foo\n"
     (let ((range-1 (meow-test-range-of "foo" 1)))
       (meow-test-start-charwise-visual range-1)
@@ -224,12 +224,10 @@
 
 (ert-deftest meow-canonical-multicursor-key-sequence-remains-live ()
   (meow-test-with-buffer "foo xx foo yy foo\n"
-    (execute-kbd-macro (kbd "mw."))
-    (execute-kbd-macro (kbd "d"))
-    (execute-kbd-macro (kbd "<escape>"))
+    (execute-kbd-macro (kbd "mw.vd"))
     (should (meow-normal-mode-p))
     (should-not meow--multicursor-active)
-    (should (equal (buffer-string) "foo xx  yy foo\n"))))
+    (should (equal (buffer-string) " xx  yy foo\n"))))
 
 (ert-deftest meow-visual-m-dot-adds-next-match ()
   (meow-test-with-buffer "foo xx foo yy foo\n"

@@ -9,18 +9,19 @@ the Stage 43 keep list.
 
 - Stage 43 classified `meow-find-ref`, clipboard, comment, page,
   slurp, sexp, wrap, open, and replace helpers as keep for now.
-- Stage 45 is only expected to prune the remaining confirmed dead
-  surface, starting with `meow-visual-search-next-or-multicursor`, and
-  to delete anything else only if the prune pass proves it is still
-  unreachable.
+- `meow-visual-search-next-or-multicursor` is not a Stage 45 target;
+  Stage 44 owns that deletion.
+- Stage 45 is only expected to prune any other confirmed dead upstream
+  surface that remains after Stage 44, and to delete anything else only
+  if the prune pass proves it is still unreachable.
 - Stage 45 may still remove stale references from `meow-var.el`,
   `meow-beacon.el`, and `meow-tutor.el`, but only for helpers this pass
   confirms are dead.
 
 ## Tasks
 
-- [ ] Remove `meow-visual-search-next-or-multicursor` and any other
-  helpers this pass proves unreachable
+- [ ] Remove any helpers this pass proves unreachable, excluding
+  `meow-visual-search-next-or-multicursor`
 - [ ] Remove the matching stale references from `meow-var.el`,
   `meow-beacon.el`, and `meow-tutor.el` for the helpers actually
   deleted in this stage
