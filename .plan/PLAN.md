@@ -54,6 +54,7 @@ Turn this Meow fork into a Vim-first modal editing package with:
 44. Multiedit and multicursor compatibility-path removal
 45. Upstream dead-surface pruning
 46. Live helper consolidation and polish
+47. Wrapped-line linewise-visual fix
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -200,6 +201,17 @@ Turn this Meow fork into a Vim-first modal editing package with:
   - reviewed `README.md` and `AGENTS.md` and left them unchanged because this stage did not alter user-facing behavior or scope
 - Verification:
   - focused replay and teardown regressions pass
+  - batch load smoke test passes
+  - full ERT suite passes
+
+## Stage 47 Summary
+- Goal: make linewise visual `V` and its numbered hint loop follow logical buffer lines even when display wrapping is active.
+- Implemented scope:
+  - added a wrapped-line regression for repeated `V` hint selection on a long first line
+  - changed the linewise visual range, linewise movement, and visible line-candidate collector to use logical lines instead of wrapped display rows
+  - kept the existing linewise anchor, hint, and edge behavior green after that change
+- Verification:
+  - focused linewise visual regressions pass
   - batch load smoke test passes
   - full ERT suite passes
 

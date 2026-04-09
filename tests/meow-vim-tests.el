@@ -770,6 +770,27 @@
     (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
                    "three\nfour"))))
 
+(ert-deftest meow-visual-line-start-advances-by-logical-lines-when-lines-wrap ()
+  (meow-test-with-buffer
+      (concat
+       "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+       "BBBB\nCCCC\nDDDD\nEEEE\nFFFF\n")
+    (delete-other-windows)
+    (let ((right (split-window-right)))
+      (window-resize right (- 20 (window-total-width right)) t)
+      (select-window right))
+    (setq truncate-lines nil)
+    (visual-line-mode 1)
+    (goto-char (point-min))
+    (meow-test-with-read-keys '(?1 ?1 ?1 ?1 ?\C-g)
+      (call-interactively #'meow-visual-line-start))
+    (should (meow-visual-mode-p))
+    (should (eq meow--visual-type 'line))
+    (should (equal (buffer-substring-no-properties (region-beginning) (region-end))
+                   (concat
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+                    "BBBB\nCCCC\nDDDD\nEEEE")))))
+
 (ert-deftest meow-visual-line-start-escape-exits-visual ()
   (meow-test-with-buffer "one\ntwo\n"
     (meow-test-with-read-keys '(?\e)

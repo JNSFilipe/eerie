@@ -43,6 +43,7 @@ No setup function is required for the default layout.
 
 - `v` starts charwise visual mode
 - `V` starts linewise visual mode anchored on the current line and shows numbered visible-line hints; `;` reverses direction during the hint loop
+- Linewise visual `V` follows logical buffer lines even when display wrapping is active, so repeated line hints advance by real lines instead of wrapped screen rows
 - `C-v` starts block selection with `rectangle-mark-mode` and immediately selects the current character column so block actions like `C-v j d` operate on a real rectangle instead of a zero-width region
 - In block visual mode, `I` enters insert at the left edge of the selected block on every selected line, and `A` appends at the right edge of the selected block on every selected line
 - `h` and `l` stay on the current line while extending the selection

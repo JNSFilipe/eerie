@@ -1284,21 +1284,9 @@ This command will expand line selection."
     (move-to-column column)))
 
 (defun meow--visual-line-range ()
-  "Return the current visual line range as a cons cell.
-
-Fall back to the logical line when visual-line primitives collapse to a
-single point, which can happen in non-windowed test environments and at
-buffer edges."
-  (save-excursion
-    (let ((line-beg (line-beginning-position))
-          (line-end (line-end-position)))
-      (beginning-of-visual-line)
-      (let ((beg (point)))
-        (end-of-visual-line)
-        (let ((end (point)))
-          (if (<= end beg)
-              (cons line-beg line-end)
-            (cons beg end)))))))
+  "Return the current logical line range as a cons cell."
+  (cons (line-beginning-position)
+        (line-end-position)))
 
 (defun meow--visual-line-beginning-position ()
   (car (meow--visual-line-range)))
@@ -1324,7 +1312,7 @@ buffer edges."
 
 (defun meow--forward-visual-line-1 ()
   (let ((orig (point)))
-    (line-move-visual 1)
+    (forward-line 1)
     (if meow--expanding-p
         (progn
           (goto-char (meow--visual-line-end-position))
@@ -1333,7 +1321,7 @@ buffer edges."
         (meow--visual-line-beginning-position)))))
 
 (defun meow--backward-visual-line-1 ()
-  (line-move-visual -1)
+  (forward-line -1)
   (meow--visual-line-beginning-position))
 
 (defun meow-visual-line (n &optional expand)
@@ -1361,7 +1349,7 @@ numeric, repeat times.
       (setq-local meow--visual-line-anchor (meow--visual-line-range)))
     (let ((target-range
            (save-mark-and-excursion
-             (line-move-visual offset)
+             (forward-line offset)
              (meow--visual-line-range))))
       (meow--visual-line-apply-selection target-range))))
 
@@ -3026,31 +3014,31 @@ with UNIVERSAL ARGUMENT, search both side."
           (nreverse visibles))))))
 
 (defun meow--jump-visible-line-ranges ()
-  "Return visible visual-line ranges in the selected window."
+  "Return visible logical line ranges in the selected window."
   (let ((window-start-pos (window-start))
         (window-end-pos (window-end (selected-window) t))
         ranges
-        previous-range)
+        previous-beg)
     (save-excursion
       (goto-char window-start-pos)
-      (beginning-of-visual-line)
+      (beginning-of-line)
       (while (< (point) window-end-pos)
-        (let ((range (meow--visual-line-range)))
-          (if (equal range previous-range)
+        (let* ((range (meow--visual-line-range))
+               (beg (car range)))
+          (if (equal beg previous-beg)
               (goto-char window-end-pos)
-            (when (and (< (car range) window-end-pos)
+            (when (and (< beg window-end-pos)
                        (> (cdr range) window-start-pos))
               (push range ranges))
-            (setq previous-range range)
-            (goto-char (car range))
-            (line-move-visual 1)))))
+            (setq previous-beg beg)
+            (forward-line 1)))))
     (nreverse ranges)))
 
 (defun meow--jump-line-can-move-p (direction origin)
   "Return non-nil when DIRECTION can move beyond ORIGIN."
   (save-excursion
     (goto-char (car origin))
-    (line-move-visual (if (eq direction 'backward) -1 1))
+    (forward-line (if (eq direction 'backward) -1 1))
     (not (= (car (meow--visual-line-range)) (car origin)))))
 
 (defun meow--jump-line-recenter (direction)

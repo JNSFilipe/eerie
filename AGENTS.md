@@ -61,6 +61,7 @@
 - `ESC` should clear the full multi-cursor session, cancel the active selection, and return to normal mode.
 - Unsupported commands currently still clear extra target-builder state instead of trying to preserve the session through arbitrary interactive flows.
 - `V` should start linewise visual mode, immediately show numbered visible-line hints, support `;` direction reversal inside that hint loop, and keep the same anchored linewise selection behavior once a line is chosen.
+- Linewise visual `V` should follow logical buffer lines even when display wrapping is active, so repeated numbered hints advance by real lines instead of wrapped screen rows.
 - `V` should recenter the window when needed so forward or reverse line hints can expose up to 9 numbered targets before the real buffer boundary is reached.
 - Visual mode currently also supports `f` as a visible character jump that extends the active selection, including selections that were started by `w`.
 - Reverse visual `f` should skip the character currently under the visual cursor, so `f<char> ; 1` moves to the previous matching character instead of staying on the current one.
