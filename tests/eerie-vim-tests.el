@@ -2,7 +2,7 @@
 
 (require 'cl-lib)
 (require 'ert)
-(require 'eerie)
+(require 'eerie nil nil)
 
 (defmacro eerie-test-with-buffer (content &rest body)
   "Run BODY in a temporary Eerie-enabled buffer seeded with CONTENT."

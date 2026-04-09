@@ -59,6 +59,9 @@ Turn this fork into a Vim-first modal editing package with:
 49. Entry point and module graph rename to `eerie`
 50. Lisp symbol surface rename to `eerie-*`
 51. Canonical docs, packaging, and shipped-surface audit
+52. Reorg tracker bootstrap and red `lisp/` load-path test
+53. Move shipped package sources into `lisp/`
+54. Canonical command updates, stale-doc deletion, and final layout audit
 
 ## Update Policy
 - Keep this file, every `.plan/STAGE#_TODO.md`, `README.md`, and `AGENTS.md` in sync with the current implementation.
@@ -66,7 +69,7 @@ Turn this fork into a Vim-first modal editing package with:
 - Record any intentionally deferred work in the relevant stage file instead of leaving it implicit.
 
 ## Current Status
-- Active stage: None
+- Active stage: 53
 - Verification:
   - package load smoke test passes
   - ERT suite in `tests/eerie-vim-tests.el` passes
@@ -159,6 +162,38 @@ Turn this fork into a Vim-first modal editing package with:
   - `rg --files | rg '(^|/)meow'` returns no matches
   - `emacs -Q --batch -L . -l eerie.el` passes
   - `emacs -Q --batch -L . -L tests -l tests/eerie-vim-tests.el -f ert-run-tests-batch-and-exit` passes
+
+## Stage 52 Plan
+- Goal: bootstrap the repository layout reorganization by adding honest stage trackers and proving the future `lisp/` load path is red before the source move.
+- Planned scope:
+  - add Stage 52 through Stage 54 tracker files
+  - update the canonical tracker with the new layout-reorg stages and set Stage 52 active
+  - point the renamed ERT harness at the future `lisp/` load path
+  - verify the focused test fails while `lisp/` does not exist
+
+## Stage 53 Plan
+- Goal: move the shipped `eerie` package into `lisp/` and restore package loading under the new source layout.
+- Planned scope:
+  - move `eerie.el` and every `eerie-*.el` module into `lisp/`
+  - update `Eask` package-file, file globs, and test script to the `lisp/` layout
+  - verify the package load smoke test and focused ERT smoke test pass from `lisp/`
+
+## Stage 54 Plan
+- Goal: finish the layout reorganization by updating canonical commands and docs, deleting stale legacy files, and closing the final audit.
+- Planned scope:
+  - update `README.md`, `AGENTS.md`, `.plan/*`, and the interactive demo header comment to use `-L lisp`
+  - delete the stale legacy root `.org` docs and the tracked editor backup files
+  - run the final stale-path audit plus the final smoke and full ERT verification under `lisp/`
+
+## Stage 52 Summary
+- Goal: bootstrap the repository layout reorganization by adding honest stage trackers and proving the future `lisp/` load path is red before the source move.
+- Implemented scope:
+  - added Stage 52 through Stage 54 tracker entries and TODO files for the layout reorganization
+  - updated the canonical tracker to mark the new reorg work active
+  - pointed the ERT harness at the future `lisp/` load path by changing the top-level require form
+  - verified the focused `-L lisp` ERT command fails red because the `lisp/` source directory does not exist yet
+- Verification:
+  - `emacs -Q --batch -L lisp -L tests -l tests/eerie-vim-tests.el --eval "(ert-run-tests-batch-and-exit 'eerie-default-normal-keymap-is-vim-like)"` fails with `Cannot open load file ... eerie`
 ## Stage 36 Summary
 - Goal: replace the old visual-only entry point with a canonical normal `m` multicursor session and keep a persistent multicursor cheat sheet visible while that session is active.
 - Implemented scope:
